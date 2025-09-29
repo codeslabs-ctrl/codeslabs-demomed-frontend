@@ -2,7 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { PatientService } from '../../services/patient.service';
-import { Patient } from '../../models/patient.model';
+import { PatientWithHistoryService, PatientWithHistorialResponse } from '../../services/patient-with-history.service';
+import { Patient, PatientHistory } from '../../models/patient.model';
 
 @Component({
   selector: 'app-patient-detail',
@@ -76,21 +77,41 @@ import { Patient } from '../../models/patient.model';
           </div>
 
           <div class="section">
-            <h3>Información Médica</h3>
-            <div class="medical-info">
-              <div class="info-item full-width">
-                <label>Motivo de Consulta</label>
-                <div class="info-text rich-content" [innerHTML]="patient.motivo_consulta"></div>
-              </div>
-              <div class="info-item full-width" *ngIf="patient.diagnostico">
-                <label>Diagnóstico</label>
-                <div class="info-text rich-content" [innerHTML]="patient.diagnostico"></div>
-              </div>
-              <div class="info-item full-width" *ngIf="patient.conclusiones">
-                <label>Conclusiones</label>
-                <div class="info-text rich-content" [innerHTML]="patient.conclusiones"></div>
+            <h3>Historia Médica</h3>
+            <div class="medical-info" *ngIf="historial && historial.length > 0; else noHistory">
+              <div class="history-item" *ngFor="let historia of historial; let i = index">
+                <div class="history-header">
+                  <h4>Consulta #{{ i + 1 }}</h4>
+                  <span class="history-date">{{ formatDate(historia.fecha_consulta) }}</span>
+                </div>
+                <div class="history-content">
+                  <div class="info-item full-width" *ngIf="historia.motivo_consulta">
+                    <label>Motivo de Consulta</label>
+                    <div class="info-text rich-content" [innerHTML]="historia.motivo_consulta"></div>
+                  </div>
+                  <div class="info-item full-width" *ngIf="historia.diagnostico">
+                    <label>Diagnóstico</label>
+                    <div class="info-text rich-content" [innerHTML]="historia.diagnostico"></div>
+                  </div>
+                  <div class="info-item full-width" *ngIf="historia.conclusiones">
+                    <label>Conclusiones</label>
+                    <div class="info-text rich-content" [innerHTML]="historia.conclusiones"></div>
+                  </div>
+                  <div class="info-item full-width" *ngIf="historia.plan">
+                    <label>Plan de Tratamiento</label>
+                    <div class="info-text rich-content" [innerHTML]="historia.plan"></div>
+                  </div>
+                </div>
               </div>
             </div>
+            <ng-template #noHistory>
+              <div class="no-history">
+                <p>No hay historia médica registrada para este paciente.</p>
+                <a [routerLink]="['/patients', patient?.id, 'edit']" class="btn btn-primary">
+                  Agregar Historia Médica
+                </a>
+              </div>
+            </ng-template>
           </div>
 
           <div class="section">
@@ -463,15 +484,67 @@ import { Patient } from '../../models/patient.model';
         font-size: 0.9rem;
       }
     }
+
+    .history-item {
+      background: #F5F5F5;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid #E91E63;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #E91E63;
+    }
+
+    .history-header h4 {
+      color: #2C2C2C;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .history-date {
+      background: #E91E63;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .history-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .no-history {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: #666666;
+    }
+
+    .no-history p {
+      margin: 0 0 1.5rem 0;
+      font-size: 1.1rem;
+    }
   `]
 })
 export class PatientDetailComponent implements OnInit {
   patient: Patient | null = null;
+  historial: PatientHistory[] = [];
   loading = true;
   error: string | null = null;
 
   constructor(
     private patientService: PatientService,
+    private patientWithHistoryService: PatientWithHistoryService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
@@ -487,10 +560,11 @@ export class PatientDetailComponent implements OnInit {
     this.loading = true;
     this.error = null;
     
-    this.patientService.getPatientById(id).subscribe({
+    this.patientWithHistoryService.getPatientWithHistory(id).subscribe({
       next: (response) => {
         if (response.success) {
-          this.patient = response.data;
+          this.patient = response.data.paciente;
+          this.historial = response.data.historial;
         } else {
           this.error = 'Paciente no encontrado';
         }
@@ -523,7 +597,7 @@ export class PatientDetailComponent implements OnInit {
 
   deletePatient() {
     if (this.patient && confirm('¿Estás seguro de que quieres eliminar este paciente?')) {
-      this.patientService.deletePatient(this.patient.id).subscribe({
+      this.patientService.deletePatient(this.patient?.id).subscribe({
         next: (response) => {
           if (response.success) {
             this.router.navigate(['/patients']);

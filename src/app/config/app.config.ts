@@ -9,7 +9,15 @@ export const APP_CONFIG = {
     PATIENT_BY_EMAIL: (email: string) => `/patients/email/${email}`,
     PATIENT_SEARCH: '/patients/search',
     PATIENT_AGE_RANGE: '/patients/age-range',
-    PATIENT_STATISTICS: '/patients/statistics'
+    PATIENT_STATISTICS: '/patients/statistics',
+    // Views endpoints
+    VIEWS: '/views',
+    HISTORICO_FILTRADO: '/views/historico-filtrado',
+    MEDICOS_COMPLETA: '/views/medicos-completa',
+    ESTADISTICAS_ESPECIALIDAD: '/views/estadisticas-especialidad',
+    HISTORICO_COMPLETO: '/views/historico-completo',
+    MEDICO_ESTADISTICAS: (id: number) => `/views/medico-estadisticas/${id}`,
+    PACIENTE_ESTADISTICAS: (id: number) => `/views/paciente-estadisticas/${id}`
   },
 
   // Application Configuration

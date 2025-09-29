@@ -84,6 +84,14 @@ export class PatientService {
     return this.http.get<ApiResponse<any>>(`${APP_CONFIG.API_BASE_URL}${APP_CONFIG.API_ENDPOINTS.PATIENT_STATISTICS}`);
   }
 
+  getDashboardStats(): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`${APP_CONFIG.API_BASE_URL}${APP_CONFIG.API_ENDPOINTS.PATIENT_STATISTICS}`);
+  }
+
+  getPatients(page: number = 1, limit: number = 10): Observable<ApiResponse<Patient[]>> {
+    return this.getAllPatients({}, { page, limit });
+  }
+
   /**
    * Sanitiza los datos del paciente antes de enviarlos al servidor
    * @param patient - Datos del paciente a sanitizar

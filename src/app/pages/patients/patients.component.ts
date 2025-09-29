@@ -75,7 +75,7 @@ import { ConfirmationModalComponent } from '../../components/confirmation-modal/
               <th>Sexo</th>
               <th>Email</th>
               <th>Teléfono</th>
-              <th>Motivo Consulta</th>
+              <th>Estado</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -91,7 +91,11 @@ import { ConfirmationModalComponent } from '../../components/confirmation-modal/
               </td>
               <td>{{ patient.email }}</td>
               <td>{{ patient.telefono }}</td>
-              <td>{{ patient.motivo_consulta }}</td>
+              <td>
+                <span class="status-badge" [class.active]="patient.activo" [class.inactive]="!patient.activo">
+                  {{ patient.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
               <td>
                 <div class="action-buttons">
                   <a routerLink="/patients/{{ patient.id }}" class="btn btn-sm btn-primary">
@@ -328,6 +332,23 @@ import { ConfirmationModalComponent } from '../../components/confirmation-modal/
         font-size: 0.75rem;
         padding: 0.4rem 0.6rem;
       }
+    }
+
+    .status-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-badge.active {
+      background: #10B981;
+      color: white;
+    }
+
+    .status-badge.inactive {
+      background: #EF4444;
+      color: white;
     }
   `]
 })
