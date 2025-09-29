@@ -327,6 +327,7 @@ import { Patient } from '../../models/patient.model';
       box-shadow: 0 8px 24px rgba(44, 44, 44, 0.15);
     }
 
+
     .stat-icon {
       width: 48px;
       height: 48px;
@@ -639,6 +640,7 @@ export class DashboardEnhancedComponent implements OnInit {
   newThisMonth = 0;
   recentPatients: Patient[] = [];
   loadingPatients = false;
+  loadingNewThisMonth = false;
   selectedEspecialidadId?: number;
   selectedMedicoId?: number;
 
@@ -651,6 +653,7 @@ export class DashboardEnhancedComponent implements OnInit {
   ngOnInit() {
     this.loadDashboardData();
     this.loadRecentPatients();
+    this.loadNewThisMonthPatients();
     this.loadQueryParams();
   }
 
@@ -702,6 +705,36 @@ export class DashboardEnhancedComponent implements OnInit {
       error: (error) => {
         console.error('Error loading recent patients:', error);
         this.loadingPatients = false;
+      }
+    });
+  }
+
+  loadNewThisMonthPatients() {
+    this.loadingNewThisMonth = true;
+    
+    // Obtener el primer día del mes actual
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    // Cargar todos los pacientes y filtrar por fecha
+    this.patientService.getPatients(1, 100).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Filtrar pacientes creados este mes y contar
+          const newThisMonthCount = response.data.filter(patient => {
+            const patientDate = new Date(patient.fecha_creacion);
+            return patientDate >= firstDayOfMonth && patientDate <= lastDayOfMonth;
+          }).length;
+          
+          // Actualizar el contador
+          this.newThisMonth = newThisMonthCount;
+        }
+        this.loadingNewThisMonth = false;
+      },
+      error: (error) => {
+        console.error('Error loading new this month patients:', error);
+        this.loadingNewThisMonth = false;
       }
     });
   }
