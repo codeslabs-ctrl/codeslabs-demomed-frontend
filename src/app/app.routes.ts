@@ -31,6 +31,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/patient-form/patient-form.component').then(m => m.PatientFormComponent)
   },
   {
+    path: 'admin/medicos',
+    loadComponent: () => import('./pages/admin/medicos/medicos.component').then(m => m.MedicosComponent)
+  },
+  {
+    path: 'admin/especialidades',
+    loadComponent: () => import('./pages/admin/especialidades/especialidades.component').then(m => m.EspecialidadesComponent)
+  },
+  {
     path: '**',
     redirectTo: '/dashboard'
   }

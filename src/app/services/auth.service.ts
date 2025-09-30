@@ -47,13 +47,13 @@ export class AuthService {
             console.log('👨‍⚕️ Loading medico data for ID:', user.medico_id);
             return this.medicoService.getMedicoById(user.medico_id).pipe(
               map(medicoData => {
-                if (medicoData) {
+                if (medicoData && medicoData.success && medicoData.data) {
                   // Combinar datos del usuario con datos del médico
                   const enrichedUser = {
                     ...user,
-                    nombres: medicoData.nombres,
-                    apellidos: medicoData.apellidos,
-                    especialidad: medicoData.especialidad
+                    nombres: medicoData.data.nombres,
+                    apellidos: medicoData.data.apellidos,
+                    especialidad: medicoData.data.especialidad_nombre
                   };
                   
                   console.log('✅ Enriched user data:', enrichedUser);

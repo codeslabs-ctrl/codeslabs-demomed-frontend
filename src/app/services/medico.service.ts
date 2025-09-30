@@ -1,17 +1,17 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 import { APP_CONFIG } from '../config/app.config';
 import { ApiResponse } from '../models/patient.model';
 
 export interface Medico {
-  id: number;
+  id?: number;
   nombres: string;
   apellidos: string;
-  especialidad: string;
   email: string;
   telefono: string;
+  especialidad_id: number;
+  especialidad_nombre?: string;
   fecha_creacion?: string;
   fecha_actualizacion?: string;
 }
@@ -24,15 +24,33 @@ export class MedicoService {
 
   constructor(private http: HttpClient) {}
 
-  getMedicoById(id: number): Observable<Medico | null> {
-    return this.http.get<ApiResponse<Medico>>(`${this.baseUrl}/${id}`).pipe(
-      map(response => response.success ? response.data : null)
-    );
+  getAllMedicos(): Observable<ApiResponse<Medico[]>> {
+    return this.http.get<ApiResponse<Medico[]>>(this.baseUrl);
   }
 
-  getAllMedicos(): Observable<Medico[]> {
-    return this.http.get<ApiResponse<Medico[]>>(this.baseUrl).pipe(
-      map(response => response.success ? response.data : [])
-    );
+  getMedicoById(id: number): Observable<ApiResponse<Medico>> {
+    return this.http.get<ApiResponse<Medico>>(`${this.baseUrl}/${id}`);
+  }
+
+  createMedico(medico: Omit<Medico, 'id' | 'fecha_creacion' | 'fecha_actualizacion'>): Observable<ApiResponse<Medico>> {
+    return this.http.post<ApiResponse<Medico>>(this.baseUrl, medico);
+  }
+
+  updateMedico(id: number, medico: Partial<Medico>): Observable<ApiResponse<Medico>> {
+    return this.http.put<ApiResponse<Medico>>(`${this.baseUrl}/${id}`, medico);
+  }
+
+  deleteMedico(id: number): Observable<ApiResponse<{ message: string }>> {
+    return this.http.delete<ApiResponse<{ message: string }>>(`${this.baseUrl}/${id}`);
+  }
+
+  searchMedicos(query: string): Observable<ApiResponse<Medico[]>> {
+    return this.http.get<ApiResponse<Medico[]>>(`${this.baseUrl}/search`, {
+      params: { q: query }
+    });
+  }
+
+  getMedicosByEspecialidad(especialidadId: number): Observable<ApiResponse<Medico[]>> {
+    return this.http.get<ApiResponse<Medico[]>>(`${this.baseUrl}/by-especialidad/${especialidadId}`);
   }
 }

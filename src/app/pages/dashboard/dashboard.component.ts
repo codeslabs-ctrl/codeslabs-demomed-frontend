@@ -14,7 +14,6 @@ import { User } from '../../models/user.model';
   template: `
     <div class="dashboard">
       <div class="dashboard-header">
-        <h1>Dashboard FemiMed</h1>
         <p *ngIf="currentUser?.rol === 'administrador'">Panel de administración - Todos los pacientes</p>
         <p *ngIf="currentUser?.rol === 'medico'">Mis pacientes y consultas médicas</p>
         <p *ngIf="!currentUser">Gestion de pacientes y consultas médicas</p>
