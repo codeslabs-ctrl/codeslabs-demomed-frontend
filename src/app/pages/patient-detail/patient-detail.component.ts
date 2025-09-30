@@ -2,13 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { PatientService } from '../../services/patient.service';
-import { PatientWithHistoryService, PatientWithHistorialResponse } from '../../services/patient-with-history.service';
-import { Patient, PatientHistory } from '../../models/patient.model';
+import { HistoricoService, HistoricoWithDetails } from '../../services/historico.service';
+import { Patient } from '../../models/patient.model';
+import { RemitirPacienteModalComponent } from '../../components/remitir-paciente-modal/remitir-paciente-modal.component';
 
 @Component({
   selector: 'app-patient-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, RemitirPacienteModalComponent],
   template: `
     <div class="patient-detail-page">
       <div class="page-header">
@@ -73,45 +74,49 @@ import { Patient, PatientHistory } from '../../models/patient.model';
                 <label>Teléfono</label>
                 <span>{{ patient.telefono }}</span>
               </div>
+              <div class="info-item" *ngIf="patient.cedula">
+                <label>Cédula</label>
+                <span class="cedula-badge">{{ patient.cedula }}</span>
+              </div>
             </div>
           </div>
 
           <div class="section">
-            <h3>Historia Médica</h3>
-            <div class="medical-info" *ngIf="historial && historial.length > 0; else noHistory">
-              <div class="history-item" *ngFor="let historia of historial; let i = index">
-                <div class="history-header">
-                  <h4>Consulta #{{ i + 1 }}</h4>
-                  <span class="history-date">{{ formatDate(historia.fecha_consulta) }}</span>
-                </div>
-                <div class="history-content">
-                  <div class="info-item full-width" *ngIf="historia.motivo_consulta">
-                    <label>Motivo de Consulta</label>
-                    <div class="info-text rich-content" [innerHTML]="historia.motivo_consulta"></div>
-                  </div>
-                  <div class="info-item full-width" *ngIf="historia.diagnostico">
-                    <label>Diagnóstico</label>
-                    <div class="info-text rich-content" [innerHTML]="historia.diagnostico"></div>
-                  </div>
-                  <div class="info-item full-width" *ngIf="historia.conclusiones">
-                    <label>Conclusiones</label>
-                    <div class="info-text rich-content" [innerHTML]="historia.conclusiones"></div>
-                  </div>
-                  <div class="info-item full-width" *ngIf="historia.plan">
-                    <label>Plan de Tratamiento</label>
-                    <div class="info-text rich-content" [innerHTML]="historia.plan"></div>
-                  </div>
-                </div>
+            <h3>Información Médica</h3>
+            <div class="medical-info">
+              <div class="info-item full-width">
+                <label>Motivo de Consulta</label>
+                <p class="info-text">{{ historico?.motivo_consulta || patient.motivo_consulta || 'No especificado' }}</p>
+              </div>
+              <div class="info-item full-width" *ngIf="historico?.diagnostico || patient.diagnostico">
+                <label>Diagnóstico</label>
+                <p class="info-text">{{ historico?.diagnostico || patient.diagnostico }}</p>
+              </div>
+              <div class="info-item full-width" *ngIf="historico?.conclusiones || patient.conclusiones">
+                <label>Conclusiones</label>
+                <p class="info-text">{{ historico?.conclusiones || patient.conclusiones }}</p>
+              </div>
+              <div class="info-item full-width" *ngIf="historico?.antecedentes_medicos || patient.antecedentes_medicos">
+                <label>Antecedentes Médicos</label>
+                <p class="info-text">{{ historico?.antecedentes_medicos || patient.antecedentes_medicos }}</p>
+              </div>
+              <div class="info-item full-width" *ngIf="historico?.medicamentos || patient.medicamentos">
+                <label>Medicamentos</label>
+                <p class="info-text">{{ historico?.medicamentos || patient.medicamentos }}</p>
+              </div>
+              <div class="info-item full-width" *ngIf="historico?.alergias || patient.alergias">
+                <label>Alergias</label>
+                <p class="info-text">{{ historico?.alergias || patient.alergias }}</p>
+              </div>
+              <div class="info-item full-width" *ngIf="historico?.observaciones || patient.observaciones">
+                <label>Observaciones</label>
+                <p class="info-text">{{ historico?.observaciones || patient.observaciones }}</p>
+              </div>
+              <div class="info-item full-width" *ngIf="historico?.fecha_consulta">
+                <label>Fecha de Consulta</label>
+                <p class="info-text">{{ formatDate(historico!.fecha_consulta) }}</p>
               </div>
             </div>
-            <ng-template #noHistory>
-              <div class="no-history">
-                <p>No hay historia médica registrada para este paciente.</p>
-                <a [routerLink]="['/patients', patient?.id, 'edit']" class="btn btn-primary">
-                  Agregar Historia Médica
-                </a>
-              </div>
-            </ng-template>
           </div>
 
           <div class="section">
@@ -130,8 +135,25 @@ import { Patient, PatientHistory } from '../../models/patient.model';
         </div>
 
         <div class="patient-actions">
+          <div class="action-group">
+            <button class="btn btn-primary" (click)="printReport()">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+              </svg>
+              Imprimir Informe
+            </button>
+            <button class="btn btn-secondary" (click)="referPatient()">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+              Remitir Paciente
+            </button>
+          </div>
           <button class="btn btn-danger" (click)="deletePatient()">
-            🗑️ Eliminar Paciente
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+            Eliminar Paciente
           </button>
         </div>
       </div>
@@ -147,6 +169,14 @@ import { Patient, PatientHistory } from '../../models/patient.model';
           Volver a Pacientes
         </a>
       </div>
+
+      <!-- Modal de Remisión -->
+      <app-remitir-paciente-modal
+        [isOpen]="showRemitirModal"
+        [patient]="patient"
+        (close)="closeRemitirModal()"
+        (remisionCreated)="onRemisionCreated($event)">
+      </app-remitir-paciente-modal>
     </div>
   `,
   styles: [`
@@ -185,13 +215,12 @@ import { Patient, PatientHistory } from '../../models/patient.model';
     }
 
     .patient-header {
-      background: #E91E63;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
       color: white;
       padding: 2rem;
       display: flex;
       align-items: center;
       gap: 2rem;
-      box-shadow: 0 4px 12px rgba(233, 30, 99, 0.2);
     }
 
     .patient-avatar {
@@ -246,18 +275,7 @@ import { Patient, PatientHistory } from '../../models/patient.model';
       color: #1e293b;
       margin-bottom: 1rem;
       padding-bottom: 0.5rem;
-      border-bottom: 2px solid #f06292;
-      position: relative;
-    }
-
-    .section h3::after {
-      content: '';
-      position: absolute;
-      bottom: -2px;
-      left: 0;
-      width: 30px;
-      height: 2px;
-      background: linear-gradient(135deg, #e91e63 0%, #f06292 100%);
+      border-bottom: 2px solid #e5e7eb;
     }
 
     .info-grid {
@@ -290,76 +308,14 @@ import { Patient, PatientHistory } from '../../models/patient.model';
     }
 
     .info-text {
-      color: #2C2C2C;
+      color: #1e293b;
       font-size: 1rem;
       line-height: 1.6;
       margin: 0;
       padding: 1rem;
-      background: #F5F5F5;
+      background: #f8fafc;
       border-radius: 0.5rem;
-      border-left: 4px solid #E91E63;
-      box-shadow: 0 2px 4px rgba(44, 44, 44, 0.1);
-      font-family: 'Montserrat', sans-serif;
-    }
-
-    .rich-content {
-      color: #2C2C2C;
-      font-size: 1rem;
-      line-height: 1.6;
-      margin: 0;
-      padding: 1rem;
-      background: #F5F5F5;
-      border-radius: 0.5rem;
-      border-left: 4px solid #E91E63;
-      box-shadow: 0 2px 4px rgba(44, 44, 44, 0.1);
-      font-family: 'Montserrat', sans-serif;
-    }
-
-    .rich-content h1, .rich-content h2, .rich-content h3, .rich-content h4, .rich-content h5, .rich-content h6 {
-      color: #2C2C2C;
-      font-family: 'Montserrat', sans-serif;
-      margin: 1rem 0 0.5rem 0;
-      font-weight: 600;
-    }
-
-    .rich-content h3 {
-      font-size: 1.1rem;
-      border-bottom: 2px solid #E91E63;
-      padding-bottom: 0.25rem;
-    }
-
-    .rich-content p {
-      margin: 0.5rem 0;
-      color: #2C2C2C;
-      font-family: 'Montserrat', sans-serif;
-    }
-
-    .rich-content ul, .rich-content ol {
-      margin: 0.5rem 0;
-      padding-left: 1.5rem;
-      color: #2C2C2C;
-      font-family: 'Montserrat', sans-serif;
-    }
-
-    .rich-content li {
-      margin: 0.25rem 0;
-      color: #2C2C2C;
-      font-family: 'Montserrat', sans-serif;
-    }
-
-    .rich-content strong, .rich-content b {
-      font-weight: 600;
-      color: #2C2C2C;
-    }
-
-    .rich-content em, .rich-content i {
-      font-style: italic;
-      color: #666666;
-    }
-
-    .rich-content u {
-      text-decoration: underline;
-      color: #E91E63;
+      border-left: 4px solid #f5576c;
     }
 
     .sex-badge {
@@ -377,12 +333,35 @@ import { Patient, PatientHistory } from '../../models/patient.model';
       color: #be185d;
     }
 
+    .cedula-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      background-color: #fce7f3;
+      color: #be185d;
+      font-family: 'Courier New', monospace;
+    }
+
     .patient-actions {
       padding: 1.5rem 2rem;
-      background: #F5F5F5;
-      border-top: 1px solid #E91E63;
+      background: #f8fafc;
+      border-top: 1px solid #e5e7eb;
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .action-group {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .btn-icon {
+      width: 18px;
+      height: 18px;
+      margin-right: 0.5rem;
     }
 
     .loading, .error {
@@ -400,10 +379,6 @@ import { Patient, PatientHistory } from '../../models/patient.model';
     }
 
     @media (max-width: 768px) {
-      .header-content h1 {
-        font-size: 1.5rem;
-      }
-
       .header-content {
         flex-direction: column;
         gap: 1rem;
@@ -412,139 +387,41 @@ import { Patient, PatientHistory } from '../../models/patient.model';
 
       .header-actions {
         flex-direction: column;
-        gap: 0.5rem;
       }
 
       .patient-header {
         flex-direction: column;
         text-align: center;
         gap: 1rem;
-        padding: 1.5rem;
-      }
-
-      .patient-info h2 {
-        font-size: 1.5rem;
-      }
-
-      .patient-meta {
-        font-size: 1rem;
-      }
-
-      .patient-contact {
-        font-size: 0.9rem;
       }
 
       .info-grid {
         grid-template-columns: 1fr;
       }
 
-      .patient-sections {
-        padding: 1.5rem;
-      }
-
-      .section h3 {
-        font-size: 1.125rem;
-      }
-
       .patient-actions {
-        justify-content: center;
-        padding: 1rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .header-content h1 {
-        font-size: 1.25rem;
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
       }
 
-      .patient-header {
-        padding: 1rem;
+      .action-group {
+        flex-direction: column;
+        gap: 0.75rem;
       }
-
-      .patient-info h2 {
-        font-size: 1.25rem;
-      }
-
-      .avatar-circle {
-        width: 60px;
-        height: 60px;
-        font-size: 1.25rem;
-      }
-
-      .patient-sections {
-        padding: 1rem;
-      }
-
-      .section h3 {
-        font-size: 1rem;
-      }
-
-      .info-text {
-        padding: 0.75rem;
-        font-size: 0.9rem;
-      }
-    }
-
-    .history-item {
-      background: #F5F5F5;
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      border-left: 4px solid #E91E63;
-    }
-
-    .history-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 1px solid #E91E63;
-    }
-
-    .history-header h4 {
-      color: #2C2C2C;
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin: 0;
-    }
-
-    .history-date {
-      background: #E91E63;
-      color: white;
-      padding: 0.25rem 0.75rem;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .history-content {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .no-history {
-      text-align: center;
-      padding: 3rem 2rem;
-      color: #666666;
-    }
-
-    .no-history p {
-      margin: 0 0 1.5rem 0;
-      font-size: 1.1rem;
     }
   `]
 })
 export class PatientDetailComponent implements OnInit {
   patient: Patient | null = null;
-  historial: PatientHistory[] = [];
+  historico: HistoricoWithDetails | null = null;
   loading = true;
   error: string | null = null;
+  showRemitirModal = false;
 
   constructor(
     private patientService: PatientService,
-    private patientWithHistoryService: PatientWithHistoryService,
+    private historicoService: HistoricoService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
@@ -560,19 +437,37 @@ export class PatientDetailComponent implements OnInit {
     this.loading = true;
     this.error = null;
     
-    this.patientWithHistoryService.getPatientWithHistory(id).subscribe({
+    // Cargar datos del paciente
+    this.patientService.getPatientById(id).subscribe({
       next: (response) => {
         if (response.success) {
-          this.patient = response.data.paciente;
-          this.historial = response.data.historial;
+          this.patient = response.data;
+          // Cargar historial médico del paciente
+          this.loadHistorico(id);
         } else {
           this.error = 'Paciente no encontrado';
+          this.loading = false;
         }
-        this.loading = false;
       },
       error: (error) => {
         console.error('Error loading patient:', error);
         this.error = 'Error al cargar los datos del paciente';
+        this.loading = false;
+      }
+    });
+  }
+
+  loadHistorico(pacienteId: number) {
+    this.historicoService.getLatestHistoricoByPaciente(pacienteId).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.historico = response.data;
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading historico:', error);
+        // No mostrar error si no hay historial, solo continuar
         this.loading = false;
       }
     });
@@ -595,9 +490,38 @@ export class PatientDetailComponent implements OnInit {
     });
   }
 
+  printReport() {
+    if (this.patient) {
+      // Crear una nueva ventana para imprimir
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        const printContent = this.generatePrintContent();
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.print();
+      }
+    }
+  }
+
+  referPatient() {
+    if (this.patient) {
+      this.showRemitirModal = true;
+    }
+  }
+
+  closeRemitirModal() {
+    this.showRemitirModal = false;
+  }
+
+  onRemisionCreated(remision: any) {
+    console.log('Remisión creada:', remision);
+    alert(`Paciente ${this.patient?.nombres} ${this.patient?.apellidos} remitido exitosamente`);
+    this.showRemitirModal = false;
+  }
+
   deletePatient() {
     if (this.patient && confirm('¿Estás seguro de que quieres eliminar este paciente?')) {
-      this.patientService.deletePatient(this.patient?.id).subscribe({
+      this.patientService.deletePatient(this.patient.id).subscribe({
         next: (response) => {
           if (response.success) {
             this.router.navigate(['/patients']);
@@ -608,5 +532,121 @@ export class PatientDetailComponent implements OnInit {
         }
       });
     }
+  }
+
+  private generatePrintContent(): string {
+    if (!this.patient) return '';
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Informe Médico - ${this.patient.nombres} ${this.patient.apellidos}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .logo { font-size: 24px; font-weight: bold; color: #E91E63; }
+          .patient-info { margin-bottom: 20px; }
+          .section { margin-bottom: 20px; }
+          .section h3 { color: #E91E63; border-bottom: 2px solid #E91E63; }
+          .info-row { display: flex; margin-bottom: 10px; }
+          .info-label { font-weight: bold; width: 150px; }
+          .footer { margin-top: 40px; text-align: center; font-size: 12px; }
+          @media print { body { margin: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo">FemiMed</div>
+          <h1>Informe Médico</h1>
+        </div>
+        
+        <div class="patient-info">
+          <h2>${this.patient.nombres} ${this.patient.apellidos}</h2>
+          <div class="info-row">
+            <span class="info-label">Edad:</span>
+            <span>${this.patient.edad} años</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Sexo:</span>
+            <span>${this.patient.sexo}</span>
+          </div>
+          ${this.patient.cedula ? `
+          <div class="info-row">
+            <span class="info-label">Cédula:</span>
+            <span>${this.patient.cedula}</span>
+          </div>
+          ` : ''}
+          <div class="info-row">
+            <span class="info-label">Email:</span>
+            <span>${this.patient.email}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Teléfono:</span>
+            <span>${this.patient.telefono}</span>
+          </div>
+        </div>
+        
+        <div class="section">
+          <h3>Motivo de Consulta</h3>
+          <p>${this.historico?.motivo_consulta || this.patient.motivo_consulta || 'No especificado'}</p>
+        </div>
+        
+        ${(this.historico?.diagnostico || this.patient.diagnostico) ? `
+        <div class="section">
+          <h3>Diagnóstico</h3>
+          <p>${this.historico?.diagnostico || this.patient.diagnostico}</p>
+        </div>
+        ` : ''}
+        
+        ${(this.historico?.conclusiones || this.patient.conclusiones) ? `
+        <div class="section">
+          <h3>Conclusiones</h3>
+          <p>${this.historico?.conclusiones || this.patient.conclusiones}</p>
+        </div>
+        ` : ''}
+        
+        ${(this.historico?.antecedentes_medicos || this.patient.antecedentes_medicos) ? `
+        <div class="section">
+          <h3>Antecedentes Médicos</h3>
+          <p>${this.historico?.antecedentes_medicos || this.patient.antecedentes_medicos}</p>
+        </div>
+        ` : ''}
+        
+        ${(this.historico?.medicamentos || this.patient.medicamentos) ? `
+        <div class="section">
+          <h3>Medicamentos</h3>
+          <p>${this.historico?.medicamentos || this.patient.medicamentos}</p>
+        </div>
+        ` : ''}
+        
+        ${(this.historico?.alergias || this.patient.alergias) ? `
+        <div class="section">
+          <h3>Alergias</h3>
+          <p>${this.historico?.alergias || this.patient.alergias}</p>
+        </div>
+        ` : ''}
+        
+        ${(this.historico?.observaciones || this.patient.observaciones) ? `
+        <div class="section">
+          <h3>Observaciones</h3>
+          <p>${this.historico?.observaciones || this.patient.observaciones}</p>
+        </div>
+        ` : ''}
+        
+        ${this.historico?.fecha_consulta ? `
+        <div class="section">
+          <h3>Fecha de Consulta</h3>
+          <p>${this.formatDate(this.historico!.fecha_consulta)}</p>
+        </div>
+        ` : ''}
+        
+        <div class="footer">
+          <p>Fecha de emisión: ${new Date().toLocaleDateString('es-ES')}</p>
+          <p>FemiMed - Especialistas en Ginecología</p>
+        </div>
+      </body>
+      </html>
+    `;
   }
 }

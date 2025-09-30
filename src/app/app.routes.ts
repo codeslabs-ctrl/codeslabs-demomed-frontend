@@ -7,8 +7,12 @@ export const routes: Routes = [
     pathMatch: 'full'
   },
   {
+    path: 'login',
+    loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent)
+  },
+  {
     path: 'dashboard',
-    loadComponent: () => import('./pages/dashboard-enhanced/dashboard-enhanced.component').then(m => m.DashboardEnhancedComponent)
+    loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent)
   },
   {
     path: 'patients',
@@ -16,7 +20,7 @@ export const routes: Routes = [
   },
   {
     path: 'patients/new',
-    loadComponent: () => import('./pages/patient-form-new/patient-form-new.component').then(m => m.PatientFormNewComponent)
+    loadComponent: () => import('./pages/patient-form/patient-form.component').then(m => m.PatientFormComponent)
   },
   {
     path: 'patients/:id',
@@ -24,15 +28,7 @@ export const routes: Routes = [
   },
   {
     path: 'patients/:id/edit',
-    loadComponent: () => import('./pages/patient-form-new/patient-form-new.component').then(m => m.PatientFormNewComponent)
-  },
-  {
-    path: 'especialidades',
-    loadComponent: () => import('./pages/especialidades/especialidades.component').then(m => m.EspecialidadesComponent)
-  },
-  {
-    path: 'medicos',
-    loadComponent: () => import('./pages/medicos/medicos.component').then(m => m.MedicosComponent)
+    loadComponent: () => import('./pages/patient-form/patient-form.component').then(m => m.PatientFormComponent)
   },
   {
     path: '**',

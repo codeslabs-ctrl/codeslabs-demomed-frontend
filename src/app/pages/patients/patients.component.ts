@@ -3,14 +3,15 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PatientService } from '../../services/patient.service';
+import { AuthService } from '../../services/auth.service';
+import { User } from '../../models/user.model';
 import { Patient, PatientFilters } from '../../models/patient.model';
 import { APP_CONFIG } from '../../config/app.config';
-import { ConfirmationModalComponent } from '../../components/confirmation-modal/confirmation-modal.component';
 
 @Component({
   selector: 'app-patients',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ConfirmationModalComponent],
+  imports: [CommonModule, RouterModule, FormsModule],
   template: `
     <div class="patients-page">
       <div class="page-header">
@@ -30,6 +31,15 @@ import { ConfirmationModalComponent } from '../../components/confirmation-modal/
               [(ngModel)]="searchName"
               (input)="onSearchChange()"
               placeholder="Nombre del paciente">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Buscar por cédula</label>
+            <input 
+              type="text" 
+              class="form-input" 
+              [(ngModel)]="searchCedula"
+              (input)="onCedulaSearchChange()"
+              placeholder="V-12345678">
           </div>
           <div class="form-group">
             <label class="form-label">Sexo</label>
@@ -71,11 +81,12 @@ import { ConfirmationModalComponent } from '../../components/confirmation-modal/
             <tr>
               <th>ID</th>
               <th>Nombre</th>
+              <th>Cédula</th>
               <th>Edad</th>
               <th>Sexo</th>
               <th>Email</th>
               <th>Teléfono</th>
-              <th>Estado</th>
+              <th>Motivo Consulta</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -83,6 +94,9 @@ import { ConfirmationModalComponent } from '../../components/confirmation-modal/
             <tr *ngFor="let patient of patients">
               <td>{{ patient.id }}</td>
               <td>{{ patient.nombres }} {{ patient.apellidos }}</td>
+              <td>
+                <span class="cedula-badge">{{ patient.cedula || 'N/A' }}</span>
+              </td>
               <td>{{ patient.edad }}</td>
               <td>
                 <span class="sex-badge" [class.female]="patient.sexo === 'Femenino'">
@@ -91,23 +105,24 @@ import { ConfirmationModalComponent } from '../../components/confirmation-modal/
               </td>
               <td>{{ patient.email }}</td>
               <td>{{ patient.telefono }}</td>
-              <td>
-                <span class="status-badge" [class.active]="patient.activo" [class.inactive]="!patient.activo">
-                  {{ patient.activo ? 'Activo' : 'Inactivo' }}
-                </span>
-              </td>
+              <td>{{ patient.motivo_consulta }}</td>
               <td>
                 <div class="action-buttons">
-                  <a routerLink="/patients/{{ patient.id }}" class="btn btn-sm btn-primary">
-                    👁️ Ver
+                  <a routerLink="/patients/{{ patient.id }}" class="action-btn view-btn" title="Ver detalles">
+                    <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                    Ver
                   </a>
-                  <a routerLink="/patients/{{ patient.id }}/edit" class="btn btn-sm btn-secondary">
-                    ✏️ Editar
+                  <a routerLink="/patients/{{ patient.id }}/edit" class="action-btn edit-btn" title="Editar paciente">
+                    <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                    Editar
                   </a>
-                  <button class="btn btn-sm btn-danger" (click)="showDeleteConfirmation(patient)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="3,6 5,6 21,6"></polyline>
-                      <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+                  <button class="action-btn delete-btn" (click)="deletePatient(patient.id)" title="Eliminar paciente">
+                    <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                     </svg>
                     Eliminar
                   </button>
@@ -144,18 +159,6 @@ import { ConfirmationModalComponent } from '../../components/confirmation-modal/
         <div class="spinner"></div>
         <p>Cargando pacientes...</p>
       </div>
-
-      <!-- Modal de confirmación -->
-      <app-confirmation-modal
-        [isVisible]="showDeleteModal"
-        [title]="'Eliminar Paciente'"
-        [message]="'¿Estás seguro de que quieres eliminar este paciente? Esta acción no se puede deshacer.'"
-        [confirmText]="'Eliminar Paciente'"
-        [details]="selectedPatientDetails"
-        [loading]="deletingPatient"
-        (confirm)="confirmDelete()"
-        (cancel)="cancelDelete()">
-      </app-confirmation-modal>
     </div>
   `,
   styles: [`
@@ -214,26 +217,32 @@ import { ConfirmationModalComponent } from '../../components/confirmation-modal/
       background-color: #f8fafc;
       font-weight: 600;
       color: #374151;
-      padding: 1rem;
+      padding: 0.75rem 0.5rem;
       text-align: left;
       border-bottom: 1px solid #e5e7eb;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .table td {
-      padding: 1rem 0.75rem;
+      padding: 0.75rem 0.5rem;
       border-bottom: 1px solid #e5e7eb;
       vertical-align: middle;
-      text-align: left;
+      font-size: 0.8rem;
+      line-height: 1.4;
     }
 
-    .table th:last-child,
-    .table td:last-child {
-      text-align: center;
-      width: 220px;
+    .table tbody tr:nth-child(even) {
+      background-color: #fafafa;
     }
 
     .table tbody tr:hover {
-      background-color: #f8fafc;
+      background-color: #f0f0f0;
+    }
+
+    .table tbody tr:nth-child(even):hover {
+      background-color: #e8e8e8;
     }
 
     .sex-badge {
@@ -250,31 +259,79 @@ import { ConfirmationModalComponent } from '../../components/confirmation-modal/
       color: #be185d;
     }
 
+    .cedula-badge {
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      background-color: #e0f2fe;
+      color: #0369a1;
+      font-family: 'Courier New', monospace;
+      white-space: nowrap;
+    }
+
     .action-buttons {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.25rem;
       flex-wrap: nowrap;
       justify-content: center;
       align-items: center;
-      min-width: 200px;
     }
 
-    .action-buttons .btn {
-      padding: 0.5rem 0.75rem;
-      font-size: 0.8rem;
-      white-space: nowrap;
-      min-width: 65px;
-      text-align: center;
-      border-radius: 0.5rem;
-      transition: all 0.2s ease;
+    .action-btn {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
       gap: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      border: none;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: auto;
+      justify-content: center;
+      white-space: nowrap;
     }
 
-    .action-buttons .btn:hover {
+    .action-icon {
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
+    }
+
+    .view-btn {
+      background-color: #3b82f6;
+      color: white;
+    }
+
+    .view-btn:hover {
+      background-color: #2563eb;
       transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+    }
+
+    .edit-btn {
+      background-color: #f59e0b;
+      color: white;
+    }
+
+    .edit-btn:hover {
+      background-color: #d97706;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+    }
+
+    .delete-btn {
+      background-color: #ef4444;
+      color: white;
+    }
+
+    .delete-btn:hover {
+      background-color: #dc2626;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
     }
 
     .no-patients {
@@ -318,37 +375,29 @@ import { ConfirmationModalComponent } from '../../components/confirmation-modal/
       }
 
       .table {
-        font-size: 0.875rem;
+        font-size: 0.75rem;
+      }
+
+      .table th,
+      .table td {
+        padding: 0.5rem 0.25rem;
       }
 
       .action-buttons {
         flex-direction: column;
         gap: 0.25rem;
-        min-width: 150px;
       }
 
-      .action-buttons .btn {
-        min-width: 120px;
-        font-size: 0.75rem;
-        padding: 0.4rem 0.6rem;
+      .action-btn {
+        min-width: 100%;
+        padding: 0.375rem 0.5rem;
+        font-size: 0.7rem;
       }
-    }
 
-    .status-badge {
-      padding: 0.25rem 0.75rem;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .status-badge.active {
-      background: #10B981;
-      color: white;
-    }
-
-    .status-badge.inactive {
-      background: #EF4444;
-      color: white;
+      .action-icon {
+        width: 10px;
+        height: 10px;
+      }
     }
   `]
 })
@@ -359,37 +408,73 @@ export class PatientsComponent implements OnInit {
   pageSize = APP_CONFIG.PAGINATION.DEFAULT_PAGE_SIZE;
   pagination: any = null;
   searchName = '';
+  searchCedula = '';
   filters: PatientFilters = {};
   pageSizeOptions = APP_CONFIG.PAGINATION.PAGE_SIZE_OPTIONS;
-  
-  // Modal de confirmación
-  showDeleteModal = false;
-  deletingPatient = false;
-  selectedPatient: Patient | null = null;
-  selectedPatientDetails: { label: string; value: string }[] = [];
+  currentUser: User | null = null;
 
-  constructor(private patientService: PatientService) {}
+  constructor(
+    private patientService: PatientService,
+    private authService: AuthService
+  ) {}
 
   ngOnInit() {
-    this.loadPatients();
+    // Obtener el usuario actual
+    this.authService.currentUser$.subscribe((user: User | null) => {
+      this.currentUser = user;
+      this.loadPatients();
+    });
   }
 
   loadPatients() {
     this.loading = true;
-    this.patientService.getAllPatients(this.filters, { page: this.currentPage, limit: this.pageSize })
-      .subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.patients = response.data;
-            this.pagination = response.pagination;
+    
+    if (!this.currentUser) {
+      this.loading = false;
+      return;
+    }
+
+    // Si es administrador, cargar todos los pacientes
+    if (this.currentUser.rol === 'administrador') {
+      this.patientService.getAllPatients(this.filters, { page: this.currentPage, limit: this.pageSize })
+        .subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.patients = response.data;
+              this.pagination = response.pagination;
+            }
+            this.loading = false;
+          },
+          error: (error) => {
+            console.error('Error loading patients:', error);
+            this.loading = false;
           }
-          this.loading = false;
-        },
-        error: (error) => {
-          console.error('Error loading patients:', error);
-          this.loading = false;
-        }
-      });
+        });
+    } 
+    // Si es médico, cargar solo sus pacientes
+    else if (this.currentUser.rol === 'medico' && this.currentUser.medico_id) {
+      this.patientService.getPatientsByMedico(this.currentUser.medico_id, this.currentPage, this.pageSize, this.filters)
+        .subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.patients = response.data.patients;
+              this.pagination = {
+                page: response.data.page,
+                limit: response.data.limit,
+                total: response.data.total,
+                pages: response.data.totalPages
+              };
+            }
+            this.loading = false;
+          },
+          error: (error) => {
+            console.error('Error loading patients by medico:', error);
+            this.loading = false;
+          }
+        });
+    } else {
+      this.loading = false;
+    }
   }
 
   onSearchChange() {
@@ -410,6 +495,24 @@ export class PatientsComponent implements OnInit {
     }
   }
 
+  onCedulaSearchChange() {
+    if (this.searchCedula.trim()) {
+      this.patientService.searchPatientsByCedula(this.searchCedula).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.patients = response.data;
+            this.pagination = null;
+          }
+        },
+        error: (error) => {
+          console.error('Error searching patients by cedula:', error);
+        }
+      });
+    } else {
+      this.loadPatients();
+    }
+  }
+
   applyFilters() {
     this.currentPage = 1;
     this.loadPatients();
@@ -418,6 +521,7 @@ export class PatientsComponent implements OnInit {
   clearFilters() {
     this.filters = {};
     this.searchName = '';
+    this.searchCedula = '';
     this.currentPage = 1;
     this.loadPatients();
   }
@@ -427,42 +531,18 @@ export class PatientsComponent implements OnInit {
     this.loadPatients();
   }
 
-  showDeleteConfirmation(patient: Patient) {
-    this.selectedPatient = patient;
-    this.selectedPatientDetails = [
-      { label: 'Nombre', value: `${patient.nombres} ${patient.apellidos}` },
-      { label: 'Edad', value: `${patient.edad} años` },
-      { label: 'Sexo', value: patient.sexo },
-      { label: 'Email', value: patient.email }
-    ];
-    this.showDeleteModal = true;
-  }
-
-  confirmDelete() {
-    if (this.selectedPatient) {
-      this.deletingPatient = true;
-      this.patientService.deletePatient(this.selectedPatient.id).subscribe({
+  deletePatient(id: number) {
+    if (confirm('¿Estás seguro de que quieres eliminar este paciente?')) {
+      this.patientService.deletePatient(id).subscribe({
         next: (response) => {
           if (response.success) {
-            this.showDeleteModal = false;
-            this.selectedPatient = null;
-            this.selectedPatientDetails = [];
             this.loadPatients();
           }
-          this.deletingPatient = false;
         },
         error: (error) => {
           console.error('Error deleting patient:', error);
-          this.deletingPatient = false;
         }
       });
     }
-  }
-
-  cancelDelete() {
-    this.showDeleteModal = false;
-    this.selectedPatient = null;
-    this.selectedPatientDetails = [];
-    this.deletingPatient = false;
   }
 }
