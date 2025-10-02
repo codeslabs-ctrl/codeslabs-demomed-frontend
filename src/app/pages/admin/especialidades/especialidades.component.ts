@@ -1,15 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { EspecialidadService } from '../../../services/especialidad.service';
-
-export interface Especialidad {
-  id?: number;
-  nombre: string;
-  descripcion: string;
-  fecha_creacion?: string;
-  fecha_actualizacion?: string;
-}
+import { EspecialidadService, Especialidad } from '../../../services/especialidad.service';
 
 @Component({
   selector: 'app-especialidades',
@@ -28,7 +20,7 @@ export class EspecialidadesComponent implements OnInit {
   searchName = '';
 
   especialidadData: Especialidad = {
-    nombre: '',
+    nombre_especialidad: '',
     descripcion: ''
   };
 
@@ -62,7 +54,7 @@ export class EspecialidadesComponent implements OnInit {
     }
 
     this.filteredEspecialidades = this.especialidades.filter(especialidad =>
-      especialidad.nombre.toLowerCase().includes(this.searchName.toLowerCase()) ||
+      especialidad.nombre_especialidad.toLowerCase().includes(this.searchName.toLowerCase()) ||
       especialidad.descripcion.toLowerCase().includes(this.searchName.toLowerCase())
     );
   }
@@ -75,7 +67,7 @@ export class EspecialidadesComponent implements OnInit {
   openAddModal() {
     this.isEditing = false;
     this.especialidadData = {
-      nombre: '',
+      nombre_especialidad: '',
       descripcion: ''
     };
     this.showModal = true;
@@ -90,7 +82,7 @@ export class EspecialidadesComponent implements OnInit {
   closeModal() {
     this.showModal = false;
     this.especialidadData = {
-      nombre: '',
+      nombre_especialidad: '',
       descripcion: ''
     };
   }
@@ -138,7 +130,7 @@ export class EspecialidadesComponent implements OnInit {
   }
 
   deleteEspecialidad(especialidad: Especialidad) {
-    if (confirm(`¿Estás seguro de que quieres eliminar la especialidad "${especialidad.nombre}"?`)) {
+    if (confirm(`¿Estás seguro de que quieres eliminar la especialidad "${especialidad.nombre_especialidad}"?`)) {
       this.especialidadService.deleteEspecialidad(especialidad.id!).subscribe({
         next: (response) => {
           if (response.success) {

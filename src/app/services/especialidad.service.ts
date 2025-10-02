@@ -6,8 +6,9 @@ import { ApiResponse } from '../models/patient.model';
 
 export interface Especialidad {
   id?: number;
-  nombre: string;
+  nombre_especialidad: string;
   descripcion: string;
+  activa?: boolean;
   fecha_creacion?: string;
   fecha_actualizacion?: string;
 }

@@ -74,6 +74,12 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
                 <label>Teléfono</label>
                 <span>{{ patient.telefono }}</span>
               </div>
+              <div class="info-item" *ngIf="getLastMedicoTratante()">
+                <label>Último Médico Tratante</label>
+                <span class="medico-info">
+                  👨‍⚕️ {{ getLastMedicoTratante() }}
+                </span>
+              </div>
               <div class="info-item" *ngIf="patient.cedula">
                 <label>Cédula</label>
                 <span class="cedula-badge">{{ patient.cedula }}</span>
@@ -146,7 +152,7 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
               <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
               </svg>
-              Remitir Paciente
+              Interconsulta
             </button>
           </div>
           <button class="btn btn-danger" (click)="deletePatient()">
@@ -342,6 +348,19 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
       background-color: #fce7f3;
       color: #be185d;
       font-family: 'Courier New', monospace;
+    }
+
+    .medico-info {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      background-color: #f0f9ff;
+      color: #0369a1;
+      white-space: nowrap;
     }
 
     .patient-actions {
@@ -648,5 +667,19 @@ export class PatientDetailComponent implements OnInit {
       </body>
       </html>
     `;
+  }
+
+  getLastMedicoTratante(): string | null {
+    // Check for the field that actually comes from the backend
+    if (this.historico?.nombre_medico) {
+      return this.historico.nombre_medico;
+    }
+    
+    // Fallback to the original fields if they exist
+    if (this.historico?.medico_nombre && this.historico?.medico_apellidos) {
+      return `${this.historico.medico_nombre} ${this.historico.medico_apellidos}`;
+    }
+    
+    return null;
   }
 }

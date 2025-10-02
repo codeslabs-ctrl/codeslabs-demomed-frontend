@@ -25,7 +25,7 @@
           (change)="onEspecialidadChange()">
           <option value="">Todas las especialidades</option>
           <option *ngFor="let especialidad of especialidades" [value]="especialidad.id">
-            {{ especialidad.nombre }}
+            {{ especialidad.nombre_especialidad }}
           </option>
         </select>
       </div>
@@ -156,7 +156,7 @@
             required>
             <option value="">Seleccionar especialidad</option>
             <option *ngFor="let especialidad of especialidades" [value]="especialidad.id">
-              {{ especialidad.nombre }}
+              {{ especialidad.nombre_especialidad }}
             </option>
           </select>
         </div>

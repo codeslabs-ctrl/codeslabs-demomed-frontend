@@ -39,6 +39,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/admin/especialidades/especialidades.component').then(m => m.EspecialidadesComponent)
   },
   {
+    path: 'admin/consultas',
+    loadComponent: () => import('./pages/admin/consultas/consultas.component').then(m => m.ConsultasComponent)
+  },
+  {
+    path: 'statistics',
+    loadComponent: () => import('./pages/statistics/statistics.component').then(m => m.StatisticsComponent)
+  },
+  {
     path: '**',
     redirectTo: '/dashboard'
   }

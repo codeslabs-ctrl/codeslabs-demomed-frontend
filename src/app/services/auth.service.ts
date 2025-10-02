@@ -42,9 +42,9 @@ export class AuthService {
           console.log('👤 User data:', user);
           console.log('🔑 Token:', token);
           
-          // Si es médico, obtener datos completos del médico
-          if (user.rol === 'medico' && user.medico_id) {
-            console.log('👨‍⚕️ Loading medico data for ID:', user.medico_id);
+          // Si tiene medico_id, obtener datos completos del médico (para médicos y administradores)
+          if (user.medico_id) {
+            console.log('👨‍⚕️ Loading medico data for ID:', user.medico_id, 'User role:', user.rol);
             return this.medicoService.getMedicoById(user.medico_id).pipe(
               map(medicoData => {
                 if (medicoData && medicoData.success && medicoData.data) {
@@ -76,7 +76,7 @@ export class AuthService {
               })
             );
           } else {
-            // Para administradores, usar datos básicos
+            // Para usuarios sin medico_id, usar datos básicos
             localStorage.setItem(this.TOKEN_KEY, token);
             localStorage.setItem(this.USER_KEY, JSON.stringify(user));
             this.currentUserSubject.next(user);

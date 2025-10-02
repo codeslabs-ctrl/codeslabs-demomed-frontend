@@ -436,9 +436,9 @@ export class RemitirPacienteModalComponent implements OnInit {
     // TODO: Implementar servicio para obtener médicos
     // Por ahora, datos de ejemplo
     this.medicos = [
-      { id: 1, nombres: 'Dr. Juan', apellidos: 'Pérez', especialidad: 'Ginecología', email: 'juan@femimed.com', telefono: '0412-1234567' },
-      { id: 2, nombres: 'Dra. María', apellidos: 'González', especialidad: 'Obstetricia', email: 'maria@femimed.com', telefono: '0412-7654321' },
-      { id: 3, nombres: 'Dr. Carlos', apellidos: 'Rodríguez', especialidad: 'Endocrinología', email: 'carlos@femimed.com', telefono: '0412-9876543' }
+      { id: 1, nombres: 'Juan', apellidos: 'Pérez', especialidad: 'Ginecología', email: 'juan@femimed.com', telefono: '0412-1234567' },
+      { id: 2, nombres: 'María', apellidos: 'González', especialidad: 'Obstetricia', email: 'maria@femimed.com', telefono: '0412-7654321' },
+      { id: 3, nombres: 'Carlos', apellidos: 'Rodríguez', especialidad: 'Endocrinología', email: 'carlos@femimed.com', telefono: '0412-9876543' }
     ];
   }
 

@@ -18,9 +18,12 @@ import { User } from '../../models/user.model';
         <p *ngIf="currentUser?.rol === 'medico'">Mis pacientes y consultas médicas</p>
         <p *ngIf="!currentUser">Gestion de pacientes y consultas médicas</p>
         <p class="doctor-info" *ngIf="currentUser">
-          <span *ngIf="currentUser.rol === 'administrador'">👑 Administrador</span>
+          <span *ngIf="currentUser.rol === 'administrador'">
+            👑 {{ getDoctorFullName() }}
+            <span *ngIf="currentUser.especialidad" class="specialty">- {{ currentUser.especialidad }}</span>
+          </span>
           <span *ngIf="currentUser.rol === 'medico'">
-            👨‍⚕️ Dr. {{ getDoctorFullName() }}
+            👨‍⚕️ {{ getDoctorFullName() }}
             <span *ngIf="currentUser.especialidad" class="specialty">- {{ currentUser.especialidad }}</span>
           </span>
         </p>
@@ -76,14 +79,6 @@ import { User } from '../../models/user.model';
         </div>
       </div>
 
-      <div class="dashboard-actions">
-        <a routerLink="/patients/new" class="btn btn-primary">
-          ➕ Nuevo Paciente
-        </a>
-        <a routerLink="/patients" class="btn btn-secondary">
-          📋 Ver Todos los Pacientes
-        </a>
-      </div>
 
       <div class="recent-patients" *ngIf="recentPatientsList.length > 0">
         <h2>Pacientes Recientes</h2>
@@ -95,9 +90,7 @@ import { User } from '../../models/user.model';
               <p class="patient-email">{{ patient.email }}</p>
             </div>
             <div class="patient-actions">
-              <a routerLink="/patients/{{ patient.id }}" class="btn btn-sm btn-primary">
-                Ver Detalles
-              </a>
+              <a routerLink="/patients/{{ patient.id }}" class="btn btn-sm btn-primary">Ver Detalles</a>
             </div>
           </div>
         </div>
@@ -199,12 +192,7 @@ import { User } from '../../models/user.model';
       margin: 0;
     }
 
-    .dashboard-actions {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      margin-bottom: 2rem;
-    }
+
 
     .recent-patients h2 {
       font-size: 1.5rem;
@@ -227,6 +215,11 @@ import { User } from '../../models/user.model';
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 1rem;
+    }
+
+    .patient-actions {
+      flex-shrink: 0;
     }
 
     .patient-info h4 {
@@ -249,6 +242,9 @@ import { User } from '../../models/user.model';
     .patient-actions .btn {
       padding: 0.5rem 1rem;
       font-size: 0.875rem;
+      white-space: nowrap;
+      text-decoration: none;
+      display: inline-block;
     }
 
     .loading {
@@ -262,11 +258,6 @@ import { User } from '../../models/user.model';
     }
 
     @media (max-width: 768px) {
-      .dashboard-actions {
-        flex-direction: column;
-        align-items: center;
-      }
-
       .patients-grid {
         grid-template-columns: 1fr;
       }

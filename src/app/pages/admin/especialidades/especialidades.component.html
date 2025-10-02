@@ -39,7 +39,7 @@
       <tbody>
         <tr *ngFor="let especialidad of filteredEspecialidades">
           <td>{{ especialidad.id }}</td>
-          <td class="especialidad-name">{{ especialidad.nombre }}</td>
+          <td class="especialidad-name">{{ especialidad.nombre_especialidad }}</td>
           <td>{{ especialidad.descripcion }}</td>
           <td>{{ especialidad.fecha_creacion | date:'short' }}</td>
           <td>
@@ -96,7 +96,7 @@
           <input 
             type="text" 
             class="form-input" 
-            [(ngModel)]="especialidadData.nombre" 
+            [(ngModel)]="especialidadData.nombre_especialidad" 
             name="nombre"
             required>
         </div>
