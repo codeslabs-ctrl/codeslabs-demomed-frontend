@@ -1,0 +1,77 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="logo">
+        <img src="assets/LogoFemiMed.svg" alt="FemiMed Logo" class="logo-image">
+        <p>Centro Médico Especializado</p>
+      </div>
+    </div>
+    
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <div class="form-group">
+        <label for="username">Usuario</label>
+        <input 
+          type="text" 
+          id="username" 
+          formControlName="username" 
+          placeholder="Ingresa tu usuario"
+          [class.error]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
+        >
+        <div *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched" class="error-message">
+          El usuario es requerido
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <div class="password-input-container">
+          <input 
+            [type]="showPassword ? 'text' : 'password'" 
+            id="password" 
+            formControlName="password" 
+            placeholder="Ingresa tu contraseña"
+            [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+            class="password-input"
+          >
+          <button 
+            type="button" 
+            class="password-toggle" 
+            (click)="togglePasswordVisibility()"
+            [title]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            <span class="password-icon">{{ showPassword ? '🙈' : '👁️' }}</span>
+          </button>
+        </div>
+        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error-message">
+          La contraseña es requerida
+        </div>
+      </div>
+
+      <button 
+        type="submit" 
+        class="login-btn" 
+        [disabled]="loginForm.invalid || isLoading"
+        [class.loading]="isLoading"
+      >
+        <span *ngIf="!isLoading">Iniciar Sesión</span>
+        <span *ngIf="isLoading">Iniciando...</span>
+      </button>
+
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+    </form>
+
+    <div class="login-footer">
+      <p>Credenciales de prueba:</p>
+      <div class="test-credentials">
+        <div class="credential-item">
+          <strong>Médico:</strong> medico_01 / abc123
+        </div>
+        <div class="credential-item">
+          <strong>Admin:</strong> admin / abc123
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
