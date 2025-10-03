@@ -4,11 +4,12 @@ import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PatientService } from '../../services/patient.service';
 import { Patient } from '../../models/patient.model';
+import { FileUploadComponent } from '../../components/file-upload/file-upload.component';
 
 @Component({
   selector: 'app-patient-form',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, FileUploadComponent],
   template: `
     <div class="patient-form-page">
       <div class="page-header">
@@ -172,6 +173,13 @@ import { Patient } from '../../models/patient.model';
         <div class="spinner"></div>
         <p>Cargando datos del paciente...</p>
       </div>
+
+      <!-- Componente de archivos anexos -->
+      <app-file-upload 
+        *ngIf="patient.id || !isEdit" 
+        [historiaId]="getHistoriaId()"
+        (filesUpdated)="onFilesUpdated($event)">
+      </app-file-upload>
     </div>
   `,
   styles: [`
@@ -388,5 +396,22 @@ export class PatientFormComponent implements OnInit {
 
   onCancel() {
     this.router.navigate(['/patients']);
+  }
+
+  // Método para obtener el ID de la historia (necesario para los archivos)
+  getHistoriaId(): number {
+    // Si es un paciente existente, usar su ID
+    if (this.patient.id) {
+      return this.patient.id;
+    }
+    
+    // Si es un nuevo paciente, retornar 0 (el componente manejará esto)
+    return 0;
+  }
+
+  // Método para manejar la actualización de archivos
+  onFilesUpdated(archivos: any[]) {
+    console.log('Archivos actualizados:', archivos);
+    // Aquí podrías agregar lógica adicional si es necesario
   }
 }
