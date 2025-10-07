@@ -11,14 +11,25 @@ export class ArchivoService {
 
   constructor(private http: HttpClient) {}
 
-  // Subir un archivo
-  uploadArchivo(historiaId: number, archivo: File, descripcion: string): Observable<ArchivoUploadResponse> {
+  // Subir múltiples archivos
+  uploadArchivos(historiaId: number, archivos: File[], descripciones: string[]): Observable<ArchivoUploadResponse> {
     const formData = new FormData();
-    formData.append('archivo', archivo);
-    formData.append('descripcion', descripcion);
+    
+    // Agregar todos los archivos
+    archivos.forEach(archivo => {
+      formData.append('archivos', archivo);
+    });
+    
+    // Agregar descripciones como JSON
+    formData.append('descripciones', JSON.stringify(descripciones));
     formData.append('historia_id', historiaId.toString());
 
     return this.http.post<ArchivoUploadResponse>(`${this.API_URL}/archivos/upload`, formData);
+  }
+
+  // Subir un archivo (método de compatibilidad)
+  uploadArchivo(historiaId: number, archivo: File, descripcion: string): Observable<ArchivoUploadResponse> {
+    return this.uploadArchivos(historiaId, [archivo], [descripcion]);
   }
 
   // Obtener archivos por historia

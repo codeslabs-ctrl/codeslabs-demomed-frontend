@@ -5,17 +5,26 @@ import { AuthService } from './services/auth.service';
 import { User } from './models/user.model';
 import { filter } from 'rxjs/operators';
 import { NavbarComponent } from './components/navbar/navbar.component';
+import { ChangePasswordModalComponent } from './components/change-password-modal/change-password-modal.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, NavbarComponent],
+  imports: [RouterOutlet, CommonModule, NavbarComponent, ChangePasswordModalComponent],
   template: `
     <div class="app-container">
       <app-navbar *ngIf="showNavbar"></app-navbar>
       <main class="app-main" [class.full-height]="!showNavbar">
         <router-outlet></router-outlet>
       </main>
+      
+      <!-- Modal de cambio de contraseña -->
+      <app-change-password-modal
+        [isVisible]="showPasswordModal"
+        [isFirstLogin]="isFirstLogin"
+        (close)="closePasswordModal()"
+        (passwordChanged)="onPasswordChanged()">
+      </app-change-password-modal>
     </div>
   `,
   styles: [`
@@ -39,6 +48,8 @@ import { NavbarComponent } from './components/navbar/navbar.component';
 export class AppComponent implements OnInit {
   title = 'femimed-dashboard';
   showNavbar = false;
+  showPasswordModal = false;
+  isFirstLogin = false;
 
   constructor(
     private authService: AuthService,
@@ -55,11 +66,30 @@ export class AppComponent implements OnInit {
 
     // Verificar ruta inicial
     this.updateNavbarVisibility(this.router.url);
+
+    // Suscribirse a cambios en el usuario autenticado
+    this.authService.currentUser$.subscribe(user => {
+      if (user && this.authService.needsPasswordChange()) {
+        this.isFirstLogin = user.first_login === true;
+        this.showPasswordModal = true;
+      }
+    });
   }
 
   private updateNavbarVisibility(url: string) {
     // No mostrar navbar en la página de login
     this.showNavbar = url !== '/login' && this.authService.isAuthenticated();
+  }
+
+  closePasswordModal(): void {
+    this.showPasswordModal = false;
+  }
+
+  onPasswordChanged(): void {
+    this.showPasswordModal = false;
+    
+    // Actualizar el estado del usuario localmente
+    this.authService.updateUserAfterPasswordChange();
   }
 
 }

@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   template: `
     <div class="login-container">
       <div class="login-card">
@@ -68,22 +68,17 @@ import { AuthService } from '../../services/auth.service';
             <span *ngIf="isLoading">Iniciando...</span>
           </button>
 
+          <div class="forgot-password-container">
+            <a routerLink="/forgot-password" class="forgot-password-link">
+              ¿Olvidaste tu contraseña?
+            </a>
+          </div>
+
           <div *ngIf="errorMessage" class="error-message">
             {{ errorMessage }}
           </div>
         </form>
 
-        <div class="login-footer">
-          <p>Credenciales de prueba:</p>
-          <div class="test-credentials">
-            <div class="credential-item">
-              <strong>Médico:</strong> medico_01 / abc123
-            </div>
-            <div class="credential-item">
-              <strong>Admin:</strong> admin / abc123
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   `,
@@ -233,32 +228,24 @@ import { AuthService } from '../../services/auth.service';
       position: relative;
     }
 
-    .login-footer {
-      margin-top: 2rem;
-      padding-top: 2rem;
-      border-top: 1px solid #e5e7eb;
+    .forgot-password-container {
       text-align: center;
+      margin-top: 1rem;
     }
 
-    .login-footer p {
-      color: #6b7280;
+    .forgot-password-link {
+      color: #E91E63;
+      text-decoration: none;
       font-size: 0.9rem;
-      margin-bottom: 1rem;
+      font-weight: 500;
+      transition: color 0.2s ease;
     }
 
-    .test-credentials {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+    .forgot-password-link:hover {
+      color: #C2185B;
+      text-decoration: underline;
     }
 
-    .credential-item {
-      background: #f3f4f6;
-      padding: 0.75rem;
-      border-radius: 0.5rem;
-      font-size: 0.8rem;
-      color: #374151;
-    }
 
     @media (max-width: 480px) {
       .login-container {

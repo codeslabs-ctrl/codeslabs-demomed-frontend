@@ -7,6 +7,7 @@ export interface Patient {
   sexo: 'Masculino' | 'Femenino';
   email: string;
   telefono: string;
+  plan?: string;
   medico_id?: number;
   motivo_consulta: string;
   diagnostico?: string;
@@ -17,6 +18,7 @@ export interface Patient {
   observaciones?: string;
   fecha_creacion: string;
   fecha_actualizacion: string;
+  historico_id?: number; // ID del historial médico asociado
 }
 
 export interface ApiResponse<T> {

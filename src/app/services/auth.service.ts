@@ -161,4 +161,33 @@ export class AuthService {
     }
   }
 
+  changePassword(currentPassword: string, newPassword: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/auth/change-password`, {
+      currentPassword,
+      newPassword
+    });
+  }
+
+  needsPasswordChange(): boolean {
+    const user = this.currentUserSubject.value;
+    return user?.first_login === true || !user?.password_changed_at;
+  }
+
+  updateUserAfterPasswordChange(): void {
+    const user = this.currentUserSubject.value;
+    if (user) {
+      const updatedUser = {
+        ...user,
+        first_login: false,
+        password_changed_at: new Date().toISOString()
+      };
+      
+      // Guardar el usuario actualizado en localStorage
+      localStorage.setItem(this.USER_KEY, JSON.stringify(updatedUser));
+      
+      // Actualizar el BehaviorSubject
+      this.currentUserSubject.next(updatedUser);
+    }
+  }
+
 }

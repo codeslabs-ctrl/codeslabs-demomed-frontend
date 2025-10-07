@@ -66,7 +66,7 @@
                 </svg>
                 Editar
               </button>
-              <button class="action-btn delete" (click)="deleteMedico(medico)" title="Eliminar">
+              <button class="action-btn delete" (click)="deleteMedico(medico.id!, medico.nombres, medico.apellidos)" title="Eliminar">
                 <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                 </svg>
@@ -114,7 +114,14 @@
             class="form-input" 
             [(ngModel)]="medicoData.nombres" 
             name="nombres"
-            required>
+            required
+            pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$"
+            placeholder="Solo letras y espacios"
+            #nombresInput="ngModel">
+          <div *ngIf="nombresInput.invalid && nombresInput.touched" class="error-message">
+            <span *ngIf="nombresInput.errors?.['required']">Los nombres son requeridos</span>
+            <span *ngIf="nombresInput.errors?.['pattern']">Solo se permiten letras y espacios (2-50 caracteres)</span>
+          </div>
         </div>
 
         <div class="form-group">
@@ -128,13 +135,34 @@
         </div>
 
         <div class="form-group">
+          <label class="form-label">Cédula</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="medicoData.cedula" 
+            name="cedula"
+            pattern="^[VEJPG][0-9]{7,8}$"
+            placeholder="Ej: V12345678, E1234567 (opcional)"
+            #cedulaInput="ngModel">
+          <div *ngIf="cedulaInput.invalid && cedulaInput.touched" class="error-message">
+            <span *ngIf="cedulaInput.errors?.['pattern']">Formato inválido. Usa: V12345678 o E1234567</span>
+          </div>
+        </div>
+
+        <div class="form-group">
           <label class="form-label">Email *</label>
           <input 
             type="email" 
             class="form-input" 
             [(ngModel)]="medicoData.email" 
             name="email"
-            required>
+            required
+            pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
+            #emailInput="ngModel">
+          <div *ngIf="emailInput.invalid && emailInput.touched" class="error-message">
+            <span *ngIf="emailInput.errors?.['required']">El email es requerido</span>
+            <span *ngIf="emailInput.errors?.['email'] || emailInput.errors?.['pattern']">Ingresa un email válido (ej: usuario&#64;dominio.com)</span>
+          </div>
         </div>
 
         <div class="form-group">
@@ -144,7 +172,14 @@
             class="form-input" 
             [(ngModel)]="medicoData.telefono" 
             name="telefono"
-            required>
+            required
+            pattern="^(\+58|0)[0-9]{10}$|^[0-9]{7,10}$"
+            placeholder="Ej: 04141234567 o +584141234567"
+            #telefonoInput="ngModel">
+          <div *ngIf="telefonoInput.invalid && telefonoInput.touched" class="error-message">
+            <span *ngIf="telefonoInput.errors?.['required']">El teléfono es requerido</span>
+            <span *ngIf="telefonoInput.errors?.['pattern']">Formato inválido. Usa: 04141234567 o +584141234567</span>
+          </div>
         </div>
 
         <div class="form-group">
@@ -153,26 +188,69 @@
             class="form-input" 
             [(ngModel)]="medicoData.especialidad_id" 
             name="especialidad_id"
-            required>
+            required
+            #especialidadInput="ngModel">
             <option value="">Seleccionar especialidad</option>
             <option *ngFor="let especialidad of especialidades" [value]="especialidad.id">
               {{ especialidad.nombre_especialidad }}
             </option>
           </select>
+          <div *ngIf="especialidadInput.invalid && especialidadInput.touched" class="error-message">
+            <span *ngIf="especialidadInput.errors?.['required']">La especialidad es requerida</span>
+          </div>
+        </div>
+
+        <!-- Mensaje de éxito -->
+        <div *ngIf="showSuccessMessage" class="success-message">
+          <div class="success-icon">✅</div>
+          <div class="success-text">{{ successMessage }}</div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">
+            Cancelar
+          </button>
+          <button 
+            type="submit" 
+            class="btn btn-primary" 
+            [disabled]="saving || medicoForm.invalid">
+            {{ saving ? 'Guardando...' : (isEditing ? 'Actualizar' : 'Crear') }}
+          </button>
         </div>
       </form>
     </div>
+  </div>
+</div>
 
-    <div class="modal-footer">
-      <button type="button" class="btn btn-secondary" (click)="closeModal()">
-        Cancelar
-      </button>
+<!-- Snackbar -->
+<div *ngIf="showSnackbar" class="snackbar" [class]="'snackbar-' + snackbarType">
+  <div class="snackbar-content">
+    <div class="snackbar-icon">
+      <svg *ngIf="snackbarType === 'success'" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+      </svg>
+      <svg *ngIf="snackbarType === 'error'" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </svg>
+      <svg *ngIf="snackbarType === 'info'" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+      </svg>
+      <svg *ngIf="snackbarType === 'warning'" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+      </svg>
+    </div>
+    <div class="snackbar-message">{{ snackbarMessage }}</div>
+    <div class="snackbar-actions">
       <button 
-        type="button" 
-        class="btn btn-primary" 
-        (click)="onSubmit()"
-        [disabled]="saving">
-        {{ saving ? 'Guardando...' : (isEditing ? 'Actualizar' : 'Crear') }}
+        *ngIf="snackbarAction" 
+        class="snackbar-action-btn" 
+        (click)="executeSnackbarAction()">
+        {{ snackbarActionText }}
+      </button>
+      <button class="snackbar-close-btn" (click)="hideSnackbar()">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
       </button>
     </div>
   </div>

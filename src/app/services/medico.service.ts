@@ -8,6 +8,7 @@ export interface Medico {
   id?: number;
   nombres: string;
   apellidos: string;
+  cedula?: string;
   email: string;
   telefono: string;
   especialidad_id: number;

@@ -12,10 +12,6 @@ import { ArchivoAnexo, ArchivoFormData } from '../../models/archivo.model';
     <div class="file-upload-container">
       <h4 class="section-title">Archivos Anexos</h4>
       
-      <!-- Mensaje informativo para nuevos pacientes -->
-      <div class="info-message" *ngIf="historiaId <= 0">
-        <p>💡 <strong>Nota:</strong> Debe crear el paciente primero para poder subir archivos. Una vez creado, podrá anexar documentos aquí.</p>
-      </div>
       
       <!-- Lista de archivos existentes -->
       <div class="existing-files" *ngIf="archivos.length > 0">
@@ -51,37 +47,65 @@ import { ArchivoAnexo, ArchivoFormData } from '../../models/archivo.model';
         <div class="form-group">
           <label for="fileInput" class="file-input-label">
             <span class="upload-icon">📎</span>
-            Seleccionar Archivo
+            Seleccionar Archivos (máx. 5)
           </label>
           <input 
             type="file" 
             id="fileInput" 
             #fileInput
-            (change)="onFileSelected($event)"
+            (change)="onFilesSelected($event)"
             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt,.xls,.xlsx"
             class="file-input"
+            multiple
           >
         </div>
 
-        <div class="form-group" *ngIf="selectedFile">
-          <label for="description">Descripción del archivo</label>
-          <textarea 
-            id="description"
-            [(ngModel)]="fileDescription"
-            placeholder="Describe brevemente el contenido del archivo..."
-            class="description-input"
-            rows="2"
-          ></textarea>
+        <!-- Lista de archivos seleccionados -->
+        <div class="selected-files" *ngIf="selectedFiles.length > 0">
+          <h5>Archivos seleccionados ({{ selectedFiles.length }}/5):</h5>
+          <div class="file-list">
+            <div class="file-item" *ngFor="let file of selectedFiles; let i = index">
+              <div class="file-info">
+                <span class="file-icon">📄</span>
+                <span class="file-name">{{ file.name }}</span>
+                <span class="file-size">({{ formatFileSize(file.size) }})</span>
+              </div>
+              <button 
+                type="button" 
+                class="btn-remove" 
+                (click)="removeFile(i)"
+                title="Eliminar archivo"
+              >
+                ❌
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div class="upload-actions" *ngIf="selectedFile">
+        <!-- Descripciones para cada archivo -->
+        <div class="form-group" *ngIf="selectedFiles.length > 0">
+          <label>Descripciones de los archivos</label>
+          <div class="descriptions-container">
+            <div class="description-item" *ngFor="let file of selectedFiles; let i = index">
+              <label class="description-label">{{ file.name }}:</label>
+              <textarea 
+                [(ngModel)]="fileDescriptions[i]"
+                placeholder="Describe brevemente el contenido de este archivo..."
+                class="description-input"
+                rows="2"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="upload-actions" *ngIf="selectedFiles.length > 0">
           <button 
             type="button" 
             class="btn-upload" 
-            (click)="uploadFile()"
+            (click)="uploadFiles()"
             [disabled]="isUploading"
           >
-            <span *ngIf="!isUploading">📤 Subir Archivo</span>
+            <span *ngIf="!isUploading">📤 Subir {{ selectedFiles.length }} Archivo(s)</span>
             <span *ngIf="isUploading">⏳ Subiendo...</span>
           </button>
           <button 
@@ -307,6 +331,90 @@ import { ArchivoAnexo, ArchivoFormData } from '../../models/archivo.model';
       color: #0369a1;
       font-size: 0.9rem;
     }
+
+    .selected-files {
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+    }
+
+    .selected-files h5 {
+      margin: 0 0 0.75rem 0;
+      color: #374151;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex: 1;
+    }
+
+    .file-icon {
+      font-size: 1rem;
+    }
+
+    .file-name {
+      font-weight: 500;
+      color: #374151;
+      flex: 1;
+    }
+
+    .file-size {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .btn-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 3px;
+      transition: background-color 0.2s;
+    }
+
+    .btn-remove:hover {
+      background: #fee2e2;
+    }
+
+    .descriptions-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .description-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .description-label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #374151;
+    }
   `]
 })
 export class FileUploadComponent implements OnInit {
@@ -314,8 +422,8 @@ export class FileUploadComponent implements OnInit {
   @Output() filesUpdated = new EventEmitter<ArchivoAnexo[]>();
 
   archivos: ArchivoAnexo[] = [];
-  selectedFile: File | null = null;
-  fileDescription: string = '';
+  selectedFiles: File[] = [];
+  fileDescriptions: string[] = [];
   isUploading: boolean = false;
   errorMessage: string = '';
 
@@ -342,12 +450,22 @@ export class FileUploadComponent implements OnInit {
     });
   }
 
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
+  onFilesSelected(event: any) {
+    const files = Array.from(event.target.files) as File[];
+    
+    if (files.length === 0) return;
+
+    // Validar número máximo de archivos
+    if (files.length > 5) {
+      this.errorMessage = 'Máximo 5 archivos permitidos.';
+      return;
+    }
+
+    // Validar cada archivo
+    for (const file of files) {
       // Validar tamaño (10MB máximo)
       if (file.size > 10 * 1024 * 1024) {
-        this.errorMessage = 'El archivo es demasiado grande. Máximo 10MB.';
+        this.errorMessage = `El archivo "${file.name}" es demasiado grande. Máximo 10MB.`;
         return;
       }
 
@@ -356,49 +474,66 @@ export class FileUploadComponent implements OnInit {
       const isValidType = allowedTypes.some(type => file.type.startsWith(type));
       
       if (!isValidType) {
-        this.errorMessage = 'Tipo de archivo no permitido. Solo se permiten: PDF, DOC, DOCX, JPG, PNG, TXT, XLS, XLSX';
+        this.errorMessage = `Tipo de archivo no permitido para "${file.name}". Solo se permiten: PDF, DOC, DOCX, JPG, PNG, TXT, XLS, XLSX`;
         return;
       }
-
-      this.selectedFile = file;
-      this.errorMessage = '';
     }
+
+    this.selectedFiles = files;
+    this.fileDescriptions = new Array(files.length).fill('');
+    this.errorMessage = '';
   }
 
-  uploadFile() {
-    if (!this.selectedFile) return;
+  uploadFiles() {
+    if (this.selectedFiles.length === 0) return;
 
     if (this.historiaId <= 0) {
-      this.errorMessage = 'Debe crear el paciente primero antes de subir archivos';
+      this.errorMessage = 'No se puede subir archivos sin un historial médico válido';
       return;
     }
 
     this.isUploading = true;
     this.errorMessage = '';
 
-    this.archivoService.uploadArchivo(this.historiaId, this.selectedFile, this.fileDescription).subscribe({
+    this.archivoService.uploadArchivos(this.historiaId, this.selectedFiles, this.fileDescriptions).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          this.archivos.unshift(response.data);
-          this.selectedFile = null;
-          this.fileDescription = '';
+          // Agregar todos los archivos nuevos al inicio de la lista
+          if (Array.isArray(response.data)) {
+            this.archivos.unshift(...response.data);
+          } else {
+            this.archivos.unshift(response.data);
+          }
+          
+          this.selectedFiles = [];
+          this.fileDescriptions = [];
           this.errorMessage = '';
           this.filesUpdated.emit(this.archivos);
         }
         this.isUploading = false;
       },
       error: (error) => {
-        console.error('Error uploading file:', error);
-        this.errorMessage = 'Error al subir el archivo';
+        console.error('Error uploading files:', error);
+        this.errorMessage = 'Error al subir los archivos';
         this.isUploading = false;
       }
     });
   }
 
+  // Método de compatibilidad
+  uploadFile() {
+    this.uploadFiles();
+  }
+
   cancelUpload() {
-    this.selectedFile = null;
-    this.fileDescription = '';
+    this.selectedFiles = [];
+    this.fileDescriptions = [];
     this.errorMessage = '';
+  }
+
+  removeFile(index: number) {
+    this.selectedFiles.splice(index, 1);
+    this.fileDescriptions.splice(index, 1);
   }
 
   downloadFile(archivo: ArchivoAnexo) {

@@ -79,6 +79,47 @@ import { User } from '../../models/user.model';
         </div>
       </div>
 
+      <!-- Accesos directos -->
+      <div class="quick-actions" *ngIf="currentUser?.rol === 'administrador'">
+        <h2>Accesos Directos</h2>
+        <div class="actions-grid">
+          <a routerLink="/patients" class="action-card">
+            <div class="action-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 7H16c-.8 0-1.54.5-1.85 1.26L13.5 12H11v8h2v-6h2.5l1.5 6H20zM12.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S11 9.17 11 10s.67 1.5 1.5 1.5zM5.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2zm2 16v-7H9V9.5C9 8.12 7.88 7 6.5 7S4 8.12 4 9.5V15h-.5v7h4z"/>
+              </svg>
+            </div>
+            <div class="action-content">
+              <h3>Gestionar Pacientes</h3>
+              <p>Administrar información de pacientes</p>
+            </div>
+          </a>
+          
+          <a routerLink="/admin/consultas" class="action-card">
+            <div class="action-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+              </svg>
+            </div>
+            <div class="action-content">
+              <h3>Gestionar Consultas</h3>
+              <p>Administrar citas y consultas médicas</p>
+            </div>
+          </a>
+          
+          <a routerLink="/admin/mensajes" class="action-card">
+            <div class="action-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+              </svg>
+            </div>
+            <div class="action-content">
+              <h3>Mensajes de Difusión</h3>
+              <p>Enviar mensajes masivos a pacientes</p>
+            </div>
+          </a>
+        </div>
+      </div>
 
       <div class="recent-patients" *ngIf="recentPatientsList.length > 0">
         <h2>Pacientes Recientes</h2>
@@ -192,7 +233,72 @@ import { User } from '../../models/user.model';
       margin: 0;
     }
 
+    .quick-actions {
+      margin-bottom: 2rem;
+    }
 
+    .quick-actions h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 1rem;
+    }
+
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+
+    .action-card {
+      background: white;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+
+    .action-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.15);
+      border-color: #E91E63;
+    }
+
+    .action-icon {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%);
+      border-radius: 50%;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .action-icon svg {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .action-content h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .action-content p {
+      color: #64748b;
+      margin: 0;
+      font-size: 0.9rem;
+    }
 
     .recent-patients h2 {
       font-size: 1.5rem;
@@ -353,16 +459,30 @@ export class DashboardComponent implements OnInit {
             console.log('👑 Loaded', patients.length, 'patients for admin statistics');
           }
         } else {
-          console.log('🔄 No patients found, falling back to all patients');
-          this.loadAllPatients();
+          console.log('📭 No patients found for this doctor, showing empty state');
+          this.totalPatients = 0;
+          this.femalePatients = 0;
+          this.malePatients = 0;
+          this.recentPatientsList = [];
+          this.loading = false;
         }
       },
       error: (error) => {
         console.error('❌ Error loading patients for stats:', error);
-        console.log('🔄 Falling back to all patients due to error');
         this.loading = false;
-        // Fallback to all patients if specific query fails
-        this.loadAllPatients();
+        
+        // Si es médico, mostrar estado vacío en caso de error
+        if (this.currentUser?.rol === 'medico') {
+          console.log('👨‍⚕️ Error loading doctor patients, showing empty state');
+          this.totalPatients = 0;
+          this.femalePatients = 0;
+          this.malePatients = 0;
+          this.recentPatientsList = [];
+        } else {
+          // Solo para administradores, hacer fallback a todos los pacientes
+          console.log('👑 Admin error, falling back to all patients');
+          this.loadAllPatients();
+        }
       }
     });
   }

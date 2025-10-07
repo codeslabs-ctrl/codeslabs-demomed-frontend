@@ -7,6 +7,8 @@ export interface User {
   nombres?: string;
   apellidos?: string;
   especialidad?: string;
+  first_login?: boolean;
+  password_changed_at?: string;
 }
 
 export interface LoginResponse {
