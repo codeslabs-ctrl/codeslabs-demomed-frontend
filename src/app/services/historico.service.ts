@@ -11,6 +11,7 @@ export interface HistoricoData {
   motivo_consulta: string;
   diagnostico?: string;
   conclusiones?: string;
+  plan?: string;
   antecedentes_medicos?: string;
   medicamentos?: string;
   alergias?: string;

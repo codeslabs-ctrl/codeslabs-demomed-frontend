@@ -18,7 +18,7 @@ export interface Medico {
 
 export interface Especialidad {
   id: number;
-  nombre: string;
+  nombre_especialidad: string;
   descripcion: string;
 }
 
@@ -82,7 +82,7 @@ export interface Especialidad {
                 required>
                 <option value="">Seleccionar especialidad</option>
                 <option *ngFor="let especialidad of especialidades" [value]="especialidad.id">
-                  {{ especialidad.nombre }}
+                  {{ especialidad.nombre_especialidad }}
                 </option>
               </select>
             </div>
@@ -446,10 +446,10 @@ export class RemitirPacienteModalComponent implements OnInit {
     // TODO: Implementar servicio para obtener especialidades
     // Por ahora, datos de ejemplo
     this.especialidades = [
-      { id: 1, nombre: 'Ginecología', descripcion: 'Especialidad en salud femenina' },
-      { id: 2, nombre: 'Obstetricia', descripcion: 'Especialidad en embarazo y parto' },
-      { id: 3, nombre: 'Endocrinología', descripcion: 'Especialidad en hormonas' },
-      { id: 4, nombre: 'Oncología', descripcion: 'Especialidad en cáncer' }
+      { id: 1, nombre_especialidad: 'Ginecología', descripcion: 'Especialidad en salud femenina' },
+      { id: 2, nombre_especialidad: 'Obstetricia', descripcion: 'Especialidad en embarazo y parto' },
+      { id: 3, nombre_especialidad: 'Endocrinología', descripcion: 'Especialidad en hormonas' },
+      { id: 4, nombre_especialidad: 'Oncología', descripcion: 'Especialidad en cáncer' }
     ];
   }
 
@@ -467,7 +467,7 @@ export class RemitirPacienteModalComponent implements OnInit {
       console.log('🔍 Todas las especialidades:', this.especialidades);
       
       if (especialidad) {
-        this.medicosPorEspecialidad = this.medicos.filter(m => m.especialidad === especialidad.nombre);
+        this.medicosPorEspecialidad = this.medicos.filter(m => m.especialidad === especialidad.nombre_especialidad);
         console.log('🔍 Médicos filtrados:', this.medicosPorEspecialidad);
         console.log('🔍 Todos los médicos:', this.medicos);
       }
