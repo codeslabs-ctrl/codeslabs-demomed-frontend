@@ -694,8 +694,11 @@ export class PatientDetailComponent implements OnInit {
   }
 
   referPatient() {
+    console.log('🔍 Patient data when opening modal:', this.patient);
     if (this.patient) {
       this.showRemitirModal = true;
+    } else {
+      console.log('⚠️ No patient data available for remision');
     }
   }
 

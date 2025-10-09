@@ -6,11 +6,12 @@ import { User } from './models/user.model';
 import { filter } from 'rxjs/operators';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { ChangePasswordModalComponent } from './components/change-password-modal/change-password-modal.component';
+import { SnackbarComponent } from './components/snackbar/snackbar.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, NavbarComponent, ChangePasswordModalComponent],
+  imports: [RouterOutlet, CommonModule, NavbarComponent, ChangePasswordModalComponent, SnackbarComponent],
   template: `
     <div class="app-container">
       <app-navbar *ngIf="showNavbar"></app-navbar>
@@ -25,6 +26,9 @@ import { ChangePasswordModalComponent } from './components/change-password-modal
         (close)="closePasswordModal()"
         (passwordChanged)="onPasswordChanged()">
       </app-change-password-modal>
+      
+      <!-- Snackbar global -->
+      <app-snackbar></app-snackbar>
     </div>
   `,
   styles: [`

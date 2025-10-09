@@ -1,26 +1,15 @@
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RemisionService } from '../../services/remision.service';
 import { AuthService } from '../../services/auth.service';
+import { EspecialidadService, Especialidad } from '../../services/especialidad.service';
+import { MedicoService, Medico } from '../../services/medico.service';
+import { SnackbarService } from '../../services/snackbar.service';
 import { CrearRemisionRequest } from '../../models/remision.model';
 import { Patient } from '../../models/patient.model';
 import { User } from '../../models/user.model';
 
-export interface Medico {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  especialidad: string;
-  email: string;
-  telefono: string;
-}
-
-export interface Especialidad {
-  id: number;
-  nombre_especialidad: string;
-  descripcion: string;
-}
 
 @Component({
   selector: 'app-remitir-paciente-modal',
@@ -64,7 +53,7 @@ export interface Especialidad {
                 required>
                 <option value="">Seleccionar médico remitente</option>
                 <option *ngFor="let medico of medicos" [value]="medico.id">
-                  {{ medico.nombres }} {{ medico.apellidos }} - {{ medico.especialidad }}
+                  {{ medico.nombres }} {{ medico.apellidos }} - {{ medico.especialidad_nombre || 'Sin especialidad' }}
                 </option>
               </select>
               <small *ngIf="isMedicoUser" class="form-help">
@@ -94,6 +83,7 @@ export interface Especialidad {
                 [(ngModel)]="remisionData.medico_remitido_id" 
                 name="medico_remitido_id"
                 [disabled]="!selectedEspecialidad"
+                (change)="onMedicoRemitidoChange()"
                 required>
                 <option value="">Seleccionar médico de destino</option>
                 <option *ngFor="let medico of medicosPorEspecialidad" [value]="medico.id">
@@ -385,7 +375,7 @@ export interface Especialidad {
     }
   `]
 })
-export class RemitirPacienteModalComponent implements OnInit {
+export class RemitirPacienteModalComponent implements OnInit, OnChanges {
   @Input() isOpen = false;
   @Input() patient: Patient | null = null;
   @Output() close = new EventEmitter<void>();
@@ -409,12 +399,28 @@ export class RemitirPacienteModalComponent implements OnInit {
 
   constructor(
     private remisionService: RemisionService,
-    private authService: AuthService
+    private authService: AuthService,
+    private especialidadService: EspecialidadService,
+    private medicoService: MedicoService,
+    private snackbarService: SnackbarService
   ) {}
 
+  ngOnChanges(changes: SimpleChanges) {
+    console.log('🔄 ngOnChanges triggered:', changes);
+    if (changes['patient'] && changes['patient'].currentValue) {
+      console.log('🔍 Patient data received in ngOnChanges:', changes['patient'].currentValue);
+      this.remisionData.paciente_id = changes['patient'].currentValue.id;
+      console.log('✅ Paciente ID asignado en ngOnChanges:', changes['patient'].currentValue.id);
+    }
+  }
+
   ngOnInit() {
+    console.log('🔍 Patient data received in ngOnInit:', this.patient);
     if (this.patient) {
       this.remisionData.paciente_id = this.patient.id;
+      console.log('✅ Paciente ID asignado en ngOnInit:', this.patient.id);
+    } else {
+      console.log('⚠️ No se recibió información del paciente en ngOnInit');
     }
     
     // Obtener el usuario actual
@@ -422,9 +428,26 @@ export class RemitirPacienteModalComponent implements OnInit {
       this.currentUser = user;
       this.isMedicoUser = user?.rol === 'medico';
       
+      console.log('🔍 Usuario actual completo:', user);
+      console.log('🔍 Rol del usuario:', user?.rol);
+      console.log('🔍 Medico ID del usuario:', user?.medico_id);
+      console.log('🔍 Es médico?', this.isMedicoUser);
+      
       // Si es médico, establecer automáticamente el médico remitente
       if (this.isMedicoUser && user?.medico_id) {
         this.remisionData.medico_remitente_id = user.medico_id;
+        console.log('👨‍⚕️ Médico remitente asignado:', user.medico_id, 'Usuario:', user);
+      } else if (user?.rol === 'administrador' && user?.medico_id) {
+        // Los administradores también pueden tener medico_id
+        this.remisionData.medico_remitente_id = user.medico_id;
+        console.log('👑 Administrador con medico_id asignado:', user.medico_id, 'Usuario:', user);
+      } else {
+        console.log('⚠️ Usuario no es médico/administrador o no tiene medico_id:', {
+          isMedicoUser: this.isMedicoUser,
+          medico_id: user?.medico_id,
+          rol: user?.rol,
+          user: user
+        });
       }
     });
     
@@ -433,24 +456,38 @@ export class RemitirPacienteModalComponent implements OnInit {
   }
 
   loadMedicos() {
-    // TODO: Implementar servicio para obtener médicos
-    // Por ahora, datos de ejemplo
-    this.medicos = [
-      { id: 1, nombres: 'Juan', apellidos: 'Pérez', especialidad: 'Ginecología', email: 'juan@femimed.com', telefono: '0412-1234567' },
-      { id: 2, nombres: 'María', apellidos: 'González', especialidad: 'Obstetricia', email: 'maria@femimed.com', telefono: '0412-7654321' },
-      { id: 3, nombres: 'Carlos', apellidos: 'Rodríguez', especialidad: 'Endocrinología', email: 'carlos@femimed.com', telefono: '0412-9876543' }
-    ];
+    console.log('🔍 Loading medicos from service...');
+    this.medicoService.getAllMedicos().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.medicos = response.data;
+          console.log('✅ Médicos cargados:', this.medicos);
+          console.log('🔍 IDs de médicos disponibles:', this.medicos.map(m => ({ id: m.id, nombres: m.nombres, apellidos: m.apellidos })));
+        } else {
+          console.error('❌ Error loading medicos:', response.error);
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error loading medicos:', error);
+      }
+    });
   }
 
   loadEspecialidades() {
-    // TODO: Implementar servicio para obtener especialidades
-    // Por ahora, datos de ejemplo
-    this.especialidades = [
-      { id: 1, nombre_especialidad: 'Ginecología', descripcion: 'Especialidad en salud femenina' },
-      { id: 2, nombre_especialidad: 'Obstetricia', descripcion: 'Especialidad en embarazo y parto' },
-      { id: 3, nombre_especialidad: 'Endocrinología', descripcion: 'Especialidad en hormonas' },
-      { id: 4, nombre_especialidad: 'Oncología', descripcion: 'Especialidad en cáncer' }
-    ];
+    console.log('🔍 Loading especialidades from service...');
+    this.especialidadService.getAllEspecialidades().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.especialidades = response.data;
+          console.log('✅ Especialidades cargadas:', this.especialidades);
+        } else {
+          console.error('❌ Error loading especialidades:', response.error);
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error loading especialidades:', error);
+      }
+    });
   }
 
   onEspecialidadChange() {
@@ -462,19 +499,24 @@ export class RemitirPacienteModalComponent implements OnInit {
         ? parseInt(this.selectedEspecialidad) 
         : this.selectedEspecialidad;
       
-      const especialidad = this.especialidades.find(e => e.id === especialidadId);
-      console.log('🔍 Especialidad encontrada:', especialidad);
-      console.log('🔍 Todas las especialidades:', this.especialidades);
+      console.log('🔍 Filtrando médicos por especialidad_id:', especialidadId);
+      console.log('🔍 Todos los médicos:', this.medicos);
       
-      if (especialidad) {
-        this.medicosPorEspecialidad = this.medicos.filter(m => m.especialidad === especialidad.nombre_especialidad);
-        console.log('🔍 Médicos filtrados:', this.medicosPorEspecialidad);
-        console.log('🔍 Todos los médicos:', this.medicos);
-      }
+      // Filtrar médicos por especialidad_id
+      this.medicosPorEspecialidad = this.medicos.filter(m => m.especialidad_id === especialidadId);
+      console.log('🔍 Médicos filtrados:', this.medicosPorEspecialidad);
+      
+      // Reset médico remitido cuando cambia la especialidad
+      this.remisionData.medico_remitido_id = 0;
     } else {
       this.medicosPorEspecialidad = [];
     }
     this.remisionData.medico_remitido_id = 0;
+  }
+
+  onMedicoRemitidoChange() {
+    console.log('👨‍⚕️ Médico remitido seleccionado:', this.remisionData.medico_remitido_id);
+    console.log('👨‍⚕️ Médico remitente actual:', this.remisionData.medico_remitente_id);
   }
 
   onSubmit() {
@@ -484,17 +526,51 @@ export class RemitirPacienteModalComponent implements OnInit {
       
       this.loading = true;
       
-      this.remisionService.crearRemision(this.remisionData).subscribe({
+      // Debug: Log the data being sent
+      console.log('🔍 Remision data being sent:', this.remisionData);
+      console.log('🔍 Patient object:', this.patient);
+      console.log('🔍 Data types:', {
+        paciente_id: typeof this.remisionData.paciente_id,
+        medico_remitente_id: typeof this.remisionData.medico_remitente_id,
+        medico_remitido_id: typeof this.remisionData.medico_remitido_id,
+        motivo_remision: typeof this.remisionData.motivo_remision
+      });
+      
+      // Verificar que el paciente_id esté asignado
+      if (!this.remisionData.paciente_id || this.remisionData.paciente_id === 0) {
+        console.error('❌ ERROR: paciente_id no está asignado!');
+        console.error('❌ Patient object:', this.patient);
+        console.error('❌ RemisionData:', this.remisionData);
+        alert('❌ Error: No se ha seleccionado un paciente válido');
+        this.loading = false;
+        return;
+      }
+      
+      // Ensure IDs are numbers
+      const remisionDataToSend = {
+        ...this.remisionData,
+        paciente_id: Number(this.remisionData.paciente_id),
+        medico_remitente_id: Number(this.remisionData.medico_remitente_id),
+        medico_remitido_id: Number(this.remisionData.medico_remitido_id)
+      };
+      
+      console.log('🔍 Processed data:', remisionDataToSend);
+      
+      this.remisionService.crearRemision(remisionDataToSend).subscribe({
         next: (response: any) => {
           if (response.success) {
+            alert('✅ Remisión creada exitosamente.\n\nSe ha enviado una notificación al médico de destino.');
             this.remisionCreated.emit(response.data);
+            this.clearForm();
             this.closeModal();
+          } else {
+            alert('❌ Error al crear la remisión.\n\nPor favor, intente nuevamente.');
           }
           this.loading = false;
         },
         error: (error: any) => {
           console.error('Error creating remision:', error);
-          alert('Error al crear la remisión. Por favor, intente nuevamente.');
+          alert('❌ Error al crear la remisión.\n\nPor favor, intente nuevamente.');
           this.loading = false;
         }
       });
@@ -503,7 +579,28 @@ export class RemitirPacienteModalComponent implements OnInit {
 
   closeModal() {
     this.isOpen = false;
+    this.clearForm();
     this.close.emit();
+  }
+
+  clearForm() {
+    // Limpiar datos del formulario
+    this.remisionData = {
+      paciente_id: this.patient?.id || 0,
+      medico_remitente_id: this.currentUser?.medico_id || 0,
+      medico_remitido_id: 0,
+      motivo_remision: '',
+      observaciones: ''
+    };
+    
+    // Limpiar selecciones
+    this.selectedEspecialidad = null;
+    this.medicosPorEspecialidad = [];
+    
+    // Limpiar estado de carga
+    this.loading = false;
+    
+    console.log('🧹 Formulario limpiado');
   }
 
   getInitials(nombres: string, apellidos: string): string {
