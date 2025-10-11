@@ -3,7 +3,10 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PatientService } from '../../services/patient.service';
+import { HistoricoService, HistoricoWithDetails } from '../../services/historico.service';
+import { ArchivoService } from '../../services/archivo.service';
 import { Patient } from '../../models/patient.model';
+import { ArchivoAnexo } from '../../models/archivo.model';
 import { FileUploadComponent } from '../../components/file-upload/file-upload.component';
 import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-text-editor.component';
 
@@ -21,6 +24,7 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
       </div>
 
       <form class="patient-form" (ngSubmit)="onSubmit()" #patientForm="ngForm">
+        
         <div class="form-section">
           <h3>Información Personal</h3>
           <div class="form-grid">
@@ -32,12 +36,10 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
                 [(ngModel)]="patient.nombres"
                 name="nombres"
                 required
-                pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$"
-                placeholder="Solo letras y espacios"
+                placeholder="Ingrese los nombres"
                 #nombres="ngModel">
               <div class="error-message" *ngIf="nombres.invalid && nombres.touched">
                 <span *ngIf="nombres.errors?.['required']">Los nombres son requeridos</span>
-                <span *ngIf="nombres.errors?.['pattern']">Solo se permiten letras y espacios (2-50 caracteres)</span>
               </div>
             </div>
             <div class="form-group">
@@ -48,12 +50,10 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
                 [(ngModel)]="patient.apellidos"
                 name="apellidos"
                 required
-                pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$"
-                placeholder="Solo letras y espacios"
+                placeholder="Ingrese los apellidos"
                 #apellidos="ngModel">
               <div class="error-message" *ngIf="apellidos.invalid && apellidos.touched">
                 <span *ngIf="apellidos.errors?.['required']">Los apellidos son requeridos</span>
-                <span *ngIf="apellidos.errors?.['pattern']">Solo se permiten letras y espacios (2-50 caracteres)</span>
               </div>
             </div>
             <div class="form-group">
@@ -145,39 +145,87 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
           </div>
         </div>
 
+        <!-- Sección de Historias Clínicas Existentes (solo en modo edición) -->
+        <div class="form-section" *ngIf="isEdit && historicos.length > 0">
+          <h3>
+            Historias Clínicas Existentes
+            <span class="history-count" *ngIf="historicos.length > 1">
+              ({{ historicos.length }} historias)
+            </span>
+          </h3>
+          
+          <!-- Selector de Historias Clínicas -->
+          <div class="history-selector" *ngIf="historicos.length > 1">
+            <label for="historico-select">Seleccionar Historia Clínica:</label>
+            <select 
+              id="historico-select" 
+              class="form-control" 
+              [value]="historico?.id" 
+              (change)="onHistoricoChange($event)">
+              <option *ngFor="let h of historicos" [value]="h.id">
+                {{ getHistoricoDisplayText(h) }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Información básica de la Historia Seleccionada -->
+          <div class="existing-medical-info" *ngIf="historico">
+            <div class="info-item">
+              <label>Fecha de Consulta:</label>
+              <span>{{ formatDate(historico.fecha_consulta) }}</span>
+            </div>
+            <div class="info-item" *ngIf="historico.nombre_medico">
+              <label>Médico:</label>
+              <span>{{ historico.nombre_medico }}</span>
+            </div>
+          </div>
+        </div>
+
         <div class="form-section">
           <h3>Información Médica</h3>
           <div class="form-group">
             <label class="form-label">Motivo de Consulta *</label>
-            <app-rich-text-editor
-              [value]="patient.motivo_consulta || ''"
-              placeholder="Describa el motivo de la consulta"
-              (valueChange)="onMotivoConsultaChange($event)">
-            </app-rich-text-editor>
+            <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
+              <app-rich-text-editor
+                *ngIf="!loading && historicoDataReady"
+                [value]="patient.motivo_consulta || ''"
+                placeholder="Describa el motivo de la consulta"
+                (valueChange)="onMotivoConsultaChange($event)">
+              </app-rich-text-editor>
+            </ng-container>
           </div>
           <div class="form-group">
             <label class="form-label">Diagnóstico</label>
-            <app-rich-text-editor
-              [value]="patient.diagnostico || ''"
-              placeholder="Diagnóstico médico"
-              (valueChange)="onDiagnosticoChange($event)">
-            </app-rich-text-editor>
+            <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
+              <app-rich-text-editor
+                *ngIf="!loading && historicoDataReady"
+                [value]="patient.diagnostico || ''"
+                placeholder="Diagnóstico médico"
+                (valueChange)="onDiagnosticoChange($event)">
+              </app-rich-text-editor>
+            </ng-container>
           </div>
           <div class="form-group">
             <label class="form-label">Conclusiones</label>
-            <app-rich-text-editor
-              [value]="patient.conclusiones || ''"
-              placeholder="Conclusiones y recomendaciones"
-              (valueChange)="onConclusionesChange($event)">
-            </app-rich-text-editor>
+            <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
+              <app-rich-text-editor
+                *ngIf="!loading && historicoDataReady"
+                [value]="patient.conclusiones || ''"
+                placeholder="Conclusiones y recomendaciones"
+                (valueChange)="onConclusionesChange($event)">
+              </app-rich-text-editor>
+            </ng-container>
           </div>
           <div class="form-group">
             <label class="form-label">Plan de Tratamiento</label>
-            <app-rich-text-editor
-              [value]="patient.plan || ''"
-              placeholder="Plan de acciones a seguir en el tratamiento del paciente"
-              (valueChange)="onPlanChange($event)">
-            </app-rich-text-editor>
+            <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
+              <app-rich-text-editor
+                *ngIf="!loading && historicoDataReady"
+                [value]="patient.plan || ''"
+                placeholder="Plan de acciones a seguir en el tratamiento del paciente"
+                (valueChange)="onPlanChange($event)">
+              </app-rich-text-editor>
+            </ng-container>
           </div>
         </div>
 
@@ -210,9 +258,63 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
         <p>Cargando datos del paciente...</p>
       </div>
 
+      <!-- Sección de Archivos Anexos Existentes (solo en modo edición) -->
+      <div class="form-section" *ngIf="isEdit && archivos.length > 0">
+        <h3>Archivos Anexos Existentes</h3>
+        <div class="archivos-container">
+          <div class="archivo-item-enhanced" *ngFor="let archivo of archivos">
+            <div class="archivo-header">
+              <div class="archivo-icono">
+                <span [innerHTML]="getFileIcon(archivo.tipo_mime)"></span>
+              </div>
+              <div class="archivo-info">
+                <div class="archivo-nombre">{{ archivo.nombre_original }}</div>
+                <div class="archivo-descripcion" *ngIf="archivo.descripcion">
+                  📝 {{ archivo.descripcion }}
+                </div>
+                <div class="archivo-meta">
+                  <span class="archivo-tipo">{{ getFileType(archivo.tipo_mime) }}</span>
+                  <span class="archivo-tamano">{{ formatFileSize(archivo.tamano_bytes) }}</span>
+                  <span class="archivo-fecha">{{ formatDate(archivo.fecha_subida || '') }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="archivo-actions">
+              <button class="btn-download" (click)="downloadFile(archivo)" title="Descargar">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                </svg>
+              </button>
+              <button class="btn-edit" (click)="editFileDescription(archivo)" title="Editar descripción">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+              </button>
+              <button class="btn-delete" (click)="deleteArchivo(archivo.id!)" title="Eliminar">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Componente de archivos anexos -->
+      <div class="form-section" *ngIf="!canUploadFiles()">
+        <div class="info-message">
+          <h3>📁 Archivos Anexos</h3>
+          <p *ngIf="!isEdit">
+            <strong>Para subir archivos:</strong> Primero debes crear el paciente y su historia médica.
+          </p>
+          <p *ngIf="isEdit && !historico">
+            <strong>Para subir archivos:</strong> Selecciona una historia clínica existente.
+          </p>
+        </div>
+      </div>
+
       <app-file-upload 
-        *ngIf="patient.id || historicoId || !isEdit" 
+        *ngIf="canUploadFiles()" 
         [historiaId]="getHistoriaId()"
         (filesUpdated)="onFilesUpdated($event)">
       </app-file-upload>
@@ -319,6 +421,247 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
       color: #64748b;
     }
 
+    /* Estilos para historias clínicas existentes */
+    .history-count {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #f5576c;
+      background: #fce7f3;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      margin-left: 0.5rem;
+    }
+
+    .history-selector {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .history-selector label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      background: white;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #f5576c;
+      box-shadow: 0 0 0 3px rgba(245, 87, 108, 0.1);
+    }
+
+    .existing-medical-info {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      padding: 1rem;
+    }
+
+    .existing-medical-info .info-item {
+      margin-bottom: 1rem;
+    }
+
+    .existing-medical-info .info-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .existing-medical-info label {
+      font-weight: 600;
+      color: #374151;
+      font-size: 0.875rem;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .existing-medical-info span {
+      color: #1e293b;
+      font-size: 0.875rem;
+    }
+
+    .existing-medical-info .info-text {
+      color: #1e293b;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0.5rem;
+      background: white;
+      border-radius: 0.375rem;
+      border-left: 3px solid #f5576c;
+    }
+
+    /* Estilos para archivos anexos mejorados */
+    .archivos-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .archivo-item-enhanced {
+      border: 1px solid #e5e7eb;
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      transition: all 0.3s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .archivo-item-enhanced:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border-color: #cbd5e1;
+    }
+
+    .archivo-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .archivo-icono {
+      font-size: 2rem;
+      color: #3b82f6;
+      flex-shrink: 0;
+    }
+
+    .archivo-info {
+      flex: 1;
+    }
+
+    .archivo-nombre {
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .archivo-descripcion {
+      background: #e0f2fe;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      margin: 0.75rem 0;
+      font-style: italic;
+      color: #0369a1;
+      border-left: 4px solid #0ea5e9;
+      font-size: 0.9rem;
+    }
+
+    .archivo-meta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+
+    .archivo-tipo {
+      background: #dbeafe;
+      color: #1e40af;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .archivo-tamano {
+      color: #64748b;
+      font-size: 0.875rem;
+    }
+
+    .archivo-fecha {
+      color: #64748b;
+      font-size: 0.875rem;
+    }
+
+    .archivo-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .btn-download, .btn-edit, .btn-delete {
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+    }
+
+    .btn-download {
+      background: #3b82f6;
+    }
+
+    .btn-edit {
+      background: #f59e0b;
+    }
+
+    .btn-delete {
+      background: #ef4444;
+    }
+
+    .btn-download:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+    }
+
+    .btn-edit:hover {
+      background: #d97706;
+      transform: translateY(-1px);
+    }
+
+    .btn-delete:hover {
+      background: #dc2626;
+      transform: translateY(-1px);
+    }
+
+    .btn-download .btn-icon, .btn-edit .btn-icon, .btn-delete .btn-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Estilos para mensaje informativo de archivos */
+    .info-message {
+      background: #f0f9ff;
+      border: 1px solid #0ea5e9;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .info-message h3 {
+      color: #0369a1;
+      margin: 0 0 1rem 0;
+      font-size: 1.25rem;
+    }
+
+    .info-message p {
+      color: #0369a1;
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .info-message strong {
+      color: #0c4a6e;
+    }
+
     @media (max-width: 768px) {
       .page-header {
         flex-direction: column;
@@ -354,9 +697,19 @@ export class PatientFormComponent implements OnInit {
   loading = false;
   patientId: number | null = null;
   historicoId: number | null = null;
+  medicalDataLoaded = false;
+  historicoDataReady = false;
+  editorKey = 0;
+  
+  // Variables para historias clínicas y archivos
+  historicos: HistoricoWithDetails[] = [];
+  historico: HistoricoWithDetails | null = null;
+  archivos: ArchivoAnexo[] = [];
 
   constructor(
     private patientService: PatientService,
+    private historicoService: HistoricoService,
+    private archivoService: ArchivoService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
@@ -378,6 +731,7 @@ export class PatientFormComponent implements OnInit {
         next: (response) => {
           if (response.success) {
             this.patient = response.data;
+            this.loadHistoricos();
           }
           this.loading = false;
         },
@@ -387,6 +741,60 @@ export class PatientFormComponent implements OnInit {
         }
       });
     }
+  }
+
+  loadHistoricos() {
+    if (this.patientId) {
+      this.historicoService.getHistoricoByPaciente(this.patientId).subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.historicos = response.data;
+            // Seleccionar la más reciente por defecto
+            if (this.historicos.length > 0) {
+              this.historico = this.historicos[0];
+              
+              // Cargar automáticamente los datos médicos de la primera historia
+              this.patient.motivo_consulta = this.historico.motivo_consulta || '';
+              this.patient.diagnostico = this.historico.diagnostico || '';
+              this.patient.conclusiones = this.historico.conclusiones || '';
+              this.patient.plan = this.historico.plan || '';
+              
+              console.log('🔍 Datos médicos cargados:', {
+                motivo_consulta: this.patient.motivo_consulta,
+                diagnostico: this.patient.diagnostico,
+                conclusiones: this.patient.conclusiones,
+                plan: this.patient.plan
+              });
+              
+              console.log('🔍 Historia completa:', this.historico);
+              
+              // Marcar que los datos están listos y forzar re-renderizado
+              this.historicoDataReady = true;
+              this.editorKey++;
+              
+              this.loadArchivos(this.historico.id);
+            }
+          }
+        },
+        error: (error) => {
+          console.error('Error loading historicos:', error);
+        }
+      });
+    }
+  }
+
+  loadArchivos(historicoId: number) {
+    this.archivoService.getArchivosByHistoria(historicoId).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.archivos = response.data;
+        }
+      },
+      error: (error) => {
+        console.error('Error loading archivos:', error);
+        this.archivos = [];
+      }
+    });
   }
 
   onSubmit() {
@@ -446,11 +854,31 @@ export class PatientFormComponent implements OnInit {
   updatePatient() {
     if (this.patientId) {
       this.loading = true;
-      this.patientService.updatePatient(this.patientId, this.patient)
+      
+      // Crear un objeto con solo los campos que tienen valores válidos
+      // Esto evita sobrescribir campos existentes con null/undefined
+      const updateData: Partial<Patient> = {};
+      
+      // NOTA: Los campos médicos (motivo_consulta, diagnostico, conclusiones, plan) 
+      // no se actualizan aquí porque pertenecen a la tabla historico_medico
+      // Solo se actualizan los campos básicos del paciente
+      
+      // Incluir campos básicos que siempre se pueden actualizar
+      if (this.patient.nombres) updateData.nombres = this.patient.nombres;
+      if (this.patient.apellidos) updateData.apellidos = this.patient.apellidos;
+      if (this.patient.cedula) updateData.cedula = this.patient.cedula;
+      if (this.patient.telefono) updateData.telefono = this.patient.telefono;
+      if (this.patient.email) updateData.email = this.patient.email;
+      if (this.patient.edad !== undefined) updateData.edad = this.patient.edad;
+      if (this.patient.sexo) updateData.sexo = this.patient.sexo;
+      
+      
+      this.patientService.updatePatient(this.patientId, updateData)
         .subscribe({
           next: (response) => {
             if (response.success) {
-              this.router.navigate(['/patients']);
+              // Actualizar también los campos médicos en el historico si hay cambios
+              this.updateMedicalData();
             }
             this.loading = false;
           },
@@ -459,6 +887,37 @@ export class PatientFormComponent implements OnInit {
             this.loading = false;
           }
         });
+    }
+  }
+
+  updateMedicalData() {
+    if (this.historico && this.historico.id) {
+      const medicalData = {
+        motivo_consulta: this.patient.motivo_consulta,
+        diagnostico: this.patient.diagnostico,
+        conclusiones: this.patient.conclusiones,
+        plan: this.patient.plan
+      };
+      
+      // Actualizar el historico médico
+      this.historicoService.updateHistorico(this.historico.id, medicalData).subscribe({
+        next: (response) => {
+          if (response.success) {
+            console.log('Datos médicos actualizados correctamente');
+            this.router.navigate(['/patients']);
+          } else {
+            console.error('Error actualizando datos médicos:', response.error);
+            alert('Error al actualizar los datos médicos');
+          }
+        },
+        error: (error) => {
+          console.error('Error actualizando datos médicos:', error);
+          alert('Error al actualizar los datos médicos');
+        }
+      });
+    } else {
+      // Si no hay historico, navegar directamente
+      this.router.navigate(['/patients']);
     }
   }
 
@@ -475,6 +934,16 @@ export class PatientFormComponent implements OnInit {
     this.patient.diagnostico = value;
   }
 
+  onDiagnosticoInput(event: Event) {
+    const target = event.target as HTMLElement;
+    this.patient.diagnostico = target.innerHTML;
+  }
+
+  onDiagnosticoBlur(event: Event) {
+    const target = event.target as HTMLElement;
+    this.patient.diagnostico = target.innerHTML;
+  }
+
   onConclusionesChange(value: string) {
     this.patient.conclusiones = value;
   }
@@ -483,20 +952,34 @@ export class PatientFormComponent implements OnInit {
     this.patient.plan = value;
   }
 
+  trackByEditorKey(index: number, item: any): any {
+    return item;
+  }
+
+  // Método para determinar si se pueden subir archivos
+  canUploadFiles(): boolean {
+    // En modo edición: solo si hay un historico seleccionado
+    if (this.isEdit) {
+      return this.historico && this.historico.id ? true : false;
+    }
+    
+    // En modo creación: solo después de crear el paciente (cuando hay historicoId)
+    return this.historicoId ? true : false;
+  }
+
   // Método para obtener el ID de la historia (necesario para los archivos)
   getHistoriaId(): number {
-    // Si tenemos el historicoId (después de crear el paciente), usarlo
+    // Si estamos en modo edición y hay un historico seleccionado
+    if (this.isEdit && this.historico && this.historico.id) {
+      return this.historico.id;
+    }
+    
+    // Si tenemos el historicoId (después de crear el paciente)
     if (this.historicoId) {
       return this.historicoId;
     }
     
-    // Si es un paciente existente, necesitamos obtener el historico_id
-    if (this.patient.id) {
-      // TODO: Implementar lógica para obtener el historico_id del paciente existente
-      return 0; // Por ahora retornar 0
-    }
-    
-    // Si es un nuevo paciente, retornar 0 (el componente manejará esto)
+    // Si no hay historico válido, retornar 0
     return 0;
   }
 
@@ -595,5 +1078,143 @@ export class PatientFormComponent implements OnInit {
   // Método para finalizar y volver a la lista de pacientes
   onFinish() {
     this.router.navigate(['/patients']);
+  }
+
+  // Métodos para manejar historias clínicas
+  onHistoricoChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    const historicoId = +target.value;
+    this.selectHistorico(historicoId);
+  }
+
+  selectHistorico(historicoId: number) {
+    const selectedHistorico = this.historicos.find(h => h.id === historicoId);
+    if (selectedHistorico) {
+      this.historico = selectedHistorico;
+      
+      // Actualizar los datos médicos del formulario principal con los datos de la historia seleccionada
+      this.patient.motivo_consulta = selectedHistorico.motivo_consulta || '';
+      this.patient.diagnostico = selectedHistorico.diagnostico || '';
+      this.patient.conclusiones = selectedHistorico.conclusiones || '';
+      this.patient.plan = selectedHistorico.plan || '';
+      
+      // Forzar re-renderizado de los RichTextEditor
+      this.historicoDataReady = false;
+      this.editorKey++;
+      setTimeout(() => {
+        this.historicoDataReady = true;
+      }, 100);
+      
+      this.loadArchivos(selectedHistorico.id);
+    }
+  }
+
+  getHistoricoDisplayText(historico: HistoricoWithDetails): string {
+    const fecha = this.formatDate(historico.fecha_consulta);
+    const medico = historico.nombre_medico || 
+                  (historico.medico_nombre && historico.medico_apellidos ? 
+                   `${historico.medico_nombre} ${historico.medico_apellidos}` : 
+                   'Médico no especificado');
+    return `${fecha} - ${medico}`;
+  }
+
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+
+  // Métodos para manejar archivos
+  deleteArchivo(archivoId: number) {
+    if (!archivoId) {
+      console.error('Archivo ID is undefined');
+      return;
+    }
+    if (confirm('¿Estás seguro de que quieres eliminar este archivo?')) {
+      this.archivoService.deleteArchivo(archivoId).subscribe({
+        next: (response) => {
+          if (response.success) {
+            // Recargar archivos
+            if (this.historico) {
+              this.loadArchivos(this.historico.id);
+            }
+          }
+        },
+        error: (error) => {
+          console.error('Error deleting archivo:', error);
+        }
+      });
+    }
+  }
+
+  downloadFile(archivo: ArchivoAnexo) {
+    if (!archivo.id) {
+      console.error('Archivo ID is undefined');
+      return;
+    }
+    this.archivoService.downloadArchivo(archivo.id).subscribe({
+      next: (response) => {
+        // Crear enlace de descarga
+        const blob = new Blob([response], { type: archivo.tipo_mime });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = archivo.nombre_original;
+        link.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (error) => {
+        console.error('Error downloading file:', error);
+      }
+    });
+  }
+
+  getFileIcon(tipoMime: string): string {
+    if (tipoMime.startsWith('image/')) return '🖼️';
+    if (tipoMime.startsWith('application/pdf')) return '📄';
+    if (tipoMime.includes('word')) return '📝';
+    if (tipoMime.includes('excel') || tipoMime.includes('spreadsheet')) return '📊';
+    if (tipoMime.includes('zip') || tipoMime.includes('rar')) return '📦';
+    return '📎';
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  getFileType(tipoMime: string): string {
+    if (tipoMime.startsWith('image/')) return 'Imagen';
+    if (tipoMime.startsWith('application/pdf')) return 'PDF';
+    if (tipoMime.includes('word') || tipoMime.includes('document')) return 'Documento';
+    if (tipoMime.includes('excel') || tipoMime.includes('spreadsheet')) return 'Hoja de cálculo';
+    if (tipoMime.includes('powerpoint') || tipoMime.includes('presentation')) return 'Presentación';
+    return 'Archivo';
+  }
+
+  editFileDescription(archivo: ArchivoAnexo) {
+    const nuevaDescripcion = prompt('Editar descripción del archivo:', archivo.descripcion || '');
+    if (nuevaDescripcion !== null && archivo.id) {
+      this.archivoService.updateArchivo(archivo.id, nuevaDescripcion).subscribe({
+        next: (response) => {
+          if (response.success) {
+            archivo.descripcion = nuevaDescripcion;
+            alert('Descripción actualizada correctamente');
+          } else {
+            alert('Error al actualizar la descripción');
+          }
+        },
+        error: (error) => {
+          console.error('Error actualizando descripción:', error);
+          alert('Error al actualizar la descripción');
+        }
+      });
+    }
   }
 }

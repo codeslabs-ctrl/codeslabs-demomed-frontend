@@ -90,18 +90,38 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
           </div>
 
           <div class="section">
-            <h3>Información Médica</h3>
+            <h3>
+              Información Médica
+              <span class="history-count" *ngIf="historicos.length > 1">
+                ({{ historicos.length }} historias)
+              </span>
+            </h3>
+            
+            <!-- Selector de Historias Clínicas -->
+            <div class="history-selector" *ngIf="historicos.length > 1">
+              <label for="historico-select">Seleccionar Historia Clínica:</label>
+              <select 
+                id="historico-select" 
+                class="form-control" 
+                [value]="historico?.id" 
+                (change)="onHistoricoChange($event)">
+                <option *ngFor="let h of historicos" [value]="h.id">
+                  {{ getHistoricoDisplayText(h) }}
+                </option>
+              </select>
+                </div>
+            
             <div class="medical-info">
               <div class="info-item full-width">
-                <label>Motivo de Consulta</label>
+                    <label>Motivo de Consulta</label>
                 <div class="info-text" [innerHTML]="historico?.motivo_consulta || patient.motivo_consulta || 'No especificado'"></div>
-              </div>
+                  </div>
               <div class="info-item full-width" *ngIf="historico?.diagnostico || patient.diagnostico">
-                <label>Diagnóstico</label>
+                    <label>Diagnóstico</label>
                 <div class="info-text" [innerHTML]="historico?.diagnostico || patient.diagnostico"></div>
-              </div>
+                  </div>
               <div class="info-item full-width" *ngIf="historico?.conclusiones || patient.conclusiones">
-                <label>Conclusiones</label>
+                    <label>Conclusiones</label>
                 <div class="info-text" [innerHTML]="historico?.conclusiones || patient.conclusiones"></div>
               </div>
               <div class="info-item full-width" *ngIf="historico?.antecedentes_medicos || patient.antecedentes_medicos">
@@ -119,16 +139,16 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
               <div class="info-item full-width" *ngIf="historico?.observaciones || patient.observaciones">
                 <label>Observaciones</label>
                 <div class="info-text" [innerHTML]="historico?.observaciones || patient.observaciones"></div>
-              </div>
+                  </div>
               <div class="info-item full-width" *ngIf="patient.plan">
-                <label>Plan de Tratamiento</label>
+                    <label>Plan de Tratamiento</label>
                 <div class="info-text" [innerHTML]="patient.plan"></div>
-              </div>
+                  </div>
               <div class="info-item full-width" *ngIf="historico?.fecha_consulta">
                 <label>Fecha de Consulta</label>
                 <p class="info-text">{{ formatDate(historico!.fecha_consulta) }}</p>
+                </div>
               </div>
-            </div>
           </div>
 
           <div class="section">
@@ -189,14 +209,8 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
               </svg>
               Interconsulta
-            </button>
-          </div>
-          <button class="btn btn-danger" (click)="deletePatient()">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-            </svg>
-            Eliminar Paciente
           </button>
+          </div>
         </div>
       </div>
 
@@ -318,6 +332,48 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
       margin-bottom: 1rem;
       padding-bottom: 0.5rem;
       border-bottom: 2px solid #e5e7eb;
+    }
+
+    .history-selector {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .history-selector label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      background: white;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #f5576c;
+      box-shadow: 0 0 0 3px rgba(245, 87, 108, 0.1);
+    }
+
+    .history-count {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #f5576c;
+      background: #fce7f3;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      margin-left: 0.5rem;
     }
 
     .info-grid {
@@ -570,8 +626,8 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
       }
 
       .patient-actions {
-        flex-direction: column;
-        gap: 1rem;
+      flex-direction: column;
+      gap: 1rem;
         align-items: stretch;
       }
 
@@ -585,6 +641,7 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
 export class PatientDetailComponent implements OnInit {
   patient: Patient | null = null;
   historico: HistoricoWithDetails | null = null;
+  historicos: HistoricoWithDetails[] = []; // Todas las historias
   archivos: ArchivoAnexo[] = [];
   loading = true;
   error: string | null = null;
@@ -630,19 +687,21 @@ export class PatientDetailComponent implements OnInit {
   }
 
   loadHistorico(pacienteId: number) {
-    this.historicoService.getLatestHistoricoByPaciente(pacienteId).subscribe({
+    // Cargar todas las historias del paciente
+    this.historicoService.getHistoricoByPaciente(pacienteId).subscribe({
       next: (response) => {
-        if (response.success) {
-          this.historico = response.data;
-          // Cargar archivos si hay historial
-          if (this.historico?.id) {
+        if (response.success && response.data) {
+          this.historicos = response.data;
+          // Seleccionar la más reciente por defecto
+          if (this.historicos.length > 0) {
+            this.historico = this.historicos[0];
             this.loadArchivos(this.historico.id);
           }
         }
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error loading historico:', error);
+        console.error('Error loading historicos:', error);
         // No mostrar error si no hay historial, solo continuar
         this.loading = false;
       }
@@ -712,20 +771,32 @@ export class PatientDetailComponent implements OnInit {
     this.showRemitirModal = false;
   }
 
-  deletePatient() {
-    if (this.patient && confirm('¿Estás seguro de que quieres eliminar este paciente?')) {
-      this.patientService.deletePatient(this.patient.id).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.router.navigate(['/patients']);
-          }
-        },
-        error: (error) => {
-          console.error('Error deleting patient:', error);
-        }
-      });
+  // Método para manejar el cambio de historia en el template
+  onHistoricoChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    const historicoId = +target.value;
+    this.selectHistorico(historicoId);
+  }
+
+  // Método para cambiar entre historias
+  selectHistorico(historicoId: number) {
+    const selectedHistorico = this.historicos.find(h => h.id === historicoId);
+    if (selectedHistorico) {
+      this.historico = selectedHistorico;
+      this.loadArchivos(selectedHistorico.id);
     }
   }
+
+  // Método para obtener el texto del selector de historias
+  getHistoricoDisplayText(historico: HistoricoWithDetails): string {
+    const fecha = this.formatDate(historico.fecha_consulta);
+    const medico = historico.nombre_medico || 
+                  (historico.medico_nombre && historico.medico_apellidos ? 
+                   `${historico.medico_nombre} ${historico.medico_apellidos}` : 
+                   'Médico no especificado');
+    return `${fecha} - ${medico}`;
+  }
+
 
   private generatePrintContent(): string {
     if (!this.patient) return '';
@@ -899,11 +970,11 @@ export class PatientDetailComponent implements OnInit {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-      },
-      error: (error) => {
+        },
+        error: (error) => {
         console.error('Error downloading file:', error);
         alert('Error al descargar el archivo');
-      }
-    });
+        }
+      });
   }
 }

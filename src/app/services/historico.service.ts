@@ -71,4 +71,9 @@ export class HistoricoService {
 
     return this.http.get<ApiResponse<HistoricoWithDetails[]>>(`${this.baseUrl}/filtrado`, { params });
   }
+
+  // Actualizar historial médico
+  updateHistorico(historicoId: number, updateData: Partial<HistoricoData>): Observable<ApiResponse<HistoricoWithDetails>> {
+    return this.http.put<ApiResponse<HistoricoWithDetails>>(`${this.baseUrl}/${historicoId}`, updateData);
+  }
 }

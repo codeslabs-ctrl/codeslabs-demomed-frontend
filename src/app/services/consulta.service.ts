@@ -52,6 +52,11 @@ export class ConsultaService {
     return this.http.get<ApiResponse<ConsultaWithDetails[]>>(`${this.baseUrl}/hoy`);
   }
 
+  // Obtener consultas del día filtradas por usuario autenticado
+  getConsultasDelDia(): Observable<ApiResponse<ConsultaWithDetails[]>> {
+    return this.http.get<ApiResponse<ConsultaWithDetails[]>>(`${this.baseUrl}/del-dia`);
+  }
+
   // Obtener consultas pendientes
   getConsultasPendientes(): Observable<ApiResponse<ConsultaWithDetails[]>> {
     return this.http.get<ApiResponse<ConsultaWithDetails[]>>(`${this.baseUrl}/pendientes`);

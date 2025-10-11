@@ -64,8 +64,10 @@ export interface ConsultaFilters {
   paciente_id?: number;
   medico_id?: number;
   estado_consulta?: string;
+  estado?: string;
   fecha_desde?: string;
   fecha_hasta?: string;
+  fecha?: string;
   prioridad?: string;
   tipo_consulta?: string;
   page?: number;
