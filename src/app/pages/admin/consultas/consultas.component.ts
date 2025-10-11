@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { ConsultaService } from '../../../services/consulta.service';
 import { PatientService } from '../../../services/patient.service';
 import { MedicoService } from '../../../services/medico.service';
+import { AuthService } from '../../../services/auth.service';
 import { ConsultaWithDetails, ConsultaFilters, ConsultaFormData } from '../../../models/consulta.model';
 import { Patient } from '../../../models/patient.model';
 import { Medico } from '../../../services/medico.service';
@@ -59,7 +60,7 @@ import { Medico } from '../../../services/medico.service';
               (change)="applyFilters()"
             />
           </div>
-          <div class="form-group">
+          <div class="form-group" *ngIf="currentUser?.rol === 'administrador'">
             <label for="medico">Médico</label>
             <select id="medico" class="form-control" [(ngModel)]="filters.medico_id" (change)="applyFilters()">
               <option value="">Todos los médicos</option>
@@ -1269,6 +1270,16 @@ export class ConsultasComponent implements OnInit {
     medico_id: undefined
   };
 
+  // Propiedades para autenticación
+  currentUser: any = null;
+
+  constructor(
+    private consultaService: ConsultaService,
+    private patientService: PatientService,
+    private medicoService: MedicoService,
+    private authService: AuthService
+  ) {}
+
   // Propiedades para modales
   showVerModal = false;
   showFinalizarModal = false;
@@ -1286,13 +1297,13 @@ export class ConsultasComponent implements OnInit {
   // Lista de médicos para filtros
   medicos: Medico[] = [];
 
-  constructor(
-    private consultaService: ConsultaService,
-    private patientService: PatientService,
-    private medicoService: MedicoService
-  ) {}
 
   ngOnInit(): void {
+    // Cargar usuario actual
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+    });
+    
     this.loadConsultas();
     this.loadMedicos();
   }
@@ -1307,6 +1318,12 @@ export class ConsultasComponent implements OnInit {
       fecha_hasta: this.filters.fecha,
       search: this.searchQuery
     };
+    
+    // Si el usuario es médico, filtrar automáticamente por su médico_id
+    if (this.currentUser?.rol === 'medico' && this.currentUser?.medico_id) {
+      searchFilters.medico_id = this.currentUser.medico_id;
+      console.log('🔍 Filtrando consultas por médico_id del usuario:', this.currentUser.medico_id);
+    }
     
     // Limpiar filtros vacíos
     Object.keys(searchFilters).forEach(key => {

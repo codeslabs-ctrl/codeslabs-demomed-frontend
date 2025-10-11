@@ -152,8 +152,8 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
         </div>
       </div>
 
-      <!-- Accesos Directos -->
-      <div class="quick-actions">
+      <!-- Accesos Directos - Solo para administradores -->
+      <div class="quick-actions" *ngIf="currentUser?.rol === 'administrador'">
         <h3>Accesos Directos</h3>
         <div class="actions-grid">
           <a routerLink="/admin/patients" class="action-card">
