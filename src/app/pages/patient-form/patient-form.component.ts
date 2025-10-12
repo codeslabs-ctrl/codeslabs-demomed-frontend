@@ -25,7 +25,7 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
         </button>
       </div>
 
-      <form class="patient-form" (ngSubmit)="onSubmit()" #patientForm="ngForm">
+      <form class="patient-form" (ngSubmit)="onSubmit(patientForm)" #patientForm="ngForm">
         
         <div class="form-section">
           <h3>Información Personal</h3>
@@ -86,7 +86,9 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
                 max="120"
                 #edad="ngModel">
               <div class="error-message" *ngIf="edad.invalid && edad.touched">
-                La edad es requerida y debe ser válida
+                <span *ngIf="edad.errors?.['required']">La edad es requerida</span>
+                <span *ngIf="edad.errors?.['min']">La edad debe ser mayor a 0</span>
+                <span *ngIf="edad.errors?.['max']">La edad debe ser menor a 120</span>
               </div>
             </div>
             <div class="form-group">
@@ -241,7 +243,7 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
           <button 
             type="submit" 
             class="btn btn-primary"
-            [disabled]="patientForm.invalid || loading">
+            [disabled]="loading">
             <span *ngIf="loading" class="spinner"></span>
             {{ isEdit ? 'Actualizar' : 'Crear' }} Paciente
           </button>
@@ -254,6 +256,22 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
           </button>
         </div>
       </form>
+
+      <!-- Botones de acción después de crear paciente exitosamente -->
+      <div class="success-actions" *ngIf="showSuccessActions && !isEdit">
+        <div class="success-message">
+          <h3>✅ Paciente creado exitosamente</h3>
+          <p>¿Qué deseas hacer ahora?</p>
+        </div>
+        <div class="action-buttons">
+          <button type="button" class="btn btn-secondary" (click)="goToPatients()">
+            ← Volver a Pacientes
+          </button>
+          <button type="button" class="btn btn-primary" (click)="createConsulta()">
+            📅 Nueva Consulta
+          </button>
+        </div>
+      </div>
 
       <div class="loading" *ngIf="loading && !isEdit">
         <div class="spinner"></div>
@@ -354,6 +372,65 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
 
     .archivos-title {
       margin-top: 2rem !important;
+    }
+
+    /* Estilos para botones de éxito */
+    .success-actions {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 2px solid #0ea5e9;
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-top: 2rem;
+      text-align: center;
+    }
+
+    .success-message h3 {
+      color: #0c4a6e;
+      margin-bottom: 0.5rem;
+      font-size: 1.5rem;
+    }
+
+    .success-message p {
+      color: #0369a1;
+      margin-bottom: 1.5rem;
+      font-size: 1.1rem;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .action-buttons .btn {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 0.75rem;
+      transition: all 0.3s ease;
+    }
+
+    .action-buttons .btn-secondary {
+      background: linear-gradient(135deg, #6b7280, #4b5563);
+      color: white;
+      border: none;
+    }
+
+    .action-buttons .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+    }
+
+    .action-buttons .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      border: none;
+    }
+
+    .action-buttons .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
 
     .form-grid {
@@ -696,6 +773,8 @@ export class PatientFormComponent implements OnInit {
   medicalDataLoaded = false;
   historicoDataReady = false;
   editorKey = 0;
+  showSuccessActions = false;
+  patientCreated = false;
   
   // Variables para historias clínicas y archivos
   historicos: HistoricoWithDetails[] = [];
@@ -797,11 +876,43 @@ export class PatientFormComponent implements OnInit {
     });
   }
 
-  onSubmit() {
+  onSubmit(form: any) {
     console.log('🔍 onSubmit llamado');
     console.log('🔍 isEdit:', this.isEdit);
     console.log('🔍 patientId:', this.patientId);
     console.log('🔍 patient object:', this.patient);
+    console.log('🔍 Formulario válido:', form?.valid);
+    console.log('🔍 Formulario inválido:', form?.invalid);
+    console.log('🔍 Errores del formulario:', form?.errors);
+    console.log('🔍 Controles del formulario:', form?.controls);
+    
+    // Verificar campos específicos
+    if (form?.controls) {
+      Object.keys(form.controls).forEach(key => {
+        const control = form.controls[key];
+        console.log(`🔍 Campo ${key}:`, {
+          valid: control.valid,
+          invalid: control.invalid,
+          errors: control.errors,
+          value: control.value
+        });
+      });
+    }
+    
+    // Verificar si el formulario es válido
+    if (form?.invalid) {
+      console.log('❌ Formulario inválido, no se puede proceder');
+      
+      // Marcar todos los campos como touched para mostrar errores
+      if (form.controls) {
+        Object.keys(form.controls).forEach(key => {
+          form.controls[key].markAsTouched();
+        });
+      }
+      
+      alert('Por favor completa todos los campos requeridos correctamente');
+      return;
+    }
     
     if (this.isEdit && this.patientId) {
       console.log('🔍 Llamando updatePatient');
@@ -835,11 +946,9 @@ export class PatientFormComponent implements OnInit {
             // Actualizar el paciente con el ID recibido
             this.patient.id = response.data.id;
             
-            // Mostrar mensaje de éxito
-            alert('Paciente creado exitosamente. Ahora puedes agregar archivos adjuntos si lo deseas.');
-            
-            // No redirigir inmediatamente, permitir agregar archivos
-            // this.router.navigate(['/patients']);
+            // Mostrar mensaje de éxito y botones de acción
+            this.showSuccessActions = true;
+            this.patientCreated = true;
           }
           this.loading = false;
         },
@@ -980,6 +1089,20 @@ export class PatientFormComponent implements OnInit {
   onCancel() {
     console.log('🔄 onCancel() ejecutado - navegando a /patients');
     this.router.navigate(['/patients']);
+  }
+
+  // Método para ir a la lista de pacientes
+  goToPatients() {
+    this.router.navigate(['/patients']);
+  }
+
+  // Método para crear consulta con paciente preseleccionado
+  createConsulta() {
+    if (this.patient.id) {
+      this.router.navigate(['/admin/consultas/nueva'], {
+        queryParams: { paciente_id: this.patient.id }
+      });
+    }
   }
 
   // Métodos para manejar los cambios en los editores de texto enriquecido

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PatientService } from '../../services/patient.service';
 import { RemisionService } from '../../services/remision.service';
@@ -133,6 +133,10 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
             <div class="consulta-actions">
               <button class="btn btn-view" (click)="verConsulta(consulta)">
                 👁️ Ver
+              </button>
+              <button class="btn btn-history" (click)="addHistoria(consulta)"
+                      *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada'">
+                📝 Añadir Historia
               </button>
               <button class="btn btn-success" (click)="finalizarConsulta(consulta)" 
                       *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada'">
@@ -1016,6 +1020,17 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
     }
 
+    .consulta-actions .btn-history {
+      background: linear-gradient(135deg, #10B981, #059669);
+      color: white;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .consulta-actions .btn-history:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    }
+
     .empty-state {
       text-align: center;
       padding: 3rem 2rem;
@@ -1518,7 +1533,8 @@ export class DashboardComponent implements OnInit {
     private patientService: PatientService,
     private remisionService: RemisionService,
     private authService: AuthService,
-    private consultaService: ConsultaService
+    private consultaService: ConsultaService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -1630,6 +1646,11 @@ export class DashboardComponent implements OnInit {
   verConsulta(consulta: ConsultaWithDetails): void {
     this.selectedConsulta = consulta;
     this.showVerModal = true;
+  }
+
+  // Método para añadir historia médica
+  addHistoria(consulta: ConsultaWithDetails): void {
+    this.router.navigate(['/patients', consulta.paciente_id, 'edit']);
   }
 
   // Método para finalizar consulta

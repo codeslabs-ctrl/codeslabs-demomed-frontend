@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { ConsultaService } from '../../../services/consulta.service';
 import { PatientService } from '../../../services/patient.service';
 import { MedicoService } from '../../../services/medico.service';
@@ -33,6 +33,12 @@ import { Medico } from '../../../services/medico.service';
             <div class="form-row">
               <div class="form-group">
                 <label for="paciente_id">Paciente *</label>
+                <div *ngIf="consultaForm.paciente_id > 0" class="preselected-patient">
+                  <div class="preselected-info">
+                    <span class="preselected-label">✅ Paciente preseleccionado:</span>
+                    <span class="preselected-name">{{ getPreselectedPatientName() }}</span>
+                  </div>
+                </div>
                 <select 
                   id="paciente_id" 
                   class="form-control" 
@@ -201,6 +207,33 @@ import { Medico } from '../../../services/medico.service';
       max-width: 1000px;
       margin: 2rem auto;
       padding: 0 2rem;
+    }
+
+    /* Estilos para paciente preseleccionado */
+    .preselected-patient {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 2px solid #0ea5e9;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .preselected-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .preselected-label {
+      color: #0c4a6e;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .preselected-name {
+      color: #0369a1;
+      font-weight: 700;
+      font-size: 1rem;
     }
 
     .form-section {
@@ -417,10 +450,19 @@ export class NuevaConsultaComponent implements OnInit {
     private consultaService: ConsultaService,
     private patientService: PatientService,
     private medicoService: MedicoService,
-    private authService: AuthService
+    private authService: AuthService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    // Verificar si hay un paciente preseleccionado
+    this.route.queryParams.subscribe(params => {
+      if (params['paciente_id']) {
+        this.consultaForm.paciente_id = parseInt(params['paciente_id']);
+        console.log('👤 Paciente preseleccionado:', this.consultaForm.paciente_id);
+      }
+    });
+
     // Cargar usuario actual
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
@@ -459,6 +501,11 @@ export class NuevaConsultaComponent implements OnInit {
         console.error('Error loading medicos:', error);
       }
     });
+  }
+
+  getPreselectedPatientName(): string {
+    const paciente = this.pacientes.find(p => p.id === this.consultaForm.paciente_id);
+    return paciente ? `${paciente.nombres} ${paciente.apellidos} - ${paciente.cedula}` : 'Paciente no encontrado';
   }
 
   createConsulta(): void {
