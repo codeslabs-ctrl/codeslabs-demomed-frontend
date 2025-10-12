@@ -12,13 +12,11 @@ export interface HistoricoData {
   diagnostico?: string;
   conclusiones?: string;
   plan?: string;
-  antecedentes_medicos?: string;
-  medicamentos?: string;
-  alergias?: string;
-  observaciones?: string;
   fecha_consulta: string;
   fecha_creacion: string;
   fecha_actualizacion: string;
+  ruta_archivo?: string;
+  nombre_archivo?: string;
 }
 
 export interface HistoricoWithDetails extends HistoricoData {
@@ -70,6 +68,11 @@ export class HistoricoService {
     }
 
     return this.http.get<ApiResponse<HistoricoWithDetails[]>>(`${this.baseUrl}/filtrado`, { params });
+  }
+
+  // Crear nuevo historial médico
+  createHistorico(historicoData: Omit<HistoricoData, 'id' | 'fecha_creacion' | 'fecha_actualizacion'>): Observable<ApiResponse<HistoricoWithDetails>> {
+    return this.http.post<ApiResponse<HistoricoWithDetails>>(`${this.baseUrl}`, historicoData);
   }
 
   // Actualizar historial médico

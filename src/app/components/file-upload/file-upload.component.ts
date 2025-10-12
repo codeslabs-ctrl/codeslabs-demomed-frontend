@@ -10,37 +10,7 @@ import { ArchivoAnexo, ArchivoFormData } from '../../models/archivo.model';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="file-upload-container">
-      <h4 class="section-title">Archivos Anexos</h4>
-      
-      
-      <!-- Lista de archivos existentes -->
-      <div class="existing-files" *ngIf="archivos.length > 0">
-        <div class="file-item" *ngFor="let archivo of archivos; let i = index">
-          <div class="file-info">
-            <div class="file-icon">
-              <span [innerHTML]="getFileIcon(archivo.tipo_mime)"></span>
-            </div>
-            <div class="file-details">
-              <div class="file-name">{{ archivo.nombre_original }}</div>
-              <div class="file-meta">
-                <span class="file-size">{{ formatFileSize(archivo.tamano_bytes) }}</span>
-                <span class="file-date">{{ formatDate(archivo.fecha_subida) }}</span>
-              </div>
-              <div class="file-description" *ngIf="archivo.descripcion">
-                {{ archivo.descripcion }}
-              </div>
-            </div>
-          </div>
-          <div class="file-actions">
-            <button class="btn-download" (click)="downloadFile(archivo)" title="Descargar">
-              <span>📥</span>
-            </button>
-            <button class="btn-delete" (click)="deleteFile(archivo)" title="Eliminar">
-              <span>🗑️</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- Lista de archivos existentes eliminada - se muestran en "Archivos Anexos Existentes" -->
 
       <!-- Formulario para subir nuevo archivo -->
       <div class="upload-form">

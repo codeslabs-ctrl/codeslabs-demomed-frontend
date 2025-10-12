@@ -1,0 +1,531 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { ConsultaService } from '../../../services/consulta.service';
+import { PatientService } from '../../../services/patient.service';
+import { MedicoService } from '../../../services/medico.service';
+import { AuthService } from '../../../services/auth.service';
+import { ConsultaFormData } from '../../../models/consulta.model';
+import { Patient } from '../../../models/patient.model';
+import { Medico } from '../../../services/medico.service';
+
+@Component({
+  selector: 'app-nueva-consulta',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule],
+  template: `
+    <div class="nueva-consulta-page">
+      <!-- Header -->
+      <div class="page-header">
+        <h1>Nueva Consulta</h1>
+        <a routerLink="/admin/consultas" class="btn btn-secondary">
+          ← Volver a Gestión de Consultas
+        </a>
+      </div>
+
+      <!-- Formulario -->
+      <div class="form-container">
+        <form (ngSubmit)="createConsulta()" #consultaFormRef="ngForm">
+          <div class="form-section">
+            <h2>Información de la Consulta</h2>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="paciente_id">Paciente *</label>
+                <select 
+                  id="paciente_id" 
+                  class="form-control" 
+                  [(ngModel)]="consultaForm.paciente_id" 
+                  name="paciente_id"
+                  required>
+                  <option value="0">Seleccionar paciente</option>
+                  <option *ngFor="let paciente of pacientes" [value]="paciente.id">
+                    {{paciente.nombres}} {{paciente.apellidos}} - {{paciente.cedula}}
+                  </option>
+                </select>
+              </div>
+              
+              <div class="form-group" *ngIf="currentUser?.rol === 'administrador'">
+                <label for="medico_id">Médico *</label>
+                <select 
+                  id="medico_id" 
+                  class="form-control" 
+                  [(ngModel)]="consultaForm.medico_id" 
+                  name="medico_id"
+                  required>
+                  <option value="0">Seleccionar médico</option>
+                  <option *ngFor="let medico of medicos" [value]="medico.id">
+                    Dr./Dra. {{medico.nombres}} {{medico.apellidos}} - {{medico.especialidad_nombre}}
+                  </option>
+                </select>
+              </div>
+              
+              <!-- Mostrar información del médico cuando es usuario médico -->
+              <div class="form-group" *ngIf="currentUser?.rol === 'medico'">
+                <label>Médico asignado</label>
+                <div class="medico-info">
+                  <span class="medico-nombre">Dr./Dra. {{currentUser.nombres}} {{currentUser.apellidos}}</span>
+                  <span class="medico-especialidad">{{currentUser.especialidad_nombre}}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="fecha_pautada">Fecha *</label>
+                <input 
+                  type="date" 
+                  id="fecha_pautada" 
+                  class="form-control" 
+                  [(ngModel)]="consultaForm.fecha_pautada" 
+                  name="fecha_pautada"
+                  required>
+              </div>
+              
+              <div class="form-group">
+                <label for="hora_pautada">Hora *</label>
+                <input 
+                  type="time" 
+                  id="hora_pautada" 
+                  class="form-control" 
+                  [(ngModel)]="consultaForm.hora_pautada" 
+                  name="hora_pautada"
+                  required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="tipo_consulta">Tipo de Consulta</label>
+                <select 
+                  id="tipo_consulta" 
+                  class="form-control" 
+                  [(ngModel)]="consultaForm.tipo_consulta" 
+                  name="tipo_consulta">
+                  <option value="primera_vez">Primera Vez</option>
+                  <option value="control">Control</option>
+                  <option value="seguimiento">Seguimiento</option>
+                  <option value="urgencia">Urgencia</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="prioridad">Prioridad</label>
+                <select 
+                  id="prioridad" 
+                  class="form-control" 
+                  [(ngModel)]="consultaForm.prioridad" 
+                  name="prioridad">
+                  <option value="normal">Normal</option>
+                  <option value="alta">Alta</option>
+                  <option value="urgente">Urgente</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="motivo_consulta">Motivo de la Consulta *</label>
+              <textarea 
+                id="motivo_consulta" 
+                class="form-control" 
+                [(ngModel)]="consultaForm.motivo_consulta" 
+                name="motivo_consulta"
+                rows="4"
+                placeholder="Describa el motivo de la consulta..."
+                required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="observaciones">Observaciones</label>
+              <textarea 
+                id="observaciones" 
+                class="form-control" 
+                [(ngModel)]="consultaForm.observaciones" 
+                name="observaciones"
+                rows="3"
+                placeholder="Observaciones adicionales (opcional)"></textarea>
+            </div>
+          </div>
+
+          <!-- Botones de acción -->
+          <div class="form-actions">
+            <button 
+              type="button" 
+              class="btn btn-outline" 
+              (click)="resetForm()"
+              [disabled]="isSubmitting">
+              <span class="btn-icon">🧹</span>
+              <span class="btn-text">Limpiar</span>
+            </button>
+            <button 
+              type="submit" 
+              class="btn btn-primary" 
+              [disabled]="isSubmitting">
+              <span *ngIf="isSubmitting" class="btn-icon">⏳</span>
+              <span *ngIf="!isSubmitting" class="btn-icon">💾</span>
+              <span class="btn-text">{{isSubmitting ? 'Creando...' : 'Crear Consulta'}}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .nueva-consulta-page {
+      min-height: 100vh;
+      background: #f8f9fa;
+      padding: 0;
+    }
+
+    .page-header {
+      background: white;
+      border-bottom: 1px solid #e9ecef;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .page-header h1 {
+      margin: 0;
+      color: #2c3e50;
+      font-size: 1.75rem;
+      font-weight: 600;
+    }
+
+    .form-container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+
+    .form-section {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .form-section h2 {
+      margin: 0 0 1.5rem 0;
+      color: #2c3e50;
+      font-size: 1.25rem;
+      font-weight: 600;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 0.5rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      width: 100%;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #2c3e50;
+      font-size: 0.875rem;
+    }
+
+    .form-control {
+      padding: 0.75rem;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+      background: white;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .form-control textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      padding: 1.5rem 0;
+      border-top: 1px solid #e9ecef;
+      margin-top: 2rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: #E91E63;
+      color: white;
+      box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+      font-weight: 500;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #C2185B;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(233, 30, 99, 0.4);
+    }
+
+    .btn-secondary {
+      background: #F5F5F5;
+      color: #2C2C2C;
+      border: 1px solid #E91E63;
+      font-weight: 500;
+    }
+
+    .btn-secondary:hover {
+      background: #E91E63;
+      color: white;
+      border-color: #E91E63;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #6c757d;
+      border: 1px solid #6c757d;
+      font-weight: 500;
+    }
+
+    .btn-outline:hover {
+      background: #6c757d;
+      color: white;
+      border-color: #6c757d;
+    }
+
+    .btn-icon {
+      font-size: 1rem;
+    }
+
+    .medico-info {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .medico-nombre {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 1rem;
+    }
+
+    .medico-especialidad {
+      color: #6c757d;
+      font-size: 0.875rem;
+      font-style: italic;
+    }
+
+    @media (max-width: 1024px) {
+      .form-container {
+        max-width: 95%;
+        padding: 0 1rem;
+      }
+      
+      .form-section {
+        padding: 1.5rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      
+      .form-container {
+        padding: 0 1rem;
+        max-width: 100%;
+      }
+      
+      .form-section {
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      
+      .page-header {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      
+      .page-header h1 {
+        font-size: 1.5rem;
+      }
+    }
+  `]
+})
+export class NuevaConsultaComponent implements OnInit {
+  consultaForm: ConsultaFormData = {
+    paciente_id: 0,
+    medico_id: 0,
+    motivo_consulta: '',
+    tipo_consulta: 'primera_vez',
+    fecha_pautada: '',
+    hora_pautada: '',
+    observaciones: '',
+    duracion_estimada: 30,
+    prioridad: 'normal'
+  };
+  
+  pacientes: Patient[] = [];
+  medicos: Medico[] = [];
+  isSubmitting = false;
+  currentUser: any = null;
+
+  constructor(
+    private consultaService: ConsultaService,
+    private patientService: PatientService,
+    private medicoService: MedicoService,
+    private authService: AuthService
+  ) {}
+
+  ngOnInit(): void {
+    // Cargar usuario actual
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+      console.log('👤 Usuario actual:', this.currentUser);
+      
+      // Si es médico, asignar automáticamente su ID
+      if (this.currentUser?.rol === 'medico') {
+        this.consultaForm.medico_id = this.currentUser.medico_id;
+        console.log('👨‍⚕️ Médico asignado automáticamente:', this.consultaForm.medico_id);
+      }
+    });
+    
+    this.loadPacientes();
+    this.loadMedicos();
+  }
+
+  loadPacientes(): void {
+    this.patientService.getPatientsByMedicoForStats(null).subscribe({
+      next: (pacientes: Patient[]) => {
+        this.pacientes = pacientes || [];
+        console.log('📋 Pacientes cargados:', this.pacientes.length);
+      },
+      error: (error: any) => {
+        console.error('Error loading pacientes:', error);
+      }
+    });
+  }
+
+  loadMedicos(): void {
+    this.medicoService.getAllMedicos().subscribe({
+      next: (response) => {
+        this.medicos = response.data || [];
+        console.log('👨‍⚕️ Médicos cargados:', this.medicos.length);
+      },
+      error: (error) => {
+        console.error('Error loading medicos:', error);
+      }
+    });
+  }
+
+  createConsulta(): void {
+    if (this.isSubmitting) return;
+
+    // Validaciones básicas
+    if (!this.consultaForm.paciente_id || this.consultaForm.paciente_id === 0) {
+      alert('Por favor seleccione un paciente');
+      return;
+    }
+    // Solo validar selección de médico si es administrador
+    if (this.currentUser?.rol === 'administrador' && (!this.consultaForm.medico_id || this.consultaForm.medico_id === 0)) {
+      alert('Por favor seleccione un médico');
+      return;
+    }
+    if (!this.consultaForm.motivo_consulta.trim()) {
+      alert('Por favor ingrese el motivo de la consulta');
+      return;
+    }
+    if (!this.consultaForm.fecha_pautada) {
+      alert('Por favor seleccione una fecha');
+      return;
+    }
+    if (!this.consultaForm.hora_pautada) {
+      alert('Por favor seleccione una hora');
+      return;
+    }
+
+    this.isSubmitting = true;
+
+    this.consultaService.createConsulta(this.consultaForm).subscribe({
+      next: (response) => {
+        if (response.success) {
+          alert('Consulta creada exitosamente');
+          this.resetForm();
+          // La navegación se maneja con routerLink en el template
+        } else {
+          alert('Error al crear la consulta: ' + (response.error?.message || 'Error desconocido'));
+        }
+        this.isSubmitting = false;
+      },
+      error: (error) => {
+        console.error('Error creating consulta:', error);
+        alert('Error al crear la consulta: ' + (error.error?.message || 'Error de conexión'));
+        this.isSubmitting = false;
+      }
+    });
+  }
+
+  resetForm(): void {
+    // Resetear formulario a valores iniciales
+    this.consultaForm = {
+      paciente_id: 0,
+      medico_id: this.currentUser?.rol === 'medico' ? this.currentUser.medico_id : 0,
+      motivo_consulta: '',
+      tipo_consulta: 'primera_vez',
+      fecha_pautada: '',
+      hora_pautada: '',
+      observaciones: '',
+      duracion_estimada: 30,
+      prioridad: 'normal'
+    };
+    
+    // Resetear estado de envío
+    this.isSubmitting = false;
+    
+    console.log('🧹 Formulario limpiado completamente');
+  }
+
+}

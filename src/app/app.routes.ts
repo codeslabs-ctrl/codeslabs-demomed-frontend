@@ -60,6 +60,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'admin/consultas/nueva',
+    loadComponent: () => import('./pages/admin/nueva-consulta/nueva-consulta.component').then(m => m.NuevaConsultaComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'admin/mensajes',
     loadComponent: () => import('./pages/admin/mensajes/mensajes.component').then(m => m.MensajesComponent),
     canActivate: [authGuard]

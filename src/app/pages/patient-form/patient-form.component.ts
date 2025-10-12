@@ -5,8 +5,10 @@ import { FormsModule } from '@angular/forms';
 import { PatientService } from '../../services/patient.service';
 import { HistoricoService, HistoricoWithDetails } from '../../services/historico.service';
 import { ArchivoService } from '../../services/archivo.service';
+import { AuthService } from '../../services/auth.service';
 import { Patient } from '../../models/patient.model';
 import { ArchivoAnexo } from '../../models/archivo.model';
+import { User } from '../../models/user.model';
 import { FileUploadComponent } from '../../components/file-upload/file-upload.component';
 import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-text-editor.component';
 
@@ -18,9 +20,9 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
     <div class="patient-form-page">
       <div class="page-header">
         <h1>{{ isEdit ? 'Editar Paciente' : 'Nuevo Paciente' }}</h1>
-        <a routerLink="/patients" class="btn btn-secondary">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()">
           ← Volver a Pacientes
-        </a>
+        </button>
       </div>
 
       <form class="patient-form" (ngSubmit)="onSubmit()" #patientForm="ngForm">
@@ -181,13 +183,13 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
           </div>
         </div>
 
-        <div class="form-section">
+        <div class="form-section" *ngIf="isEdit">
           <h3>Información Médica</h3>
           <div class="form-group">
             <label class="form-label">Motivo de Consulta *</label>
             <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
               <app-rich-text-editor
-                *ngIf="!loading && historicoDataReady"
+                *ngIf="!loading"
                 [value]="patient.motivo_consulta || ''"
                 placeholder="Describa el motivo de la consulta"
                 (valueChange)="onMotivoConsultaChange($event)">
@@ -198,7 +200,7 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
             <label class="form-label">Diagnóstico</label>
             <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
               <app-rich-text-editor
-                *ngIf="!loading && historicoDataReady"
+                *ngIf="!loading"
                 [value]="patient.diagnostico || ''"
                 placeholder="Diagnóstico médico"
                 (valueChange)="onDiagnosticoChange($event)">
@@ -209,7 +211,7 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
             <label class="form-label">Conclusiones</label>
             <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
               <app-rich-text-editor
-                *ngIf="!loading && historicoDataReady"
+                *ngIf="!loading"
                 [value]="patient.conclusiones || ''"
                 placeholder="Conclusiones y recomendaciones"
                 (valueChange)="onConclusionesChange($event)">
@@ -220,7 +222,7 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
             <label class="form-label">Plan de Tratamiento</label>
             <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
               <app-rich-text-editor
-                *ngIf="!loading && historicoDataReady"
+                *ngIf="!loading"
                 [value]="patient.plan || ''"
                 placeholder="Plan de acciones a seguir en el tratamiento del paciente"
                 (valueChange)="onPlanChange($event)">
@@ -260,7 +262,7 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
 
       <!-- Sección de Archivos Anexos Existentes (solo en modo edición) -->
       <div class="form-section" *ngIf="isEdit && archivos.length > 0">
-        <h3>Archivos Anexos Existentes</h3>
+        <h3 class="archivos-title">Archivos Anexos Existentes</h3>
         <div class="archivos-container">
           <div class="archivo-item-enhanced" *ngFor="let archivo of archivos">
             <div class="archivo-header">
@@ -270,7 +272,7 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
               <div class="archivo-info">
                 <div class="archivo-nombre">{{ archivo.nombre_original }}</div>
                 <div class="archivo-descripcion" *ngIf="archivo.descripcion">
-                  📝 {{ archivo.descripcion }}
+                  <i class="fas fa-file-alt"></i> {{ archivo.descripcion }}
                 </div>
                 <div class="archivo-meta">
                   <span class="archivo-tipo">{{ getFileType(archivo.tipo_mime) }}</span>
@@ -301,17 +303,7 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
       </div>
 
       <!-- Componente de archivos anexos -->
-      <div class="form-section" *ngIf="!canUploadFiles()">
-        <div class="info-message">
-          <h3>📁 Archivos Anexos</h3>
-          <p *ngIf="!isEdit">
-            <strong>Para subir archivos:</strong> Primero debes crear el paciente y su historia médica.
-          </p>
-          <p *ngIf="isEdit && !historico">
-            <strong>Para subir archivos:</strong> Selecciona una historia clínica existente.
-          </p>
-        </div>
-      </div>
+      <!-- Sección de Archivos Anexos eliminada - solo se mantiene "Archivos Anexos Existentes" -->
 
       <app-file-upload 
         *ngIf="canUploadFiles()" 
@@ -358,6 +350,10 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
       margin-bottom: 1rem;
       padding-bottom: 0.5rem;
       border-bottom: 2px solid #e5e7eb;
+    }
+
+    .archivos-title {
+      margin-top: 2rem !important;
     }
 
     .form-grid {
@@ -710,6 +706,7 @@ export class PatientFormComponent implements OnInit {
     private patientService: PatientService,
     private historicoService: HistoricoService,
     private archivoService: ArchivoService,
+    private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
@@ -731,6 +728,9 @@ export class PatientFormComponent implements OnInit {
         next: (response) => {
           if (response.success) {
             this.patient = response.data;
+            // Inicializar historicoDataReady para modo edición
+            this.historicoDataReady = true;
+            this.editorKey++;
             this.loadHistoricos();
           }
           this.loading = false;
@@ -892,6 +892,7 @@ export class PatientFormComponent implements OnInit {
 
   updateMedicalData() {
     if (this.historico && this.historico.id) {
+      // Actualizar historia médica existente
       const medicalData = {
         motivo_consulta: this.patient.motivo_consulta,
         diagnostico: this.patient.diagnostico,
@@ -899,29 +900,85 @@ export class PatientFormComponent implements OnInit {
         plan: this.patient.plan
       };
       
-      // Actualizar el historico médico
+      console.log('🔄 Actualizando historia médica existente:', this.historico.id);
       this.historicoService.updateHistorico(this.historico.id, medicalData).subscribe({
         next: (response) => {
           if (response.success) {
-            console.log('Datos médicos actualizados correctamente');
+            console.log('✅ Datos médicos actualizados correctamente');
             this.router.navigate(['/patients']);
           } else {
-            console.error('Error actualizando datos médicos:', response.error);
+            console.error('❌ Error actualizando datos médicos:', response.error);
             alert('Error al actualizar los datos médicos');
           }
         },
         error: (error) => {
-          console.error('Error actualizando datos médicos:', error);
+          console.error('❌ Error actualizando datos médicos:', error);
           alert('Error al actualizar los datos médicos');
         }
       });
     } else {
-      // Si no hay historico, navegar directamente
+      // Si no hay historico, crear nueva historia médica
+      console.log('🔄 No hay historia médica existente, creando nueva...');
+      this.createNewMedicalHistory();
+    }
+  }
+
+  createNewMedicalHistory() {
+    if (this.patientId) {
+      // Obtener el medico_id del usuario autenticado
+      const currentUser = this.authService.getCurrentUser();
+      const medicoId = currentUser?.medico_id;
+      
+      if (!medicoId) {
+        console.error('❌ No se encontró medico_id en el usuario autenticado');
+        console.error('❌ Usuario actual:', currentUser);
+        alert('Error: No se pudo identificar el médico');
+        return;
+      }
+
+      const medicalData = {
+        paciente_id: this.patientId,
+        medico_id: medicoId,
+        motivo_consulta: this.patient.motivo_consulta || '',
+        diagnostico: this.patient.diagnostico || '',
+        conclusiones: this.patient.conclusiones || '',
+        plan: this.patient.plan || '',
+        fecha_consulta: new Date().toISOString().split('T')[0] // Fecha actual
+      };
+      
+      console.log('🔄 Creando nueva historia médica:', medicalData);
+      console.log('🔍 Datos enviados al backend:', JSON.stringify(medicalData, null, 2));
+      
+      this.historicoService.createHistorico(medicalData).subscribe({
+        next: (response) => {
+          console.log('✅ Respuesta del backend:', response);
+          if (response.success) {
+            console.log('✅ Nueva historia médica creada correctamente');
+            this.router.navigate(['/patients']);
+          } else {
+            console.error('❌ Error creando historia médica:', response.error);
+            alert('Error al crear la historia médica: ' + (response.error?.message || 'Error desconocido'));
+          }
+        },
+        error: (error) => {
+          console.error('❌ Error creando historia médica:', error);
+          console.error('❌ Error completo:', error);
+          console.error('❌ Error status:', error.status);
+          console.error('❌ Error message:', error.message);
+          if (error.error) {
+            console.error('❌ Error details:', error.error);
+          }
+          alert('Error al crear la historia médica: ' + (error.error?.message || error.message || 'Error desconocido'));
+        }
+      });
+    } else {
+      console.error('❌ No hay patientId para crear historia médica');
       this.router.navigate(['/patients']);
     }
   }
 
   onCancel() {
+    console.log('🔄 onCancel() ejecutado - navegando a /patients');
     this.router.navigate(['/patients']);
   }
 
@@ -986,7 +1043,12 @@ export class PatientFormComponent implements OnInit {
   // Método para manejar la actualización de archivos
   onFilesUpdated(archivos: any[]) {
     console.log('Archivos actualizados:', archivos);
-    // Aquí podrías agregar lógica adicional si es necesario
+    // Actualizar la lista de archivos para mostrar la sección "Archivos Anexos Existentes"
+    this.archivos = archivos;
+    // Recargar archivos desde el backend para obtener datos completos
+    if (this.historico && this.historico.id) {
+      this.loadArchivos(this.historico.id);
+    }
   }
 
   // Método para validar cédula venezolana
@@ -1173,12 +1235,12 @@ export class PatientFormComponent implements OnInit {
   }
 
   getFileIcon(tipoMime: string): string {
-    if (tipoMime.startsWith('image/')) return '🖼️';
-    if (tipoMime.startsWith('application/pdf')) return '📄';
-    if (tipoMime.includes('word')) return '📝';
-    if (tipoMime.includes('excel') || tipoMime.includes('spreadsheet')) return '📊';
-    if (tipoMime.includes('zip') || tipoMime.includes('rar')) return '📦';
-    return '📎';
+    if (tipoMime.startsWith('image/')) return '<i class="fas fa-file-image"></i>';
+    if (tipoMime.startsWith('application/pdf')) return '<i class="fas fa-file-pdf"></i>';
+    if (tipoMime.includes('word')) return '<i class="fas fa-file-word"></i>';
+    if (tipoMime.includes('excel') || tipoMime.includes('spreadsheet')) return '<i class="fas fa-file-excel"></i>';
+    if (tipoMime.includes('zip') || tipoMime.includes('rar')) return '<i class="fas fa-file-archive"></i>';
+    return '<i class="fas fa-file"></i>';
   }
 
   formatFileSize(bytes: number): string {

@@ -124,22 +124,8 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
                     <label>Conclusiones</label>
                 <div class="info-text" [innerHTML]="historico?.conclusiones || patient.conclusiones"></div>
               </div>
-              <div class="info-item full-width" *ngIf="historico?.antecedentes_medicos || patient.antecedentes_medicos">
-                <label>Antecedentes Médicos</label>
-                <div class="info-text" [innerHTML]="historico?.antecedentes_medicos || patient.antecedentes_medicos"></div>
-              </div>
-              <div class="info-item full-width" *ngIf="historico?.medicamentos || patient.medicamentos">
-                <label>Medicamentos</label>
-                <div class="info-text" [innerHTML]="historico?.medicamentos || patient.medicamentos"></div>
-              </div>
-              <div class="info-item full-width" *ngIf="historico?.alergias || patient.alergias">
-                <label>Alergias</label>
-                <div class="info-text" [innerHTML]="historico?.alergias || patient.alergias"></div>
-              </div>
-              <div class="info-item full-width" *ngIf="historico?.observaciones || patient.observaciones">
-                <label>Observaciones</label>
-                <div class="info-text" [innerHTML]="historico?.observaciones || patient.observaciones"></div>
-                  </div>
+              <!-- Campos removidos: antecedentes_medicos, medicamentos, alergias, observaciones -->
+              <!-- Estos campos no existen en la estructura actual de la base de datos -->
               <div class="info-item full-width" *ngIf="patient.plan">
                     <label>Plan de Tratamiento</label>
                 <div class="info-text" [innerHTML]="patient.plan"></div>
@@ -870,33 +856,8 @@ export class PatientDetailComponent implements OnInit {
         </div>
         ` : ''}
         
-        ${(this.historico?.antecedentes_medicos || this.patient.antecedentes_medicos) ? `
-        <div class="section">
-          <h3>Antecedentes Médicos</h3>
-          <div>${this.historico?.antecedentes_medicos || this.patient.antecedentes_medicos}</div>
-        </div>
-        ` : ''}
-        
-        ${(this.historico?.medicamentos || this.patient.medicamentos) ? `
-        <div class="section">
-          <h3>Medicamentos</h3>
-          <div>${this.historico?.medicamentos || this.patient.medicamentos}</div>
-        </div>
-        ` : ''}
-        
-        ${(this.historico?.alergias || this.patient.alergias) ? `
-        <div class="section">
-          <h3>Alergias</h3>
-          <div>${this.historico?.alergias || this.patient.alergias}</div>
-        </div>
-        ` : ''}
-        
-        ${(this.historico?.observaciones || this.patient.observaciones) ? `
-        <div class="section">
-          <h3>Observaciones</h3>
-          <div>${this.historico?.observaciones || this.patient.observaciones}</div>
-        </div>
-        ` : ''}
+        <!-- Campos removidos: antecedentes_medicos, medicamentos, alergias, observaciones -->
+        <!-- Estos campos no existen en la estructura actual de la base de datos -->
         
         ${this.patient.plan ? `
         <div class="section">

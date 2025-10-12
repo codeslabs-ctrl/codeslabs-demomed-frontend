@@ -12,10 +12,6 @@ export interface Patient {
   motivo_consulta: string;
   diagnostico?: string;
   conclusiones?: string;
-  antecedentes_medicos?: string;
-  medicamentos?: string;
-  alergias?: string;
-  observaciones?: string;
   fecha_creacion: string;
   fecha_actualizacion: string;
   historico_id?: number; // ID del historial médico asociado

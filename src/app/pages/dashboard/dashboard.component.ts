@@ -179,7 +179,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
               <div class="action-description">Administrar médicos y especialidades</div>
             </div>
           </a>
-
+          
           <a routerLink="/admin/consultas" class="action-card">
             <div class="action-icon consultas">
               <svg viewBox="0 0 24 24" fill="currentColor">
@@ -187,11 +187,11 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
               </svg>
             </div>
             <div class="action-content">
-              <div class="action-title">Gestionar Consultas</div>
+              <div class="action-title">Gestión de Consultas</div>
               <div class="action-description">Administrar citas y consultas</div>
             </div>
           </a>
-
+          
           <a routerLink="/admin/remisiones" class="action-card">
             <div class="action-icon remisiones">
               <svg viewBox="0 0 24 24" fill="currentColor">
@@ -209,8 +209,8 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       <div *ngIf="loading" class="loading">
         <div class="spinner"></div>
         <p>Cargando datos...</p>
-      </div>
-    </div>
+            </div>
+            </div>
 
     <!-- Modal Ver Consulta -->
     <div *ngIf="showVerModal" class="modal-overlay" (click)="closeVerModal()">
@@ -218,7 +218,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
         <div class="modal-header">
           <h3>Detalles de la Consulta</h3>
           <button class="close-btn" (click)="closeVerModal()">×</button>
-        </div>
+          </div>
         <div class="modal-body" *ngIf="selectedConsulta">
           <div class="consulta-details">
             <div class="detail-section">
@@ -233,8 +233,8 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
                 <div class="detail-item">
                   <strong>Teléfono:</strong> {{ selectedConsulta.paciente_telefono }}
                 </div>
-              </div>
-            </div>
+        </div>
+      </div>
 
             <div class="detail-section">
               <h4>Información Médica</h4>
@@ -382,8 +382,8 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
         <div class="modal-footer">
           <button class="btn btn-secondary" (click)="closeCancelarModal()">Cancelar</button>
           <button class="btn btn-danger" (click)="confirmarCancelar()" 
-                  [disabled]="!motivoCancelacion || (motivoCancelacion === 'otro' && !motivoCancelacionOtro.trim())">
-            Confirmar Cancelación
+                  [disabled]="!motivoCancelacion || (motivoCancelacion === 'otro' && !motivoCancelacionOtro.trim()) || isSubmitting">
+            {{isSubmitting ? 'Cancelando...' : 'Confirmar Cancelación'}}
           </button>
         </div>
       </div>
@@ -1427,7 +1427,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       .stat-card {
         padding: 1rem;
         flex-direction: column;
-        text-align: center;
+      text-align: center;
         gap: 0.5rem;
       }
 
@@ -1512,6 +1512,7 @@ export class DashboardComponent implements OnInit {
   motivoCancelacion = '';
   motivoCancelacionOtro = '';
   detallesCancelacion = '';
+  isSubmitting = false;
 
   constructor(
     private patientService: PatientService,
@@ -1522,7 +1523,7 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
-    this.loadDashboardData();
+      this.loadDashboardData();
   }
 
   loadDashboardData(): void {
@@ -1645,6 +1646,7 @@ export class DashboardComponent implements OnInit {
     this.motivoCancelacion = '';
     this.motivoCancelacionOtro = '';
     this.detallesCancelacion = '';
+    this.isSubmitting = false;
     this.showCancelarModal = true;
   }
 
@@ -1700,15 +1702,19 @@ export class DashboardComponent implements OnInit {
       motivoFinal = this.motivoCancelacionOtro;
     }
 
+    this.isSubmitting = true;
+
     this.consultaService.cancelarConsulta(this.selectedConsulta.id!, motivoFinal).subscribe({
       next: (response) => {
         alert('Consulta cancelada exitosamente');
         this.closeCancelarModal();
         this.loadConsultasDelDia();
+        this.isSubmitting = false;
       },
       error: (error) => {
         console.error('Error cancelando consulta:', error);
         alert('Error al cancelar la consulta');
+        this.isSubmitting = false;
       }
     });
   }

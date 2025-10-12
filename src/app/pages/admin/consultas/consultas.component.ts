@@ -1,25 +1,23 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
 import { ConsultaService } from '../../../services/consulta.service';
-import { PatientService } from '../../../services/patient.service';
 import { MedicoService } from '../../../services/medico.service';
 import { AuthService } from '../../../services/auth.service';
-import { ConsultaWithDetails, ConsultaFilters, ConsultaFormData } from '../../../models/consulta.model';
-import { Patient } from '../../../models/patient.model';
+import { ConsultaWithDetails, ConsultaFilters } from '../../../models/consulta.model';
 import { Medico } from '../../../services/medico.service';
 
 @Component({
   selector: 'app-consultas',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="consultas-page">
       <!-- Header -->
       <div class="page-header">
         <h1>Gestión de Consultas</h1>
-        <button class="btn btn-primary" (click)="showConsultaForm = true">
+        <button class="btn btn-primary" (click)="navigateToNuevaConsulta()">
           ➕ Nueva Consulta
         </button>
       </div>
@@ -134,9 +132,14 @@ import { Medico } from '../../../services/medico.service';
                   </div>
                 </td>
                 <td>
-                  <span class="estado-badge estado-{{ consulta.estado_consulta }}">
-                    {{ getEstadoText(consulta.estado_consulta) }}
-                  </span>
+                  <div class="estado-container">
+                    <span class="estado-badge estado-{{ consulta.estado_consulta }}">
+                      {{ getEstadoText(consulta.estado_consulta) }}
+                    </span>
+                    <span *ngIf="isConsultaExpirada(consulta)" class="expirada-badge" title="Consulta expirada">
+                      ⏰ Expirada
+                    </span>
+                  </div>
                 </td>
                 <td>
                   <span class="prioridad-badge prioridad-{{ consulta.prioridad || 'normal' }}">
@@ -157,12 +160,18 @@ import { Medico } from '../../../services/medico.service';
                       <span class="btn-icon">👁️</span>
                       <span class="btn-text">Ver</span>
                     </button>
-                    <button class="action-btn btn-edit" (click)="editarConsulta(consulta)" title="Editar">
+                    <button 
+                      *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada'"
+                      class="action-btn btn-edit" 
+                      [class.disabled]="isConsultaExpirada(consulta)"
+                      [disabled]="isConsultaExpirada(consulta)"
+                      (click)="editarConsulta(consulta)" 
+                      [title]="isConsultaExpirada(consulta) ? 'No se puede editar consultas expiradas' : 'Editar'">
                       <span class="btn-icon">✏️</span>
                       <span class="btn-text">Editar</span>
                     </button>
                     <button 
-                      *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada'"
+                      *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada' || consulta.estado_consulta === 'por_agendar'"
                       class="action-btn btn-reschedule" 
                       (click)="reagendarConsulta(consulta)" 
                       title="Reagendar">
@@ -435,8 +444,10 @@ import { Medico } from '../../../services/medico.service';
             <button 
               class="btn btn-danger" 
               (click)="confirmarCancelar()"
-              [disabled]="!motivoCancelacion || (motivoCancelacion === 'otro' && !detallesCancelacion.trim())">
-              Cancelar Consulta
+              [disabled]="!motivoCancelacion || (motivoCancelacion === 'otro' && !detallesCancelacion.trim()) || isSubmitting">
+              <span *ngIf="isSubmitting" class="btn-icon">⏳</span>
+              <span *ngIf="!isSubmitting" class="btn-icon">🚫</span>
+              <span class="btn-text">{{isSubmitting ? 'Cancelando...' : 'Cancelar Consulta'}}</span>
             </button>
           </div>
         </div>
@@ -490,6 +501,7 @@ import { Medico } from '../../../services/medico.service';
           </div>
         </div>
       </div>
+
     </div>
   `,
   styles: [`
@@ -518,28 +530,29 @@ import { Medico } from '../../../services/medico.service';
     }
 
     .btn-primary {
-      background: #3b82f6;
+      background: #E91E63;
       color: white;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+      font-weight: 500;
     }
 
     .btn-primary:hover {
-      background: #2563eb;
-      transform: translateY(-1px);
+      background: #C2185B;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(233, 30, 99, 0.4);
     }
 
     .btn-secondary {
-      background: #6b7280;
-      color: white;
+      background: #F5F5F5;
+      color: #2C2C2C;
+      border: 1px solid #E91E63;
+      font-weight: 500;
     }
 
     .btn-secondary:hover {
-      background: #4b5563;
+      background: #E91E63;
+      color: white;
+      border-color: #E91E63;
     }
 
     .btn-success {
@@ -820,6 +833,24 @@ import { Medico } from '../../../services/medico.service';
       color: #374151;
     }
 
+    .estado-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      align-items: flex-start;
+    }
+
+    .expirada-badge {
+      background: #fef3c7;
+      color: #92400e;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      font-size: 0.625rem;
+      font-weight: 500;
+      border: 1px solid #f59e0b;
+    }
+
+
     .prioridad-badge {
       display: inline-flex;
       align-items: center;
@@ -895,6 +926,21 @@ import { Medico } from '../../../services/medico.service';
       width: 0.875rem;
       height: 0.875rem;
       font-size: 0.75rem;
+    }
+
+    .action-btn.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #f3f4f6;
+      color: #9ca3af;
+      border-color: #e5e7eb;
+    }
+
+    .action-btn.disabled:hover {
+      background: #f3f4f6;
+      color: #9ca3af;
+      transform: none;
+      box-shadow: none;
     }
 
     .btn-view {
@@ -1228,10 +1274,26 @@ import { Medico } from '../../../services/medico.service';
     .btn-danger {
       background: #dc2626;
       color: white;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .btn-danger:hover {
       background: #b91c1c;
+    }
+    
+    .btn-danger:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+    
+    .btn-icon {
+      font-size: 16px;
+    }
+    
+    .btn-text {
+      font-weight: 500;
     }
 
     .btn-success {
@@ -1259,8 +1321,8 @@ export class ConsultasComponent implements OnInit {
   totalPages = 1;
   itemsPerPage = 10;
 
-  // Propiedades para el formulario
-  showConsultaForm = false;
+  // Lista de médicos para filtros
+  medicos: Medico[] = [];
   selectedConsulta: ConsultaWithDetails | null = null;
 
   // Propiedades para filtros
@@ -1275,9 +1337,10 @@ export class ConsultasComponent implements OnInit {
 
   constructor(
     private consultaService: ConsultaService,
-    private patientService: PatientService,
     private medicoService: MedicoService,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   // Propiedades para modales
@@ -1293,10 +1356,9 @@ export class ConsultasComponent implements OnInit {
   detallesCancelacion = '';
   nuevaFecha = '';
   nuevaHora = '';
+  isSubmitting = false;
 
-  // Lista de médicos para filtros
-  medicos: Medico[] = [];
-
+  // Lista de médicos para filtros (ya declarado arriba)
 
   ngOnInit(): void {
     // Cargar usuario actual
@@ -1349,13 +1411,28 @@ export class ConsultasComponent implements OnInit {
   loadMedicos(): void {
     this.medicoService.getAllMedicos().subscribe({
       next: (response) => {
-        this.medicos = response.data;
+        this.medicos = response.data || [];
+        console.log('👨‍⚕️ Médicos cargados:', this.medicos.length);
       },
       error: (error) => {
         console.error('Error loading medicos:', error);
       }
     });
   }
+
+  navigateToNuevaConsulta(): void {
+    console.log('🔄 Navegando a Nueva Consulta...');
+    this.router.navigate(['/admin/consultas/nueva']).then(success => {
+      if (success) {
+        console.log('✅ Navegación exitosa');
+      } else {
+        console.error('❌ Error en la navegación');
+      }
+    }).catch(error => {
+      console.error('❌ Error de navegación:', error);
+    });
+  }
+
 
   applyFilters(): void {
     this.currentPage = 1;
@@ -1372,6 +1449,7 @@ export class ConsultasComponent implements OnInit {
     this.currentPage = 1;
     this.loadConsultas();
   }
+
 
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
@@ -1398,8 +1476,40 @@ export class ConsultasComponent implements OnInit {
   }
 
   editarConsulta(consulta: ConsultaWithDetails): void {
-    // Implementar lógica de edición
+    // Verificar si la consulta está expirada
+    if (this.isConsultaExpirada(consulta)) {
+      alert('No se puede editar una consulta expirada. Use "Reagendar" para cambiar la fecha/hora.');
+      return;
+    }
+    
+    // Implementar lógica de edición para consultas no expiradas
     console.log('Editar consulta:', consulta);
+    // TODO: Implementar modal de edición
+  }
+
+  // Método para verificar si una consulta está expirada
+  isConsultaExpirada(consulta: ConsultaWithDetails): boolean {
+    if (!consulta.fecha_pautada || !consulta.hora_pautada) {
+      return false;
+    }
+
+    const fechaHoraConsulta = new Date(`${consulta.fecha_pautada}T${consulta.hora_pautada}`);
+    const ahora = new Date();
+    
+    // Una consulta está expirada si la fecha/hora ya pasó
+    const estaExpirada = fechaHoraConsulta < ahora;
+    
+    // Debug logs
+    console.log('🔍 Verificando consulta expirada:', {
+      id: consulta.id,
+      fecha: consulta.fecha_pautada,
+      hora: consulta.hora_pautada,
+      fechaHoraConsulta: fechaHoraConsulta,
+      ahora: ahora,
+      estaExpirada: estaExpirada
+    });
+    
+    return estaExpirada;
   }
 
   reagendarConsulta(consulta: ConsultaWithDetails): void {
@@ -1420,7 +1530,9 @@ export class ConsultasComponent implements OnInit {
     this.selectedConsulta = consulta;
     this.motivoCancelacion = '';
     this.detallesCancelacion = '';
+    this.isSubmitting = false; // Asegurar que esté en false al abrir
     this.showCancelarModal = true;
+    console.log('🔍 Modal de cancelación abierto, isSubmitting:', this.isSubmitting);
   }
 
   // Métodos para cerrar modales
@@ -1440,7 +1552,9 @@ export class ConsultasComponent implements OnInit {
     this.showCancelarModal = false;
     this.motivoCancelacion = '';
     this.detallesCancelacion = '';
+    this.isSubmitting = false; // Resetear al cerrar
     this.selectedConsulta = null;
+    console.log('🔍 Modal de cancelación cerrado, isSubmitting:', this.isSubmitting);
   }
 
   closeReagendarModal(): void {
@@ -1476,6 +1590,8 @@ export class ConsultasComponent implements OnInit {
   }
 
   confirmarCancelar(): void {
+    if (this.isSubmitting) return;
+    
     if (!this.selectedConsulta || !this.motivoCancelacion) {
       return;
     }
@@ -1485,16 +1601,20 @@ export class ConsultasComponent implements OnInit {
       motivoFinal = this.detallesCancelacion;
     }
 
+    this.isSubmitting = true;
+
     this.consultaService.cancelarConsulta(this.selectedConsulta.id, motivoFinal).subscribe({
       next: (response) => {
         console.log('Consulta cancelada:', response);
         this.closeCancelarModal();
         this.loadConsultas();
         alert('Consulta cancelada exitosamente');
+        this.isSubmitting = false;
       },
       error: (error) => {
         console.error('Error cancelando consulta:', error);
         alert('Error al cancelar la consulta');
+        this.isSubmitting = false;
       }
     });
   }
@@ -1504,15 +1624,28 @@ export class ConsultasComponent implements OnInit {
       return;
     }
 
-    // Implementar lógica de reagendamiento
-    console.log('Reagendar consulta:', {
-      consulta: this.selectedConsulta,
+    console.log('🔄 Reagendando consulta:', {
+      consultaId: this.selectedConsulta.id,
       nuevaFecha: this.nuevaFecha,
       nuevaHora: this.nuevaHora
     });
 
-    this.closeReagendarModal();
-    alert('Funcionalidad de reagendamiento en desarrollo');
+    this.consultaService.reagendarConsulta(
+      this.selectedConsulta.id!, 
+      this.nuevaFecha, 
+      this.nuevaHora
+    ).subscribe({
+      next: (response) => {
+        console.log('✅ Consulta reagendada exitosamente:', response);
+        this.closeReagendarModal();
+        this.loadConsultas();
+        alert('Consulta reagendada exitosamente');
+      },
+      error: (error) => {
+        console.error('❌ Error reagendando consulta:', error);
+        alert('Error al reagendar la consulta');
+      }
+    });
   }
 
   // Métodos de utilidad
