@@ -165,9 +165,10 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
             </span>
           </h3>
           
+          
           <!-- Selector de Historias Clínicas -->
           <div class="history-selector" *ngIf="historicos.length > 1">
-            <label for="historico-select">Seleccionar Historia Clínica:</label>
+            <label for="historico-select">Seleccionar Historia Clínica para Contexto:</label>
             <select 
               id="historico-select" 
               class="form-control" 
@@ -177,6 +178,10 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
                 {{ getHistoricoDisplayText(h) }}
               </option>
             </select>
+            <div class="history-note" *ngIf="shouldCreateNewHistory">
+              <span class="note-icon">ℹ️</span>
+              <span class="note-text">Mostrando historia anterior para contexto. Se creará una nueva historia para el médico actual.</span>
+            </div>
           </div>
 
           <!-- Información básica de la Historia Seleccionada -->
@@ -186,7 +191,7 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
               <span>{{ formatDate(historico.fecha_consulta) }}</span>
             </div>
             <div class="info-item" *ngIf="historico.nombre_medico">
-              <label>Médico:</label>
+              <label>Médico Tratante:</label>
               <span>{{ historico.nombre_medico }}</span>
             </div>
           </div>
@@ -605,6 +610,29 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
       border-left: 3px solid #f5576c;
     }
 
+
+    .history-note {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      padding: 0.75rem;
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      color: #92400e;
+    }
+
+    .note-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .note-text {
+      flex: 1;
+    }
+
     /* Estilos para archivos anexos mejorados */
     .archivos-container {
       display: flex;
@@ -814,6 +842,10 @@ export class PatientFormComponent implements OnInit {
   historicos: HistoricoWithDetails[] = [];
   historico: HistoricoWithDetails | null = null;
   archivos: ArchivoAnexo[] = [];
+  
+  // Variables para lógica de médico
+  currentMedicoId: number | null = null;
+  shouldCreateNewHistory = false;
 
   constructor(
     private patientService: PatientService,
@@ -825,6 +857,11 @@ export class PatientFormComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    // Obtener el médico actual del usuario autenticado
+    const currentUser = this.authService.getCurrentUser();
+    this.currentMedicoId = currentUser?.medico_id || null;
+    console.log('🔍 Médico actual:', this.currentMedicoId);
+    
     this.route.params.subscribe(params => {
       if (params['id']) {
         this.patientId = +params['id'];
@@ -862,11 +899,24 @@ export class PatientFormComponent implements OnInit {
         next: (response) => {
           if (response.success && response.data) {
             this.historicos = response.data;
-            // Seleccionar la más reciente por defecto
-            if (this.historicos.length > 0) {
+            
+            // Verificar si hay una historia del médico actual
+            const currentMedicoHistory = this.historicos.find(h => h.medico_id === this.currentMedicoId);
+            
+            if (currentMedicoHistory) {
+              // Si existe una historia del médico actual, usarla
+              this.historico = currentMedicoHistory;
+              this.shouldCreateNewHistory = false;
+              console.log('✅ Usando historia existente del médico actual:', this.currentMedicoId);
+            } else if (this.historicos.length > 0) {
+              // Si no hay historia del médico actual, mostrar la más reciente pero marcar para crear nueva
               this.historico = this.historicos[0];
-              
-              // Cargar automáticamente los datos médicos de la primera historia
+              this.shouldCreateNewHistory = true;
+              console.log('⚠️ No hay historia del médico actual, se creará nueva. Historia mostrada:', this.historicos[0].medico_id);
+            }
+            
+            // Cargar datos médicos de la historia seleccionada
+            if (this.historico) {
               this.patient.motivo_consulta = this.historico.motivo_consulta || '';
               this.patient.diagnostico = this.historico.diagnostico || '';
               this.patient.conclusiones = this.historico.conclusiones || '';
@@ -1040,8 +1090,12 @@ export class PatientFormComponent implements OnInit {
   }
 
   updateMedicalData() {
-    if (this.historico && this.historico.id) {
-      // Actualizar historia médica existente
+    if (this.shouldCreateNewHistory) {
+      // Crear nueva historia médica para el médico actual
+      console.log('🆕 Creando nueva historia médica para médico:', this.currentMedicoId);
+      this.createNewMedicalHistory();
+    } else if (this.historico && this.historico.id) {
+      // Actualizar historia médica existente del mismo médico
       const medicalData = {
         motivo_consulta: this.patient.motivo_consulta,
         diagnostico: this.patient.diagnostico,
@@ -1275,6 +1329,7 @@ export class PatientFormComponent implements OnInit {
       }
     });
   }
+
 
   // Algoritmo de validación de cédula venezolana
   private validateVenezuelanCedula(cedula: string): boolean {

@@ -77,7 +77,7 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
                 <span>{{ patient.telefono }}</span>
               </div>
               <div class="info-item" *ngIf="getLastMedicoTratante()">
-                <label>Último Médico Tratante</label>
+                <label>Médico Tratante</label>
                 <span class="medico-info">
                   👨‍⚕️ {{ getLastMedicoTratante() }}
                 </span>

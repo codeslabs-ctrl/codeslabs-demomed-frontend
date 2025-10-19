@@ -135,7 +135,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
                 👁️ Ver
               </button>
               <button class="btn btn-history" (click)="addHistoria(consulta)"
-                      *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada'">
+                      *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada') && currentUser?.rol === 'medico'">
                 📝 Historia Paciente
               </button>
               <button class="btn btn-success" (click)="finalizarConsulta(consulta)" 
