@@ -113,4 +113,30 @@ export class ConsultaService {
   }>> {
     return this.http.get<ApiResponse<any>>(`${this.baseUrl}/estadisticas`);
   }
+
+  // Obtener estadísticas de consultas por período
+  getEstadisticasPorPeriodo(fechaInicio: string, fechaFin: string): Observable<ApiResponse<{ estado: string; total: number }[]>> {
+    const params = new HttpParams()
+      .set('fecha_inicio', fechaInicio)
+      .set('fecha_fin', fechaFin);
+    
+    return this.http.get<ApiResponse<{ estado: string; total: number }[]>>(`${this.baseUrl}/estadisticas-por-periodo`, { params });
+  }
+
+  // Obtener estadísticas de consultas por especialidad
+  getEstadisticasPorEspecialidad(fechaInicio: string, fechaFin: string): Observable<ApiResponse<{ especialidad: string; total: number }[]>> {
+    const params = new HttpParams()
+      .set('fecha_inicio', fechaInicio)
+      .set('fecha_fin', fechaFin);
+    
+    return this.http.get<ApiResponse<{ especialidad: string; total: number }[]>>(`${this.baseUrl}/estadisticas-por-especialidad`, { params });
+  }
+
+  getEstadisticasPorMedico(fechaInicio: string, fechaFin: string): Observable<ApiResponse<{ medico: string; total: number }[]>> {
+    const params = new HttpParams()
+      .set('fecha_inicio', fechaInicio)
+      .set('fecha_fin', fechaFin);
+    
+    return this.http.get<ApiResponse<{ medico: string; total: number }[]>>(`${this.baseUrl}/estadisticas-por-medico`, { params });
+  }
 }

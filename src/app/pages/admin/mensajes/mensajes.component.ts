@@ -1,19 +1,23 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { MensajeService } from '../../../services/mensaje.service';
 import { MensajeDifusion, MensajeFormData, PacienteParaDifusion } from '../../../models/mensaje.model';
+import { ProgramarMensajeComponent } from './programar-mensaje/programar-mensaje.component';
+import { VerMensajeComponent } from './ver-mensaje/ver-mensaje.component';
+import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-eliminar.component';
 
 @Component({
   selector: 'app-mensajes',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, ProgramarMensajeComponent, VerMensajeComponent, ConfirmarEliminarComponent],
   template: `
     <div class="mensajes-page">
       <div class="page-header">
         <h1>Mensajes de Difusión</h1>
-        <button class="btn btn-primary" (click)="openCreateModal()">
+        <button class="btn btn-new" (click)="openCreateModal()">
           <span>📧</span>
           Nuevo Mensaje
         </button>
@@ -166,14 +170,50 @@ import { MensajeDifusion, MensajeFormData, PacienteParaDifusion } from '../../..
               <!-- Selector de destinatarios -->
               <div class="form-group">
                 <label>Destinatarios *</label>
-                <div class="destinatarios-section">
+                
+                <!-- Destinatarios actuales (solo en modo edición) -->
+                <div *ngIf="editingMensaje" class="destinatarios-actuales">
+                  <div class="destinatarios-header">
+                    <h4>Destinatarios Actuales ({{ destinatariosActuales.length }})</h4>
+                    <button type="button" class="btn btn-sm" (click)="toggleEditDestinatarios()">
+                      {{ editandoDestinatarios ? 'Cancelar' : 'Editar Destinatarios' }}
+                    </button>
+                  </div>
+                  
+                  <div *ngIf="loadingDestinatarios" class="loading-destinatarios">
+                    <div class="spinner"></div>
+                    <span>Cargando destinatarios...</span>
+                  </div>
+                  
+                  <div *ngIf="!loadingDestinatarios && destinatariosActuales.length > 0" class="destinatarios-list">
+                    <div *ngFor="let destinatario of destinatariosActuales" class="destinatario-item">
+                      <div class="destinatario-info">
+                        <strong>{{ destinatario.nombres }} {{ destinatario.apellidos }}</strong>
+                        <small>{{ destinatario.email }}</small>
+                        <small *ngIf="destinatario.cedula">Cédula: {{ destinatario.cedula }}</small>
+                      </div>
+                      <button type="button" class="btn-remove" (click)="removeDestinatario(destinatario.id)" title="Eliminar destinatario">
+                        ❌
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div *ngIf="!loadingDestinatarios && destinatariosActuales.length === 0" class="no-destinatarios">
+                    <span>No hay destinatarios asignados</span>
+                  </div>
+                </div>
+                
+                <!-- Sección para agregar nuevos destinatarios -->
+                <div *ngIf="editandoDestinatarios" class="destinatarios-section">
                   <div class="destinatarios-filters">
                     <input 
                       type="text" 
                       [(ngModel)]="busquedaPacientes"
                       (input)="filterPacientes()"
                       placeholder="Buscar pacientes..."
-                      class="form-input">
+                      class="form-input"
+                      [class.searching]="loadingPacientes"
+                      name="busquedaPacientes">
                     
                     <div class="quick-select">
                       <button type="button" class="btn btn-sm" (click)="selectAllPacientes()">
@@ -189,18 +229,169 @@ import { MensajeDifusion, MensajeFormData, PacienteParaDifusion } from '../../..
                   </div>
 
                   <div class="pacientes-list">
-                    <div class="paciente-item" *ngFor="let paciente of pacientesFiltrados">
-                      <label class="paciente-checkbox">
+                    <!-- Indicador de carga -->
+                    <div *ngIf="loadingPacientes" class="loading-pacientes">
+                      <div class="spinner"></div>
+                      <span>Buscando pacientes...</span>
+                    </div>
+                    
+                    <!-- Mensaje de error -->
+                    <div *ngIf="errorPacientes && !loadingPacientes" class="error-message">
+                      <span>⚠️ {{ errorPacientes }}</span>
+                      <button type="button" class="btn-retry" (click)="loadPacientes()">
+                        🔄 Reintentar
+                      </button>
+                    </div>
+                    
+                    <!-- Tabla de pacientes -->
+                    <div *ngIf="!loadingPacientes && !errorPacientes">
+                      <div *ngIf="pacientesFiltrados.length === 0" class="no-pacientes">
+                        <span>No se encontraron pacientes</span>
+                      </div>
+                      
+                      <div *ngIf="pacientesFiltrados.length > 0" class="pacientes-table-container">
+                        <table class="pacientes-table">
+                          <thead>
+                            <tr>
+                              <th width="50">
+                                <input 
+                                  type="checkbox" 
+                                  [checked]="allSelected"
+                                  (change)="toggleAllPacientes()"
+                                  title="Seleccionar todos">
+                              </th>
+                              <th>Nombre</th>
+                              <th>Email</th>
+                              <th>Cédula</th>
+                              <th>Edad</th>
+                              <th>Sexo</th>
+                              <th>Estado</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let paciente of pacientesFiltrados" class="paciente-row">
+                              <td>
                         <input 
                           type="checkbox" 
                           [checked]="paciente.seleccionado"
                           (change)="togglePaciente(paciente)">
-                        <span class="paciente-info">
+                              </td>
+                              <td>
                           <strong>{{ paciente.nombres }} {{ paciente.apellidos }}</strong>
-                          <small>{{ paciente.email }}</small>
-                          <small *ngIf="paciente.especialidad_nombre">{{ paciente.especialidad_nombre }}</small>
+                              </td>
+                              <td>{{ paciente.email }}</td>
+                              <td>{{ paciente.cedula || '-' }}</td>
+                              <td>{{ paciente.edad || '-' }}</td>
+                              <td>{{ paciente.sexo || '-' }}</td>
+                              <td>
+                                <span [class]="paciente.activo ? 'status-active' : 'status-inactive'">
+                                  {{ paciente.activo ? 'Activo' : 'Inactivo' }}
                         </span>
-                      </label>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="selection-summary">
+                    <strong>{{ getSelectedCount() }} pacientes seleccionados</strong>
+                    <button type="button" class="btn btn-new" (click)="addNuevosDestinatarios()" [disabled]="getSelectedCount() === 0">
+                      ➕ Agregar Seleccionados
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Sección para nuevo mensaje (sin destinatarios actuales) -->
+                <div *ngIf="!editingMensaje" class="destinatarios-section">
+                  <div class="destinatarios-filters">
+                    <input 
+                      type="text" 
+                      [(ngModel)]="busquedaPacientes"
+                      (input)="filterPacientes()"
+                      placeholder="Buscar pacientes..."
+                      class="form-input"
+                      [class.searching]="loadingPacientes"
+                      name="busquedaPacientes">
+                    
+                    <div class="quick-select">
+                      <button type="button" class="btn btn-sm" (click)="selectAllPacientes()">
+                        Seleccionar Todos
+                      </button>
+                      <button type="button" class="btn btn-sm" (click)="selectActivePacientes()">
+                        Solo Activos
+                      </button>
+                      <button type="button" class="btn btn-sm" (click)="clearSelection()">
+                        Limpiar
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="pacientes-list">
+                    <!-- Indicador de carga -->
+                    <div *ngIf="loadingPacientes" class="loading-pacientes">
+                      <div class="spinner"></div>
+                      <span>Buscando pacientes...</span>
+                    </div>
+                    
+                    <!-- Mensaje de error -->
+                    <div *ngIf="errorPacientes && !loadingPacientes" class="error-message">
+                      <span>⚠️ {{ errorPacientes }}</span>
+                      <button type="button" class="btn-retry" (click)="loadPacientes()">
+                        🔄 Reintentar
+                      </button>
+                    </div>
+                    
+                    <!-- Tabla de pacientes -->
+                    <div *ngIf="!loadingPacientes && !errorPacientes">
+                      <div *ngIf="pacientesFiltrados.length === 0" class="no-pacientes">
+                        <span>No se encontraron pacientes</span>
+                      </div>
+                      
+                      <div *ngIf="pacientesFiltrados.length > 0" class="pacientes-table-container">
+                        <table class="pacientes-table">
+                          <thead>
+                            <tr>
+                              <th width="50">
+                                <input 
+                                  type="checkbox" 
+                                  [checked]="allSelected"
+                                  (change)="toggleAllPacientes()"
+                                  title="Seleccionar todos">
+                              </th>
+                              <th>Nombre</th>
+                              <th>Email</th>
+                              <th>Cédula</th>
+                              <th>Edad</th>
+                              <th>Sexo</th>
+                              <th>Estado</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let paciente of pacientesFiltrados" class="paciente-row">
+                              <td>
+                                <input 
+                                  type="checkbox" 
+                                  [checked]="paciente.seleccionado"
+                                  (change)="togglePaciente(paciente)">
+                              </td>
+                              <td>
+                                <strong>{{ paciente.nombres }} {{ paciente.apellidos }}</strong>
+                              </td>
+                              <td>{{ paciente.email }}</td>
+                              <td>{{ paciente.cedula || '-' }}</td>
+                              <td>{{ paciente.edad || '-' }}</td>
+                              <td>{{ paciente.sexo || '-' }}</td>
+                              <td>
+                                <span [class]="paciente.activo ? 'status-active' : 'status-inactive'">
+                                  {{ paciente.activo ? 'Activo' : 'Inactivo' }}
+                                </span>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
 
@@ -213,12 +404,12 @@ import { MensajeDifusion, MensajeFormData, PacienteParaDifusion } from '../../..
           </div>
 
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" (click)="closeModal()">
+            <button type="button" class="btn btn-clear" (click)="closeModal()">
               Cancelar
             </button>
             <button 
               type="button" 
-              class="btn btn-primary" 
+              class="btn btn-new" 
               (click)="saveMensaje()"
               [disabled]="!mensajeForm.valid || getSelectedCount() === 0">
               {{ editingMensaje ? 'Actualizar' : 'Crear' }} Mensaje
@@ -227,6 +418,32 @@ import { MensajeDifusion, MensajeFormData, PacienteParaDifusion } from '../../..
         </div>
       </div>
     </div>
+
+    <!-- Modal de programación -->
+    <app-programar-mensaje 
+      *ngIf="showProgramarModal"
+      [mensaje]="mensajeParaProgramar"
+      [show]="showProgramarModal"
+      (confirm)="onProgramarConfirm($event)"
+      (cancel)="onProgramarCancel()">
+    </app-programar-mensaje>
+
+    <!-- Modal de ver mensaje -->
+    <app-ver-mensaje 
+      *ngIf="showVerModal"
+      [mensaje]="mensajeParaVer"
+      [show]="showVerModal"
+      (close)="onVerClose()">
+    </app-ver-mensaje>
+
+    <!-- Modal de confirmación eliminar -->
+    <app-confirmar-eliminar 
+      *ngIf="showConfirmModal"
+      [mensaje]="mensajeParaEliminar"
+      [show]="showConfirmModal"
+      (confirm)="onConfirmEliminar()"
+      (cancel)="onCancelEliminar()">
+    </app-confirmar-eliminar>
   `,
   styles: [`
     .mensajes-page {
@@ -554,9 +771,249 @@ import { MensajeDifusion, MensajeFormData, PacienteParaDifusion } from '../../..
       opacity: 0.6;
       cursor: not-allowed;
     }
+
+    /* Estilos para indicadores de carga y errores */
+    .loading-pacientes {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 2rem;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .spinner {
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error-message {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem;
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+      border-radius: 0.5rem;
+      color: #dc2626;
+      font-size: 0.9rem;
+    }
+
+    .btn-retry {
+      background: #dc2626;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn-retry:hover {
+      background: #b91c1c;
+    }
+
+    .no-pacientes {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      color: #666;
+      font-style: italic;
+    }
+
+    /* Estilos para información adicional del paciente */
+    .paciente-info small {
+      display: block;
+      margin-top: 0.25rem;
+      font-size: 0.75rem;
+      color: #666;
+    }
+
+    .status-active {
+      color: #059669;
+      font-weight: 600;
+    }
+
+    .status-inactive {
+      color: #dc2626;
+      font-weight: 600;
+    }
+
+    /* Estilos para destinatarios actuales */
+    .destinatarios-actuales {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+    }
+
+    .destinatarios-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .destinatarios-header h4 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .destinatarios-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.375rem;
+      background-color: white;
+    }
+
+    .destinatario-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .destinatario-item:last-child {
+      border-bottom: none;
+    }
+
+    .destinatario-info {
+      flex: 1;
+    }
+
+    .destinatario-info strong {
+      display: block;
+      color: #1e293b;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .destinatario-info small {
+      display: block;
+      color: #64748b;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .btn-remove {
+      background: none;
+      border: none;
+      color: #dc2626;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0.25rem;
+      border-radius: 0.25rem;
+      transition: background-color 0.2s;
+    }
+
+    .btn-remove:hover {
+      background-color: #fef2f2;
+    }
+
+    .no-destinatarios {
+      text-align: center;
+      color: #64748b;
+      font-style: italic;
+      padding: 1rem;
+    }
+
+    .loading-destinatarios {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      color: #64748b;
+    }
+
+    .loading-destinatarios .spinner {
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid #e2e8f0;
+      border-top: 2px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 0.5rem;
+    }
+
+    /* Estilos para tabla de pacientes */
+    .pacientes-table-container {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+    }
+
+    .pacientes-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    .pacientes-table th {
+      background: #f8fafc;
+      padding: 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 1px solid #e5e7eb;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .pacientes-table td {
+      padding: 0.75rem;
+      border-bottom: 1px solid #f3f4f6;
+      color: #374151;
+    }
+
+    .pacientes-table tr:hover {
+      background: #f8fafc;
+    }
+
+    .paciente-row {
+      cursor: pointer;
+    }
+
+    .paciente-row:hover {
+      background: #e0f2fe;
+    }
+
+    .pacientes-table input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      cursor: pointer;
+    }
+
+    /* Estilo para campo de búsqueda */
+    .form-input.searching {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      background-size: 1rem;
+      padding-right: 2.5rem;
+    }
   `]
 })
-export class MensajesComponent implements OnInit {
+export class MensajesComponent implements OnInit, OnDestroy {
   mensajes: MensajeDifusion[] = [];
   pacientes: PacienteParaDifusion[] = [];
   pacientesFiltrados: PacienteParaDifusion[] = [];
@@ -576,11 +1033,52 @@ export class MensajesComponent implements OnInit {
   busqueda = '';
   busquedaPacientes = '';
 
-  constructor(private mensajeService: MensajeService) {}
+  // Modal de programación
+  showProgramarModal: boolean = false;
+  mensajeParaProgramar: MensajeDifusion | null = null;
+  
+  // Modal de ver mensaje
+  showVerModal: boolean = false;
+  mensajeParaVer: MensajeDifusion | null = null;
+  
+  // Modal de confirmación eliminar
+  showConfirmModal: boolean = false;
+  mensajeParaEliminar: MensajeDifusion | null = null;
+  
+  // Nuevas propiedades para manejo de estado
+  loadingPacientes = false;
+  errorPacientes = '';
+  searchTimeout: any = null;
+  allSelected = false;
+  
+  // Propiedades para edición de destinatarios
+  destinatariosActuales: PacienteParaDifusion[] = [];
+  editandoDestinatarios = false;
+  pacientesParaAgregar: PacienteParaDifusion[] = [];
+  loadingDestinatarios = false;
+
+  constructor(
+    private mensajeService: MensajeService,
+    private router: Router
+  ) {}
 
   ngOnInit() {
     this.loadMensajes();
     this.loadPacientes();
+
+           // Escuchar cambios de navegación para recargar cuando se regresa de edición
+           this.router.events
+             .pipe(filter(event => event instanceof NavigationEnd))
+             .subscribe((event: any) => {
+               if (event.url === '/admin/mensajes') {
+                 console.log('Regresando a mensajes, recargando lista...');
+                 this.loadMensajes();
+               }
+             });
+         }
+
+  ngOnDestroy() {
+    // Cleanup si es necesario
   }
 
   loadMensajes() {
@@ -588,6 +1086,33 @@ export class MensajesComponent implements OnInit {
       next: (response) => {
         if (response.success) {
           this.mensajes = response.data;
+          
+          // Verificar si hay mensajes con contadores inconsistentes
+          const mensajesConProblemas = this.mensajes.filter((m: any) => 
+            m.estado === 'borrador' && m.total_destinatarios === 0
+          );
+          
+          if (mensajesConProblemas.length > 0) {
+            console.log('Detectados mensajes con contadores inconsistentes, sincronizando...');
+            this.mensajeService.sincronizarContadores().subscribe({
+              next: (syncResponse: any) => {
+                if (syncResponse.success) {
+                  console.log('Contadores sincronizados exitosamente');
+                  // Recargar mensajes después de sincronizar
+                  this.mensajeService.getMensajes().subscribe({
+                    next: (reloadResponse: any) => {
+                      if (reloadResponse.success) {
+                        this.mensajes = reloadResponse.data;
+                      }
+                    }
+                  });
+                }
+              },
+              error: (syncError: any) => {
+                console.error('Error sincronizando contadores:', syncError);
+              }
+            });
+          }
         }
       },
       error: (error) => {
@@ -596,40 +1121,49 @@ export class MensajesComponent implements OnInit {
     });
   }
 
-  loadPacientes() {
-    this.mensajeService.getPacientesParaDifusion().subscribe({
+  loadPacientes(busqueda?: string) {
+    this.loadingPacientes = true;
+    this.errorPacientes = '';
+    
+    const filtros = busqueda ? { busqueda } : {};
+    
+    this.mensajeService.getPacientesParaDifusion(filtros).subscribe({
       next: (response) => {
+        this.loadingPacientes = false;
         if (response.success) {
+          // Mantener selecciones existentes
+          const selectedIds = this.pacientesFiltrados.filter(p => p.seleccionado).map(p => p.id);
+          
           this.pacientes = response.data;
           this.pacientesFiltrados = [...this.pacientes];
+          
+          // Restaurar selecciones
+          this.pacientesFiltrados.forEach(paciente => {
+            paciente.seleccionado = selectedIds.includes(paciente.id);
+          });
+          
+          this.updateAllSelectedState();
+          this.updateDestinatarios();
+          this.errorPacientes = '';
+        } else {
+          this.errorPacientes = 'Error al cargar los pacientes';
+          console.error('Error del servidor:', response);
         }
       },
       error: (error) => {
+        this.loadingPacientes = false;
+        this.errorPacientes = 'Error de conexión al cargar pacientes';
         console.error('Error loading pacientes:', error);
       }
     });
   }
 
   openCreateModal() {
-    this.editingMensaje = null;
-    this.mensajeData = {
-      titulo: '',
-      contenido: '',
-      tipo_mensaje: 'general',
-      destinatarios: []
-    };
-    this.showModal = true;
+    this.router.navigate(['/admin/mensajes/new']);
   }
 
   editMensaje(mensaje: MensajeDifusion) {
-    this.editingMensaje = mensaje;
-    this.mensajeData = {
-      titulo: mensaje.titulo,
-      contenido: mensaje.contenido,
-      tipo_mensaje: mensaje.tipo_mensaje || 'general',
-      destinatarios: []
-    };
-    this.showModal = true;
+    this.router.navigate(['/admin/mensajes', mensaje.id, 'edit']);
   }
 
   closeModal() {
@@ -666,11 +1200,17 @@ export class MensajesComponent implements OnInit {
   }
 
   deleteMensaje(mensaje: MensajeDifusion) {
-    if (confirm(`¿Estás seguro de que quieres eliminar el mensaje "${mensaje.titulo}"?`)) {
-      this.mensajeService.eliminarMensaje(mensaje.id!).subscribe({
+    this.mensajeParaEliminar = mensaje;
+    this.showConfirmModal = true;
+  }
+
+  onConfirmEliminar() {
+    if (this.mensajeParaEliminar) {
+      this.mensajeService.eliminarMensaje(this.mensajeParaEliminar.id!).subscribe({
         next: (response) => {
           if (response.success) {
             this.loadMensajes();
+            this.closeConfirmModal();
           }
         },
         error: (error) => {
@@ -678,6 +1218,15 @@ export class MensajesComponent implements OnInit {
         }
       });
     }
+  }
+
+  onCancelEliminar() {
+    this.closeConfirmModal();
+  }
+
+  closeConfirmModal() {
+    this.showConfirmModal = false;
+    this.mensajeParaEliminar = null;
   }
 
   sendMensaje(mensaje: MensajeDifusion) {
@@ -696,12 +1245,17 @@ export class MensajesComponent implements OnInit {
   }
 
   scheduleMensaje(mensaje: MensajeDifusion) {
-    const fecha = prompt('Ingresa la fecha y hora para programar el envío (YYYY-MM-DDTHH:MM):');
-    if (fecha) {
-      this.mensajeService.programarMensaje(mensaje.id!, fecha).subscribe({
+    this.mensajeParaProgramar = mensaje;
+    this.showProgramarModal = true;
+  }
+
+  onProgramarConfirm(fechaISO: string) {
+    if (this.mensajeParaProgramar) {
+      this.mensajeService.programarMensaje(this.mensajeParaProgramar.id!, fechaISO).subscribe({
         next: (response) => {
           if (response.success) {
             this.loadMensajes();
+            this.closeProgramarModal();
           }
         },
         error: (error) => {
@@ -709,6 +1263,15 @@ export class MensajesComponent implements OnInit {
         }
       });
     }
+  }
+
+  onProgramarCancel() {
+    this.closeProgramarModal();
+  }
+
+  closeProgramarModal() {
+    this.showProgramarModal = false;
+    this.mensajeParaProgramar = null;
   }
 
   duplicateMensaje(mensaje: MensajeDifusion) {
@@ -725,24 +1288,49 @@ export class MensajesComponent implements OnInit {
   }
 
   viewMensaje(mensaje: MensajeDifusion) {
-    alert(`Título: ${mensaje.titulo}\n\nContenido: ${mensaje.contenido}`);
+    this.mensajeParaVer = mensaje;
+    this.showVerModal = true;
+  }
+
+  onVerClose() {
+    this.closeVerModal();
+  }
+
+  closeVerModal() {
+    this.showVerModal = false;
+    this.mensajeParaVer = null;
   }
 
   filterPacientes() {
-    if (!this.busquedaPacientes) {
-      this.pacientesFiltrados = [...this.pacientes];
-    } else {
-      this.pacientesFiltrados = this.pacientes.filter(paciente =>
-        paciente.nombres.toLowerCase().includes(this.busquedaPacientes.toLowerCase()) ||
-        paciente.apellidos.toLowerCase().includes(this.busquedaPacientes.toLowerCase()) ||
-        paciente.email.toLowerCase().includes(this.busquedaPacientes.toLowerCase())
-      );
+    // Limpiar timeout anterior si existe
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
     }
+    
+    // Debounce: esperar 300ms antes de hacer la búsqueda
+    this.searchTimeout = setTimeout(() => {
+      if (!this.busquedaPacientes || this.busquedaPacientes.trim() === '') {
+        // Si no hay búsqueda, cargar todos los pacientes del backend
+        this.loadPacientes();
+    } else {
+        // Si hay búsqueda, usar el backend
+        this.loadPacientes(this.busquedaPacientes.trim());
+      }
+    }, 300);
   }
 
   selectAllPacientes() {
     this.pacientesFiltrados.forEach(paciente => {
       paciente.seleccionado = true;
+    });
+    this.allSelected = true;
+    this.updateDestinatarios();
+  }
+
+  toggleAllPacientes() {
+    this.allSelected = !this.allSelected;
+    this.pacientesFiltrados.forEach(paciente => {
+      paciente.seleccionado = this.allSelected;
     });
     this.updateDestinatarios();
   }
@@ -761,7 +1349,13 @@ export class MensajesComponent implements OnInit {
 
   togglePaciente(paciente: PacienteParaDifusion) {
     paciente.seleccionado = !paciente.seleccionado;
+    this.updateAllSelectedState();
     this.updateDestinatarios();
+  }
+
+  updateAllSelectedState() {
+    const selectedCount = this.pacientesFiltrados.filter(p => p.seleccionado).length;
+    this.allSelected = selectedCount === this.pacientesFiltrados.length && this.pacientesFiltrados.length > 0;
   }
 
   updateDestinatarios() {
@@ -790,6 +1384,77 @@ export class MensajesComponent implements OnInit {
       'recordatorio': 'Recordatorio'
     };
     return tipos[tipo] || tipo;
+  }
+
+  // Métodos para gestión de destinatarios
+  loadDestinatariosActuales(mensajeId: number) {
+    this.loadingDestinatarios = true;
+    this.mensajeService.getDestinatariosActuales(mensajeId).subscribe({
+      next: (response) => {
+        this.loadingDestinatarios = false;
+        if (response.success) {
+          this.destinatariosActuales = response.data;
+        } else {
+          console.error('Error loading destinatarios:', response);
+        }
+      },
+      error: (error) => {
+        this.loadingDestinatarios = false;
+        console.error('Error loading destinatarios:', error);
+      }
+    });
+  }
+
+  toggleEditDestinatarios() {
+    this.editandoDestinatarios = !this.editandoDestinatarios;
+    if (this.editandoDestinatarios) {
+      this.loadPacientes();
+    }
+  }
+
+  removeDestinatario(pacienteId: number) {
+    if (!this.editingMensaje?.id) return;
+    
+    this.mensajeService.eliminarDestinatario(this.editingMensaje.id, pacienteId).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.destinatariosActuales = this.destinatariosActuales.filter(d => d.id !== pacienteId);
+          this.updateDestinatarios();
+        } else {
+          console.error('Error removing destinatario:', response);
+        }
+      },
+      error: (error) => {
+        console.error('Error removing destinatario:', error);
+      }
+    });
+  }
+
+  addNuevosDestinatarios() {
+    if (!this.editingMensaje?.id) return;
+    
+    const seleccionados = this.pacientesFiltrados.filter(p => p.seleccionado);
+    if (seleccionados.length === 0) return;
+    
+    const destinatariosIds = seleccionados.map(p => p.id);
+    
+    this.mensajeService.agregarDestinatarios(this.editingMensaje.id, destinatariosIds).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Agregar a destinatarios actuales
+          this.destinatariosActuales = [...this.destinatariosActuales, ...seleccionados];
+          // Limpiar selecciones
+          this.pacientesFiltrados.forEach(p => p.seleccionado = false);
+          this.updateAllSelectedState();
+          this.updateDestinatarios();
+        } else {
+          console.error('Error adding destinatarios:', response);
+        }
+      },
+      error: (error) => {
+        console.error('Error adding destinatarios:', error);
+      }
+    });
   }
 
   formatDate(dateString: string | undefined): string {

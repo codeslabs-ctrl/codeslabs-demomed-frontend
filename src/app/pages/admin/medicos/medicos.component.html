@@ -1,7 +1,7 @@
 <div class="medicos-page">
   <div class="page-header">
     <h1>Gestión de Médicos</h1>
-    <button class="btn btn-primary" (click)="openAddModal()">
+    <button class="btn btn-new" (click)="openAddModal()">
       ➕ Nuevo Médico
     </button>
   </div>
@@ -30,7 +30,7 @@
         </select>
       </div>
       <div class="form-group">
-        <button class="btn btn-secondary" (click)="clearFilters()">
+        <button class="btn btn-clear" (click)="clearFilters()">
           🗑️ Limpiar Filtros
         </button>
       </div>
@@ -60,13 +60,13 @@
           </td>
           <td>
             <div class="action-buttons">
-              <button class="action-btn edit" (click)="openEditModal(medico)" title="Editar">
+              <button class="action-btn edit-btn" (click)="openEditModal(medico)" title="Editar">
                 <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                 </svg>
                 Editar
               </button>
-              <button class="action-btn delete" (click)="deleteMedico(medico.id!, medico.nombres, medico.apellidos)" title="Eliminar">
+              <button class="action-btn delete-btn" (click)="deleteMedico(medico.id!, medico.nombres, medico.apellidos)" title="Eliminar">
                 <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                 </svg>
@@ -207,12 +207,12 @@
         </div>
 
         <div class="form-actions">
-          <button type="button" class="btn btn-secondary" (click)="closeModal()">
+          <button type="button" class="btn btn-clear" (click)="closeModal()">
             Cancelar
           </button>
           <button 
             type="submit" 
-            class="btn btn-primary" 
+            class="btn btn-new" 
             [disabled]="saving || medicoForm.invalid">
             {{ saving ? 'Guardando...' : (isEditing ? 'Actualizar' : 'Crear') }}
           </button>
@@ -255,3 +255,18 @@
     </div>
   </div>
 </div>
+
+<!-- Modal de confirmación eliminar -->
+<app-confirm-modal 
+  *ngIf="showConfirmModal"
+  [show]="showConfirmModal"
+  title="Eliminar Médico"
+  message="¿Estás seguro de que quieres eliminar este médico?"
+  [itemName]="medicoToDelete ? medicoToDelete.nombres + ' ' + medicoToDelete.apellidos : ''"
+  warningText="Esta acción eliminará permanentemente todos los datos del médico, incluyendo consultas y pacientes asignados."
+  confirmText="🗑️ Eliminar"
+  cancelText="Cancelar"
+  type="danger"
+  (confirm)="onConfirmDelete()"
+  (cancel)="onCancelDelete()">
+</app-confirm-modal>

@@ -19,7 +19,7 @@ import { Medico } from '../../../services/medico.service';
       <!-- Header -->
       <div class="page-header">
         <h1>Nueva Consulta</h1>
-        <a routerLink="/admin/consultas" class="btn btn-secondary">
+        <a routerLink="/admin/consultas" class="btn btn-clear">
           ← Volver a Gestión de Consultas
         </a>
       </div>
@@ -166,7 +166,7 @@ import { Medico } from '../../../services/medico.service';
             </button>
             <button 
               type="submit" 
-              class="btn btn-primary" 
+              class="btn btn-new" 
               [disabled]="isSubmitting">
               <span *ngIf="isSubmitting" class="btn-icon">⏳</span>
               <span *ngIf="!isSubmitting" class="btn-icon">💾</span>
@@ -513,24 +513,24 @@ export class NuevaConsultaComponent implements OnInit {
 
     // Validaciones básicas
     if (!this.consultaForm.paciente_id || this.consultaForm.paciente_id === 0) {
-      alert('Por favor seleccione un paciente');
+      alert('⚠️ Paciente requerido\n\nPor favor, seleccione un paciente de la lista antes de continuar.');
       return;
     }
     // Solo validar selección de médico si es administrador
     if (this.currentUser?.rol === 'administrador' && (!this.consultaForm.medico_id || this.consultaForm.medico_id === 0)) {
-      alert('Por favor seleccione un médico');
+      alert('⚠️ Médico requerido\n\nPor favor, seleccione un médico de la lista antes de continuar.');
       return;
     }
     if (!this.consultaForm.motivo_consulta.trim()) {
-      alert('Por favor ingrese el motivo de la consulta');
+      alert('⚠️ Motivo de consulta requerido\n\nPor favor, ingrese el motivo de la consulta para continuar.');
       return;
     }
     if (!this.consultaForm.fecha_pautada) {
-      alert('Por favor seleccione una fecha');
+      alert('⚠️ Fecha requerida\n\nPor favor, seleccione una fecha para la consulta.');
       return;
     }
     if (!this.consultaForm.hora_pautada) {
-      alert('Por favor seleccione una hora');
+      alert('⚠️ Hora requerida\n\nPor favor, seleccione una hora para la consulta.');
       return;
     }
 
@@ -539,17 +539,17 @@ export class NuevaConsultaComponent implements OnInit {
     this.consultaService.createConsulta(this.consultaForm).subscribe({
       next: (response) => {
         if (response.success) {
-          alert('Consulta creada exitosamente');
+          alert('✅ Consulta creada exitosamente\n\nLa consulta ha sido programada y se ha enviado una notificación al paciente.');
           this.resetForm();
           // La navegación se maneja con routerLink en el template
         } else {
-          alert('Error al crear la consulta: ' + (response.error?.message || 'Error desconocido'));
+          alert('❌ Error al crear la consulta\n\n' + (response.error?.message || 'Error desconocido') + '\n\nPor favor, intente nuevamente o contacte al administrador.');
         }
         this.isSubmitting = false;
       },
       error: (error) => {
         console.error('Error creating consulta:', error);
-        alert('Error al crear la consulta: ' + (error.error?.message || 'Error de conexión'));
+        alert('❌ Error al crear la consulta\n\n' + (error.error?.message || 'Error de conexión') + '\n\nPor favor, verifique su conexión e intente nuevamente.');
         this.isSubmitting = false;
       }
     });

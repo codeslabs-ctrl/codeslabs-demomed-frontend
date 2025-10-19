@@ -5,6 +5,23 @@
   box-sizing: border-box;
 }
 
+/* CSS Variables for Button Colors */
+:root {
+  /* Colores estandarizados para botones */
+  --color-btn-clear: #6b7280;        /* Gris oscuro para "Limpiar Filtros" */
+  --color-btn-clear-hover: #4b5563;  /* Hover más oscuro */
+  --color-btn-new: #E91E63;          /* Rosa para "Nuevo..." */
+  --color-btn-new-hover: #C2185B;    /* Rosa más oscuro */
+  
+  /* Colores para botones de acción */
+  --color-action-view: #3b82f6;     /* Azul para Ver */
+  --color-action-view-hover: #2563eb;
+  --color-action-edit: #f59e0b;    /* Naranja para Editar */
+  --color-action-edit-hover: #d97706;
+  --color-action-delete: #ef4444;   /* Rojo para Eliminar */
+  --color-action-delete-hover: #dc2626;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
 
 body {
@@ -123,6 +140,101 @@ small { font-size: 0.75rem; line-height: 1.5; color: #666666; }
 
 .btn-danger:hover {
   background-color: #dc2626;
+}
+
+/* Botones estandarizados */
+.btn-clear {
+  background-color: var(--color-btn-clear);
+  color: white;
+  border: 1px solid var(--color-btn-clear);
+  font-weight: 500;
+}
+
+.btn-clear:hover {
+  background-color: var(--color-btn-clear-hover);
+  border-color: var(--color-btn-clear-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+}
+
+.btn-new {
+  background-color: var(--color-btn-new);
+  color: white;
+  border: 1px solid var(--color-btn-new);
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+}
+
+.btn-new:hover {
+  background-color: var(--color-btn-new-hover);
+  border-color: var(--color-btn-new-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(233, 30, 99, 0.4);
+}
+
+/* Botones de acción estandarizados */
+.action-buttons {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: auto;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.action-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.view-btn {
+  background-color: var(--color-action-view);
+  color: white;
+}
+
+.view-btn:hover {
+  background-color: var(--color-action-view-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.edit-btn {
+  background-color: var(--color-action-edit);
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: var(--color-action-edit-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+}
+
+.delete-btn {
+  background-color: var(--color-action-delete);
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: var(--color-action-delete-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
 }
 
 .card {

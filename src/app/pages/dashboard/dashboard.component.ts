@@ -136,7 +136,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
               </button>
               <button class="btn btn-history" (click)="addHistoria(consulta)"
                       *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada'">
-                📝 Añadir Historia
+                📝 Historia Paciente
               </button>
               <button class="btn btn-success" (click)="finalizarConsulta(consulta)" 
                       *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada'">
@@ -160,7 +160,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       <div class="quick-actions" *ngIf="currentUser?.rol === 'administrador'">
         <h3>Accesos Directos</h3>
         <div class="actions-grid">
-          <a routerLink="/admin/patients" class="action-card">
+          <a routerLink="/patients" class="action-card">
             <div class="action-icon pacientes">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 7H16c-.8 0-1.54.5-1.85 1.26L13.5 12H11v8h2v-6h2.5l1.5 6H20zM12.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S11 9.17 11 10s.67 1.5 1.5 1.5zM5.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2zm2 16v-7H9V9.5C9 8.12 7.88 7 6.5 7S4 8.12 4 9.5V15h-.5v7h4z"/>
@@ -316,7 +316,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="closeFinalizarModal()">Cancelar</button>
+          <button class="btn btn-clear" (click)="closeFinalizarModal()">Cancelar</button>
           <button class="btn btn-success" (click)="confirmarFinalizar()" 
                   [disabled]="!diagnosticoPreliminar.trim()">
             Finalizar Consulta
@@ -384,7 +384,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="closeCancelarModal()">Cancelar</button>
+          <button class="btn btn-clear" (click)="closeCancelarModal()">Cancelar</button>
           <button class="btn btn-danger" (click)="confirmarCancelar()" 
                   [disabled]="!motivoCancelacion || (motivoCancelacion === 'otro' && !motivoCancelacionOtro.trim()) || isSubmitting">
             {{isSubmitting ? 'Cancelando...' : 'Confirmar Cancelación'}}
@@ -1703,13 +1703,13 @@ export class DashboardComponent implements OnInit {
 
     this.consultaService.finalizarConsulta(this.selectedConsulta.id!, data).subscribe({
       next: (response) => {
-        alert('Consulta finalizada exitosamente');
+        alert('✅ Consulta finalizada exitosamente\n\nLa consulta ha sido marcada como completada y se ha registrado en el historial del paciente.');
         this.closeFinalizarModal();
         this.loadConsultasDelDia();
       },
       error: (error) => {
         console.error('Error finalizando consulta:', error);
-        alert('Error al finalizar la consulta');
+        alert('❌ Error al finalizar la consulta\n\nPor favor, verifique su conexión e intente nuevamente. Si el problema persiste, contacte al administrador del sistema.');
       }
     });
   }
@@ -1727,14 +1727,14 @@ export class DashboardComponent implements OnInit {
 
     this.consultaService.cancelarConsulta(this.selectedConsulta.id!, motivoFinal).subscribe({
       next: (response) => {
-        alert('Consulta cancelada exitosamente');
+        alert('⚠️ Consulta cancelada exitosamente\n\nLa consulta ha sido cancelada y el paciente será notificado. Puede reagendar la cita si es necesario.');
         this.closeCancelarModal();
         this.loadConsultasDelDia();
         this.isSubmitting = false;
       },
       error: (error) => {
         console.error('Error cancelando consulta:', error);
-        alert('Error al cancelar la consulta');
+        alert('❌ Error al cancelar la consulta\n\nPor favor, verifique su conexión e intente nuevamente. Si el problema persiste, contacte al administrador del sistema.');
         this.isSubmitting = false;
       }
     });

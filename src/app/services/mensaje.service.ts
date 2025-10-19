@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { MensajeDifusion, MensajeDestinatario, MensajeFormData, PacienteParaDifusion, MensajeEstadisticas } from '../models/mensaje.model';
 
@@ -38,8 +38,25 @@ export class MensajeService {
 
   // Obtener pacientes para difusión
   getPacientesParaDifusion(filtros?: any): Observable<{success: boolean, data: PacienteParaDifusion[]}> {
+    let params = new HttpParams();
+    
+    if (filtros) {
+      if (filtros.busqueda) {
+        params = params.set('busqueda', filtros.busqueda);
+      }
+      if (filtros.especialidad) {
+        params = params.set('especialidad', filtros.especialidad);
+      }
+      if (filtros.medico) {
+        params = params.set('medico', filtros.medico);
+      }
+      if (filtros.activos) {
+        params = params.set('activos', filtros.activos);
+      }
+    }
+    
     return this.http.get<{success: boolean, data: PacienteParaDifusion[]}>(`${this.API_URL}/mensajes/pacientes`, {
-      params: filtros || {}
+      params: params
     });
   }
 
@@ -68,5 +85,26 @@ export class MensajeService {
   // Duplicar mensaje
   duplicarMensaje(id: number): Observable<{success: boolean, data: MensajeDifusion}> {
     return this.http.post<{success: boolean, data: MensajeDifusion}>(`${this.API_URL}/mensajes/${id}/duplicar`, {});
+  }
+
+  // Obtener destinatarios actuales con información completa
+  getDestinatariosActuales(id: number): Observable<{success: boolean, data: PacienteParaDifusion[]}> {
+    return this.http.get<{success: boolean, data: PacienteParaDifusion[]}>(`${this.API_URL}/mensajes/${id}/destinatarios-actuales`);
+  }
+
+  // Agregar nuevos destinatarios
+  agregarDestinatarios(id: number, destinatarios: number[]): Observable<{success: boolean}> {
+    return this.http.post<{success: boolean}>(`${this.API_URL}/mensajes/${id}/destinatarios/agregar`, {
+      destinatarios
+    });
+  }
+
+  // Eliminar destinatario específico
+  eliminarDestinatario(id: number, pacienteId: number): Observable<{success: boolean}> {
+    return this.http.delete<{success: boolean}>(`${this.API_URL}/mensajes/${id}/destinatarios/${pacienteId}`);
+  }
+
+  sincronizarContadores(): Observable<{success: boolean}> {
+    return this.http.post<{success: boolean}>(`${this.API_URL}/mensajes/sincronizar-contadores`, {});
   }
 }

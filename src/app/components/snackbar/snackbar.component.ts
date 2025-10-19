@@ -177,3 +177,4 @@ export class SnackbarComponent implements OnInit, OnDestroy {
     this.hideMessage();
   }
 }
+

@@ -541,7 +541,7 @@ export class RemitirPacienteModalComponent implements OnInit, OnChanges {
         console.error('❌ ERROR: paciente_id no está asignado!');
         console.error('❌ Patient object:', this.patient);
         console.error('❌ RemisionData:', this.remisionData);
-        alert('❌ Error: No se ha seleccionado un paciente válido');
+        alert('❌ Error: Paciente no válido\n\nNo se ha seleccionado un paciente válido. Por favor, regrese a la lista de pacientes y seleccione uno correctamente.');
         this.loading = false;
         return;
       }
@@ -559,18 +559,18 @@ export class RemitirPacienteModalComponent implements OnInit, OnChanges {
       this.remisionService.crearRemision(remisionDataToSend).subscribe({
         next: (response: any) => {
           if (response.success) {
-            alert('✅ Remisión creada exitosamente.\n\nSe ha enviado una notificación al médico de destino.');
+            alert('✅ Remisión creada exitosamente\n\nLa remisión ha sido procesada y se ha enviado una notificación al médico de destino. El paciente será contactado para coordinar la cita.');
             this.remisionCreated.emit(response.data);
             this.clearForm();
             this.closeModal();
           } else {
-            alert('❌ Error al crear la remisión.\n\nPor favor, intente nuevamente.');
+            alert('❌ Error al crear la remisión\n\nNo se pudo procesar la remisión. Por favor, verifique los datos e intente nuevamente.');
           }
           this.loading = false;
         },
         error: (error: any) => {
           console.error('Error creating remision:', error);
-          alert('❌ Error al crear la remisión.\n\nPor favor, intente nuevamente.');
+          alert('❌ Error al crear la remisión\n\nError de conexión. Por favor, verifique su internet e intente nuevamente.');
           this.loading = false;
         }
       });

@@ -2,11 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EspecialidadService, Especialidad } from '../../../services/especialidad.service';
+import { ConfirmModalComponent } from '../../../components/confirm-modal/confirm-modal.component';
 
 @Component({
   selector: 'app-especialidades',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent],
   templateUrl: './especialidades.component.html',
   styleUrls: ['./especialidades.component.css']
 })
@@ -18,6 +19,10 @@ export class EspecialidadesComponent implements OnInit {
   isEditing = false;
   saving = false;
   searchName = '';
+  
+  // Modal de confirmación eliminar
+  showConfirmModal: boolean = false;
+  especialidadToDelete: Especialidad | null = null;
 
   especialidadData: Especialidad = {
     nombre_especialidad: '',
@@ -130,11 +135,17 @@ export class EspecialidadesComponent implements OnInit {
   }
 
   deleteEspecialidad(especialidad: Especialidad) {
-    if (confirm(`¿Estás seguro de que quieres eliminar la especialidad "${especialidad.nombre_especialidad}"?`)) {
-      this.especialidadService.deleteEspecialidad(especialidad.id!).subscribe({
+    this.especialidadToDelete = especialidad;
+    this.showConfirmModal = true;
+  }
+
+  onConfirmDelete() {
+    if (this.especialidadToDelete) {
+      this.especialidadService.deleteEspecialidad(this.especialidadToDelete.id!).subscribe({
         next: (response) => {
           if (response.success) {
             this.loadEspecialidades();
+            this.closeConfirmModal();
           }
         },
         error: (error) => {
@@ -142,5 +153,14 @@ export class EspecialidadesComponent implements OnInit {
         }
       });
     }
+  }
+
+  onCancelDelete() {
+    this.closeConfirmModal();
+  }
+
+  closeConfirmModal() {
+    this.showConfirmModal = false;
+    this.especialidadToDelete = null;
   }
 }

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MedicoService } from '../../../services/medico.service';
 import { EspecialidadService, Especialidad as EspecialidadFromService } from '../../../services/especialidad.service';
+import { ConfirmModalComponent } from '../../../components/confirm-modal/confirm-modal.component';
 
 export interface Medico {
   id?: number;
@@ -18,7 +19,7 @@ export interface Medico {
 @Component({
   selector: 'app-medicos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmModalComponent],
   templateUrl: './medicos.component.html',
   styleUrls: ['./medicos.component.css']
 })
@@ -39,6 +40,10 @@ export class MedicosComponent implements OnInit {
   snackbarType: 'success' | 'error' | 'info' | 'warning' = 'info';
   snackbarAction: (() => void) | null = null;
   snackbarActionText = '';
+  
+  // Modal de confirmación eliminar
+  showConfirmModal: boolean = false;
+  medicoToDelete: Medico | null = null;
 
   medicoData: Medico = {
     nombres: '',
@@ -277,15 +282,24 @@ export class MedicosComponent implements OnInit {
   }
 
   deleteMedico(id: number, nombres: string, apellidos: string) {
-    if (confirm(`¿Está seguro de eliminar al médico ${nombres} ${apellidos}? Esta acción no se puede deshacer.`)) {
-      this.medicoService.deleteMedico(id).subscribe({
+    const medico = this.medicos.find(m => m.id === id);
+    if (medico) {
+      this.medicoToDelete = medico;
+      this.showConfirmModal = true;
+    }
+  }
+
+  onConfirmDelete() {
+    if (this.medicoToDelete) {
+      this.medicoService.deleteMedico(this.medicoToDelete.id!).subscribe({
         next: (response) => {
           if (response.success) {
             this.showSnackbarMessage(
-              `Médico ${nombres} ${apellidos} eliminado exitosamente.`,
+              `Médico ${this.medicoToDelete?.nombres} ${this.medicoToDelete?.apellidos} eliminado exitosamente.`,
               'success'
             );
             this.loadMedicos();
+            this.closeConfirmModal();
           }
         },
         error: (error) => {
@@ -297,5 +311,14 @@ export class MedicosComponent implements OnInit {
         }
       });
     }
+  }
+
+  onCancelDelete() {
+    this.closeConfirmModal();
+  }
+
+  closeConfirmModal() {
+    this.showConfirmModal = false;
+    this.medicoToDelete = null;
   }
 }

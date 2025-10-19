@@ -1,12 +1,13 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ViewsService, EstadisticasEspecialidad, MedicoCompleto } from '../../services/views.service';
+import { FormsModule } from '@angular/forms';
+import { ConsultaService } from '../../services/consulta.service';
 import { SimpleChartComponent, ChartData, ChartConfig } from '../../components/charts/simple-chart.component';
 
 @Component({
   selector: 'app-statistics',
   standalone: true,
-  imports: [CommonModule, SimpleChartComponent],
+  imports: [CommonModule, FormsModule, SimpleChartComponent],
   template: `
     <div class="statistics-container">
       <div class="statistics-header">
@@ -14,115 +15,150 @@ import { SimpleChartComponent, ChartData, ChartConfig } from '../../components/c
         <p class="subtitle">Análisis y visualización de datos médicos</p>
       </div>
 
-      <div class="loading" *ngIf="loading">
-        <div class="spinner"></div>
-        <p>Cargando estadísticas...</p>
-      </div>
-
-      <div class="error" *ngIf="error">
-        <div class="error-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="15" y1="9" x2="9" y2="15"></line>
-            <line x1="9" y1="9" x2="15" y2="15"></line>
-          </svg>
-        </div>
-        <p>{{ error }}</p>
-        <button (click)="loadStatistics()" class="btn btn-primary">Reintentar</button>
-      </div>
-
-      <div class="statistics-content" *ngIf="!loading && !error">
-        <!-- Gráfico de especialidades -->
-        <div class="chart-section">
-          <app-simple-chart 
-            [data]="especialidadesChartData" 
-            [config]="especialidadesChartConfig">
-          </app-simple-chart>
-        </div>
-
-        <!-- Gráfico de médicos por especialidad -->
-        <div class="chart-section">
-          <app-simple-chart 
-            [data]="medicosChartData" 
-            [config]="medicosChartConfig">
-          </app-simple-chart>
-        </div>
-
-        <!-- Gráfico de consultas por especialidad -->
-        <div class="chart-section">
-          <app-simple-chart 
-            [data]="consultasChartData" 
-            [config]="consultasChartConfig">
-          </app-simple-chart>
-        </div>
-
-        <!-- Gráfico de pacientes por especialidad -->
-        <div class="chart-section">
-          <app-simple-chart 
-            [data]="pacientesChartData" 
-            [config]="pacientesChartConfig">
-          </app-simple-chart>
-        </div>
-
-        <!-- Resumen estadístico -->
-        <div class="summary-section">
-          <h3>Resumen General</h3>
-          <div class="summary-grid">
-            <div class="summary-card">
-              <div class="summary-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
-                </svg>
-              </div>
-              <div class="summary-content">
-                <h4>{{ totalEspecialidades }}</h4>
-                <p>Especialidades</p>
-              </div>
-            </div>
-
-            <div class="summary-card">
-              <div class="summary-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-              </div>
-              <div class="summary-content">
-                <h4>{{ totalMedicos }}</h4>
-                <p>Médicos Activos</p>
-              </div>
-            </div>
-
-            <div class="summary-card">
-              <div class="summary-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-              </div>
-              <div class="summary-content">
-                <h4>{{ totalConsultas }}</h4>
-                <p>Total Consultas</p>
-              </div>
-            </div>
-
-            <div class="summary-card">
-              <div class="summary-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-              </div>
-              <div class="summary-content">
-                <h4>{{ totalPacientes }}</h4>
-                <p>Pacientes Atendidos</p>
-              </div>
-            </div>
+      <!-- Gráfico de Consultas por Estado -->
+      <div class="chart-section">
+        <div class="chart-header">
+          <div class="period-filter">
+            <label>📊 Consultas Pacientes - Período:</label>
+            <select [(ngModel)]="selectedPeriod" (change)="loadChartData()">
+              <option value="7">Últimos 7 días</option>
+              <option value="15">Últimos 15 días</option>
+              <option value="30">Últimos 30 días</option>
+              <option value="90">Últimos 90 días</option>
+              <option value="custom">Personalizado</option>
+            </select>
           </div>
+        </div>
+
+        <!-- Fechas personalizadas -->
+        <div *ngIf="selectedPeriod === 'custom'" class="custom-dates">
+          <div class="date-inputs">
+            <div class="date-input">
+              <label>Fecha inicio:</label>
+              <input type="date" [(ngModel)]="fechaInicio" (change)="loadChartData()">
+            </div>
+            <div class="date-input">
+              <label>Fecha fin:</label>
+              <input type="date" [(ngModel)]="fechaFin" (change)="loadChartData()">
+            </div>
+            <button class="btn-apply" (click)="loadChartData()">Aplicar</button>
+          </div>
+        </div>
+
+        <!-- Gráfico -->
+        <div class="chart-container" *ngIf="chartData.length > 0">
+          <app-simple-chart 
+            [data]="chartData" 
+            [config]="chartConfig">
+          </app-simple-chart>
+        </div>
+
+        <!-- Mensaje cuando no hay datos -->
+        <div *ngIf="chartData.length === 0 && !loading" class="no-data">
+          <p>No hay datos disponibles para el período seleccionado</p>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="loading" class="loading">
+          <p>Cargando datos...</p>
+        </div>
+      </div>
+
+      <!-- Gráfico de Consultas por Especialidad -->
+      <div class="chart-section">
+        <div class="chart-header">
+          <div class="period-filter">
+            <label>🏥 Consultas por Especialidad - Período:</label>
+            <select [(ngModel)]="selectedPeriodEspecialidades" (change)="loadEspecialidadesData()">
+              <option value="7">Últimos 7 días</option>
+              <option value="15">Últimos 15 días</option>
+              <option value="30">Últimos 30 días</option>
+              <option value="90">Últimos 90 días</option>
+              <option value="custom">Personalizado</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Fechas personalizadas para especialidades -->
+        <div *ngIf="selectedPeriodEspecialidades === 'custom'" class="custom-dates">
+          <div class="date-inputs">
+            <div class="date-input">
+              <label>Fecha inicio:</label>
+              <input type="date" [(ngModel)]="fechaInicioEspecialidades" (change)="loadEspecialidadesData()">
+            </div>
+            <div class="date-input">
+              <label>Fecha fin:</label>
+              <input type="date" [(ngModel)]="fechaFinEspecialidades" (change)="loadEspecialidadesData()">
+            </div>
+            <button class="btn-apply" (click)="loadEspecialidadesData()">Aplicar</button>
+          </div>
+        </div>
+
+        <!-- Gráfico de Especialidades -->
+        <div class="chart-container" *ngIf="especialidadesData.length > 0">
+          <app-simple-chart 
+            [data]="especialidadesData" 
+            [config]="chartConfigEspecialidades">
+          </app-simple-chart>
+        </div>
+
+        <!-- Mensaje cuando no hay datos de especialidades -->
+        <div *ngIf="especialidadesData.length === 0 && !loadingEspecialidades" class="no-data">
+          <p>No hay datos de especialidades disponibles para el período seleccionado</p>
+        </div>
+
+        <!-- Loading especialidades -->
+        <div *ngIf="loadingEspecialidades" class="loading">
+          <p>Cargando datos de especialidades...</p>
+        </div>
+      </div>
+
+      <!-- Gráfico de Consultas por Médico -->
+      <div class="chart-section">
+        <div class="chart-header">
+          <div class="period-filter">
+            <label>👨‍⚕️ Consultas por Médico - Período:</label>
+            <select [(ngModel)]="selectedPeriodMedicos" (change)="loadMedicosData()">
+              <option value="7">Últimos 7 días</option>
+              <option value="15">Últimos 15 días</option>
+              <option value="30">Últimos 30 días</option>
+              <option value="90">Últimos 90 días</option>
+              <option value="custom">Personalizado</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Fechas personalizadas para médicos -->
+        <div *ngIf="selectedPeriodMedicos === 'custom'" class="custom-dates">
+          <div class="date-inputs">
+            <div class="date-input">
+              <label>Fecha inicio:</label>
+              <input type="date" [(ngModel)]="fechaInicioMedicos" (change)="loadMedicosData()">
+            </div>
+            <div class="date-input">
+              <label>Fecha fin:</label>
+              <input type="date" [(ngModel)]="fechaFinMedicos" (change)="loadMedicosData()">
+            </div>
+            <button class="btn-apply" (click)="loadMedicosData()">Aplicar</button>
+          </div>
+        </div>
+
+        <!-- Gráfico de Médicos -->
+        <div class="chart-container" *ngIf="medicosData.length > 0">
+          <app-simple-chart 
+            [data]="medicosData" 
+            [config]="chartConfigMedicos">
+          </app-simple-chart>
+        </div>
+
+        <!-- Mensaje cuando no hay datos de médicos -->
+        <div *ngIf="medicosData.length === 0 && !loadingMedicos" class="no-data">
+          <p>No hay datos de médicos disponibles para el período seleccionado</p>
+        </div>
+
+        <!-- Loading médicos -->
+        <div *ngIf="loadingMedicos" class="loading">
+          <p>Cargando datos de médicos...</p>
         </div>
       </div>
     </div>
@@ -151,161 +187,144 @@ import { SimpleChartComponent, ChartData, ChartConfig } from '../../components/c
       margin: 0;
     }
 
-    .loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem;
-      color: #666666;
-    }
-
-    .spinner {
-      border: 3px solid #F5F5F5;
-      border-top: 3px solid #E91E63;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 1rem;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .error {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem;
-      text-align: center;
-      color: #EF4444;
-    }
-
-    .error-icon {
-      width: 48px;
-      height: 48px;
-      margin-bottom: 1rem;
-    }
-
-    .error-icon svg {
-      width: 100%;
-      height: 100%;
-      stroke: #EF4444;
-    }
-
-    .statistics-content {
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-    }
-
     .chart-section {
       background: white;
       border-radius: 12px;
       padding: 1.5rem;
-      box-shadow: 0 4px 12px rgba(44, 44, 44, 0.1);
-      border: 1px solid #F5F5F5;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 2rem;
+      max-width: 100%;
     }
 
-    .summary-section {
-      grid-column: 1 / -1;
-      background: white;
-      border-radius: 12px;
-      padding: 2rem;
-      box-shadow: 0 4px 12px rgba(44, 44, 44, 0.1);
-      border: 1px solid #F5F5F5;
+    .chart-header {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
 
-    .summary-section h3 {
+    .chart-header h3 {
       color: #2C2C2C;
       font-size: 1.5rem;
-      font-weight: 700;
-      margin: 0 0 2rem 0;
-      text-align: center;
-      border-bottom: 2px solid #E91E63;
-      padding-bottom: 0.5rem;
-    }
-
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .summary-card {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1.5rem;
-      background: #F5F5F5;
-      border-radius: 12px;
-      border-left: 4px solid #E91E63;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .summary-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(44, 44, 44, 0.15);
-    }
-
-    .summary-icon {
-      width: 48px;
-      height: 48px;
-      background: linear-gradient(135deg, #EA7EC3, #2F90B0);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .summary-icon svg {
-      width: 24px;
-      height: 24px;
-      stroke: white;
-    }
-
-    .summary-content h4 {
-      color: #2C2C2C;
-      font-size: 1.8rem;
-      font-weight: 700;
-      margin: 0 0 0.25rem 0;
-    }
-
-    .summary-content p {
-      color: #666666;
-      font-size: 0.9rem;
+      font-weight: 600;
       margin: 0;
     }
 
-    .btn {
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: inline-flex;
+    .period-filter {
+      display: flex;
       align-items: center;
-      justify-content: center;
       gap: 0.5rem;
-      font-family: 'Montserrat', sans-serif;
-      border: none;
-      text-decoration: none;
+    }
+
+    .period-filter label {
+      font-weight: 600;
+      color: #2C2C2C;
+      font-size: 1.1rem;
+    }
+
+    .period-filter select {
+      padding: 0.5rem 1rem;
+      border: 1px solid #D1D5DB;
+      border-radius: 8px;
+      background: white;
       font-size: 0.9rem;
+      color: #374151;
+      cursor: pointer;
+      transition: border-color 0.2s;
     }
 
-    .btn-primary {
-      background: #E91E63;
+    .period-filter select:hover {
+      border-color: #3B82F6;
+    }
+
+    .period-filter select:focus {
+      outline: none;
+      border-color: #3B82F6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .custom-dates {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: #F9FAFB;
+      border-radius: 8px;
+      border: 1px solid #E5E7EB;
+    }
+
+    .date-inputs {
+      display: flex;
+      align-items: end;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .date-input {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .date-input label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    .date-input input {
+      padding: 0.5rem;
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      color: #374151;
+    }
+
+    .date-input input:focus {
+      outline: none;
+      border-color: #3B82F6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .btn-apply {
+      padding: 0.5rem 1rem;
+      background: #3B82F6;
       color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      height: fit-content;
     }
 
-    .btn-primary:hover {
-      background: #C2185B;
-      transform: translateY(-1px);
+    .btn-apply:hover {
+      background: #2563EB;
+    }
+
+    .chart-container {
+      margin-top: 1rem;
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .chart-container app-simple-chart {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .no-data, .loading {
+      text-align: center;
+      padding: 2rem;
+      color: #6B7280;
+      font-style: italic;
+    }
+
+    .loading {
+      color: #3B82F6;
     }
 
     @media (max-width: 768px) {
@@ -317,151 +336,302 @@ import { SimpleChartComponent, ChartData, ChartConfig } from '../../components/c
         font-size: 2rem;
       }
 
-      .statistics-content {
-        grid-template-columns: 1fr;
+      .chart-section {
+        padding: 1rem;
       }
 
-      .summary-grid {
-        grid-template-columns: 1fr;
+      .chart-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .period-filter {
+        justify-content: center;
+      }
+
+      .date-inputs {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .btn-apply {
+        width: 100%;
+      }
+
+      .chart-container {
+        overflow-x: auto;
+        padding: 0 0.5rem;
+      }
+
+      .chart-container app-simple-chart {
+        min-width: 600px;
       }
     }
   `]
 })
 export class StatisticsComponent implements OnInit {
-  @Input() especialidadId?: number;
-  @Input() medicoId?: number;
-
-  especialidades: EstadisticasEspecialidad[] = [];
-  medicos: MedicoCompleto[] = [];
-  loading = false;
-  error: string | null = null;
-
-  // Datos para gráficos
-  especialidadesChartData: ChartData[] = [];
-  medicosChartData: ChartData[] = [];
-  consultasChartData: ChartData[] = [];
-  pacientesChartData: ChartData[] = [];
-
-  // Configuración de gráficos
-  especialidadesChartConfig: ChartConfig = {
-    type: 'doughnut',
-    title: 'Distribución por Especialidades',
-    showLegend: false,
-    showValues: true,
-    height: 400,
-    width: 400
-  };
-
-  medicosChartConfig: ChartConfig = {
+  // Datos del gráfico de estados
+  chartData: ChartData[] = [];
+  chartConfig: ChartConfig = {
     type: 'bar',
-    title: 'Médicos por Especialidad',
-    showLegend: false,
+    title: '',
+    showLegend: true,
     showValues: true,
-    height: 400,
-    width: 800
+    height: 350,
+    width: 700
   };
 
-  consultasChartConfig: ChartConfig = {
+  // Datos del gráfico de especialidades
+  especialidadesData: ChartData[] = [];
+  chartConfigEspecialidades: ChartConfig = {
     type: 'bar',
-    title: 'Consultas por Especialidad',
-    showLegend: false,
+    title: '',
+    showLegend: true,
     showValues: true,
-    height: 400,
-    width: 800
+    height: 350,
+    width: 900
   };
 
-  pacientesChartConfig: ChartConfig = {
-    type: 'line',
-    title: 'Pacientes Atendidos por Especialidad',
-    showLegend: false,
+  // Datos del gráfico de médicos
+  medicosData: ChartData[] = [];
+  chartConfigMedicos: ChartConfig = {
+    type: 'bar',
+    title: '',
+    showLegend: true,
     showValues: true,
     height: 400,
-    width: 800
+    width: 1000
   };
 
-  // Totales
-  totalEspecialidades = 0;
-  totalMedicos = 0;
-  totalConsultas = 0;
-  totalPacientes = 0;
+  // Filtros de período
+  selectedPeriod: string = '7';
+  fechaInicio: string = '';
+  fechaFin: string = '';
+  loading: boolean = false;
 
-  constructor(private viewsService: ViewsService) {}
+  selectedPeriodEspecialidades: string = '7';
+  fechaInicioEspecialidades: string = '';
+  fechaFinEspecialidades: string = '';
+  loadingEspecialidades: boolean = false;
+
+  // Filtros de período para médicos
+  selectedPeriodMedicos: string = '7';
+  fechaInicioMedicos: string = '';
+  fechaFinMedicos: string = '';
+  loadingMedicos: boolean = false;
+
+  constructor(private consultaService: ConsultaService) {}
 
   ngOnInit() {
-    this.loadStatistics();
+    this.loadChartData();
+    this.loadEspecialidadesData();
+    this.loadMedicosData();
   }
 
-  loadStatistics() {
+  loadChartData() {
     this.loading = true;
-    this.error = null;
-
-    // Cargar especialidades y médicos en paralelo
-    Promise.all([
-      this.viewsService.getEstadisticasEspecialidad(this.especialidadId).toPromise(),
-      this.viewsService.getMedicosCompleta({ page: 1, limit: 100 }, { activo: true }).toPromise()
-    ]).then(([especialidadesResponse, medicosResponse]) => {
-      if (especialidadesResponse?.success) {
-        this.especialidades = especialidadesResponse.data;
-        this.prepareChartData();
-      }
-
-      if (medicosResponse?.success) {
-        this.medicos = medicosResponse.data;
-      }
-
-      this.loading = false;
-    }).catch(error => {
-      this.error = 'Error al cargar las estadísticas';
-      this.loading = false;
-      console.error('Error loading statistics:', error);
-    });
+    const { fechaInicio, fechaFin } = this.calculateDateRange();
+    
+    this.consultaService.getEstadisticasPorPeriodo(fechaInicio, fechaFin)
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.chartData = response.data.map(item => ({
+              label: this.getEstadoLabel(item.estado),
+              value: item.total,
+              color: this.getEstadoColor(item.estado)
+            }));
+          } else {
+            this.chartData = [];
+          }
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Error cargando estadísticas:', error);
+          this.chartData = [];
+          this.loading = false;
+        }
+      });
   }
 
-  prepareChartData() {
-    console.log('📊 Preparando datos de gráficos:', this.especialidades);
+  calculateDateRange(): { fechaInicio: string; fechaFin: string } {
+    const hoy = new Date();
+    let fechaInicio: string;
+    let fechaFin = hoy.toISOString().split('T')[0];
     
-    // Datos para gráfico de especialidades (doughnut)
-    this.especialidadesChartData = this.especialidades.map((esp, index) => ({
-      label: esp.nombre_especialidad,
-      value: esp.total_consultas,
-      color: this.getDefaultColor(index)
-    }));
+    if (this.selectedPeriod === 'custom') {
+      fechaInicio = this.fechaInicio || fechaFin;
+    } else {
+      const dias = parseInt(this.selectedPeriod);
+      const fecha = new Date(hoy);
+      fecha.setDate(fecha.getDate() - dias);
+      fechaInicio = fecha.toISOString().split('T')[0];
+    }
     
-    console.log('🍩 Datos del gráfico doughnut:', this.especialidadesChartData);
-
-    // Datos para gráfico de médicos por especialidad
-    this.medicosChartData = this.especialidades.map((esp, index) => ({
-      label: esp.nombre_especialidad,
-      value: esp.medicos_activos,
-      color: this.getDefaultColor(index)
-    }));
-
-    // Datos para gráfico de consultas por especialidad
-    this.consultasChartData = this.especialidades.map((esp, index) => ({
-      label: esp.nombre_especialidad,
-      value: esp.total_consultas,
-      color: this.getDefaultColor(index)
-    }));
-
-    // Datos para gráfico de pacientes por especialidad
-    this.pacientesChartData = this.especialidades.map((esp, index) => ({
-      label: esp.nombre_especialidad,
-      value: esp.pacientes_atendidos,
-      color: this.getDefaultColor(index)
-    }));
-
-    // Calcular totales
-    this.totalEspecialidades = this.especialidades.length;
-    this.totalMedicos = this.especialidades.reduce((sum, esp) => sum + esp.medicos_activos, 0);
-    this.totalConsultas = this.especialidades.reduce((sum, esp) => sum + esp.total_consultas, 0);
-    this.totalPacientes = this.especialidades.reduce((sum, esp) => sum + esp.pacientes_atendidos, 0);
+    return { fechaInicio, fechaFin };
   }
 
-  getDefaultColor(index: number): string {
-    const colors = [
-      '#E91E63', '#2F90B0', '#EA7EC3', '#4CAF50', '#FF9800',
-      '#9C27B0', '#00BCD4', '#8BC34A', '#FF5722', '#607D8B'
+  getEstadoColor(estado: string): string {
+    const colores: { [key: string]: string } = {
+      'agendada': '#3B82F6',      // Azul
+      'finalizada': '#10B981',    // Verde
+      'cancelada': '#EF4444',     // Rojo
+      'por_agendar': '#F59E0B',   // Amarillo
+      'reagendada': '#8B5CF6',    // Púrpura
+      'no_asistio': '#6B7280'     // Gris
+    };
+    return colores[estado] || '#6B7280';
+  }
+
+  getEstadoLabel(estado: string): string {
+    const labels: { [key: string]: string } = {
+      'agendada': 'Agendadas',
+      'finalizada': 'Finalizadas', 
+      'cancelada': 'Canceladas',
+      'por_agendar': 'Por Agendar',
+      'reagendada': 'Reagendadas',
+      'no_asistio': 'No Asistió'
+    };
+    return labels[estado] || estado;
+  }
+
+  loadEspecialidadesData() {
+    this.loadingEspecialidades = true;
+    const { fechaInicio, fechaFin } = this.calculateEspecialidadesDateRange();
+    
+    this.consultaService.getEstadisticasPorEspecialidad(fechaInicio, fechaFin)
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.especialidadesData = response.data.map(item => ({
+              label: item.especialidad,
+              value: item.total,
+              color: this.getEspecialidadColor(item.especialidad)
+            }));
+          } else {
+            this.especialidadesData = [];
+          }
+          this.loadingEspecialidades = false;
+        },
+        error: (error) => {
+          console.error('Error cargando estadísticas de especialidades:', error);
+          this.especialidadesData = [];
+          this.loadingEspecialidades = false;
+        }
+      });
+  }
+
+  loadMedicosData() {
+    this.loadingMedicos = true;
+    const { fechaInicio, fechaFin } = this.calculateMedicosDateRange();
+    
+    this.consultaService.getEstadisticasPorMedico(fechaInicio, fechaFin)
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.medicosData = response.data.map(item => ({
+              label: item.medico,
+              value: item.total,
+              color: this.getMedicoColor(item.medico)
+            }));
+          } else {
+            this.medicosData = [];
+          }
+          this.loadingMedicos = false;
+        },
+        error: (error) => {
+          console.error('Error cargando estadísticas de médicos:', error);
+          this.medicosData = [];
+          this.loadingMedicos = false;
+        }
+      });
+  }
+
+  calculateEspecialidadesDateRange(): { fechaInicio: string; fechaFin: string } {
+    const hoy = new Date();
+    let fechaInicio: string;
+    let fechaFin = hoy.toISOString().split('T')[0];
+    
+    if (this.selectedPeriodEspecialidades === 'custom') {
+      fechaInicio = this.fechaInicioEspecialidades || fechaFin;
+    } else {
+      const dias = parseInt(this.selectedPeriodEspecialidades);
+      const fecha = new Date(hoy);
+      fecha.setDate(fecha.getDate() - dias);
+      fechaInicio = fecha.toISOString().split('T')[0];
+    }
+    
+    return { fechaInicio, fechaFin };
+  }
+
+  calculateMedicosDateRange(): { fechaInicio: string; fechaFin: string } {
+    const hoy = new Date();
+    let fechaInicio: string;
+    let fechaFin = hoy.toISOString().split('T')[0];
+    
+    if (this.selectedPeriodMedicos === 'custom') {
+      fechaInicio = this.fechaInicioMedicos || fechaFin;
+    } else {
+      const dias = parseInt(this.selectedPeriodMedicos);
+      const fecha = new Date(hoy);
+      fecha.setDate(fecha.getDate() - dias);
+      fechaInicio = fecha.toISOString().split('T')[0];
+    }
+    
+    return { fechaInicio, fechaFin };
+  }
+
+  getEspecialidadColor(especialidad: string): string {
+    const colores: { [key: string]: string } = {
+      'Medicina General': '#3B82F6',      // Azul
+      'Odontología': '#10B981',           // Verde
+      'Oftalmología': '#8B5CF6',          // Púrpura
+      'Neurología': '#F59E0B',            // Amarillo
+      'Cardiología': '#EF4444',           // Rojo
+      'Ortopedia': '#6B7280',             // Gris
+      'Pediatría': '#EC4899',             // Rosa
+      'Ginecología': '#84CC16',           // Verde lima
+      'Dermatología': '#F97316',          // Naranja
+      'Psiquiatría': '#6366F1',           // Índigo
+      'Sin Especialidad': '#94A3B8'       // Gris claro
+    };
+    
+    // Si no encuentra la especialidad exacta, usar colores alternativos
+    if (!colores[especialidad]) {
+      const coloresAlternativos = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#84CC16', '#F97316', '#6366F1'];
+      const hash = especialidad.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      return coloresAlternativos[Math.abs(hash) % coloresAlternativos.length];
+    }
+    
+    return colores[especialidad];
+  }
+
+  getMedicoColor(medico: string): string {
+    // Colores profesionales para médicos
+    const coloresMedicos = [
+      '#3B82F6',  // Azul
+      '#10B981',  // Verde
+      '#8B5CF6',  // Púrpura
+      '#F59E0B',  // Amarillo
+      '#EF4444',  // Rojo
+      '#EC4899',  // Rosa
+      '#84CC16',  // Verde lima
+      '#F97316',  // Naranja
+      '#6366F1',  // Índigo
+      '#06B6D4',  // Cian
+      '#8B5A2B',  // Marrón
+      '#DC2626'   // Rojo oscuro
     ];
-    return colors[index % colors.length];
+    
+    // Generar color basado en el hash del nombre del médico
+    const hash = medico.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    
+    return coloresMedicos[Math.abs(hash) % coloresMedicos.length];
   }
 }

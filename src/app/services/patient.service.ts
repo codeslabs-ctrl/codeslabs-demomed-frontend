@@ -110,4 +110,10 @@ export class PatientService {
       );
     }
   }
+
+  checkEmailAvailability(email: string): Observable<{exists: boolean}> {
+    return this.http.get<{exists: boolean}>(`${this.baseUrl}/check-email`, {
+      params: { email }
+    });
+  }
 }

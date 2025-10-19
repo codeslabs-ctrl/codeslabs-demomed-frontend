@@ -70,6 +70,16 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'admin/mensajes/new',
+    loadComponent: () => import('./pages/admin/mensajes/editar-mensaje/editar-mensaje.component').then(m => m.EditarMensajeComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/mensajes/:id/edit',
+    loadComponent: () => import('./pages/admin/mensajes/editar-mensaje/editar-mensaje.component').then(m => m.EditarMensajeComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'statistics',
     loadComponent: () => import('./pages/statistics/statistics.component').then(m => m.StatisticsComponent),
     canActivate: [authGuard]

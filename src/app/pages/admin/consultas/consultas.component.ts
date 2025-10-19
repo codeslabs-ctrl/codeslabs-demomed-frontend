@@ -17,7 +17,7 @@ import { Medico } from '../../../services/medico.service';
       <!-- Header -->
       <div class="page-header">
         <h1>Gestión de Consultas</h1>
-        <button class="btn btn-primary" (click)="navigateToNuevaConsulta()">
+        <button class="btn btn-new" (click)="navigateToNuevaConsulta()">
           ➕ Nueva Consulta
         </button>
       </div>
@@ -156,13 +156,13 @@ import { Medico } from '../../../services/medico.service';
                 </td>
                 <td>
                   <div class="actions-container">
-                    <button class="action-btn btn-view" (click)="viewConsulta(consulta)" title="Ver detalles">
+                    <button class="action-btn view-btn" (click)="viewConsulta(consulta)" title="Ver detalles">
                       <span class="btn-icon">👁️</span>
                       <span class="btn-text">Ver</span>
                     </button>
                     <button 
                       *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada'"
-                      class="action-btn btn-edit" 
+                      class="action-btn edit-btn" 
                       [class.disabled]="isConsultaExpirada(consulta)"
                       [disabled]="isConsultaExpirada(consulta)"
                       (click)="editarConsulta(consulta)" 
@@ -320,7 +320,7 @@ import { Medico } from '../../../services/medico.service';
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="closeVerModal()">Cerrar</button>
+            <button class="btn btn-clear" (click)="closeVerModal()">Cerrar</button>
           </div>
         </div>
       </div>
@@ -361,7 +361,7 @@ import { Medico } from '../../../services/medico.service';
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="closeFinalizarModal()">Cancelar</button>
+            <button class="btn btn-clear" (click)="closeFinalizarModal()">Cancelar</button>
             <button 
               class="btn btn-success" 
               (click)="confirmarFinalizar()"
@@ -440,7 +440,7 @@ import { Medico } from '../../../services/medico.service';
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="closeCancelarModal()">Cancelar</button>
+            <button class="btn btn-clear" (click)="closeCancelarModal()">Cancelar</button>
             <button 
               class="btn btn-danger" 
               (click)="confirmarCancelar()"
@@ -491,9 +491,9 @@ import { Medico } from '../../../services/medico.service';
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="closeReagendarModal()">Cancelar</button>
+            <button class="btn btn-clear" (click)="closeReagendarModal()">Cancelar</button>
             <button 
-              class="btn btn-primary" 
+              class="btn btn-new" 
               (click)="confirmarReagendar()"
               [disabled]="!nuevaFecha || !nuevaHora">
               Reagendar
@@ -1478,7 +1478,7 @@ export class ConsultasComponent implements OnInit {
   editarConsulta(consulta: ConsultaWithDetails): void {
     // Verificar si la consulta está expirada
     if (this.isConsultaExpirada(consulta)) {
-      alert('No se puede editar una consulta expirada. Use "Reagendar" para cambiar la fecha/hora.');
+      alert('⚠️ Consulta expirada\n\nNo se puede editar una consulta que ya pasó. Use la opción "Reagendar" para cambiar la fecha y hora.');
       return;
     }
     
@@ -1580,11 +1580,11 @@ export class ConsultasComponent implements OnInit {
         console.log('Consulta finalizada:', response);
         this.closeFinalizarModal();
         this.loadConsultas();
-        alert('Consulta finalizada exitosamente');
+        alert('✅ Consulta finalizada exitosamente\n\nLa consulta ha sido marcada como completada y se ha registrado en el historial del paciente.');
       },
       error: (error) => {
         console.error('Error finalizando consulta:', error);
-        alert('Error al finalizar la consulta');
+        alert('❌ Error al finalizar la consulta\n\nPor favor, verifique su conexión e intente nuevamente. Si el problema persiste, contacte al administrador.');
       }
     });
   }
@@ -1608,12 +1608,12 @@ export class ConsultasComponent implements OnInit {
         console.log('Consulta cancelada:', response);
         this.closeCancelarModal();
         this.loadConsultas();
-        alert('Consulta cancelada exitosamente');
+        alert('⚠️ Consulta cancelada exitosamente\n\nLa consulta ha sido cancelada y el paciente será notificado. Puede reagendar la cita si es necesario.');
         this.isSubmitting = false;
       },
       error: (error) => {
         console.error('Error cancelando consulta:', error);
-        alert('Error al cancelar la consulta');
+        alert('❌ Error al cancelar la consulta\n\nPor favor, verifique su conexión e intente nuevamente. Si el problema persiste, contacte al administrador.');
         this.isSubmitting = false;
       }
     });
@@ -1639,11 +1639,11 @@ export class ConsultasComponent implements OnInit {
         console.log('✅ Consulta reagendada exitosamente:', response);
         this.closeReagendarModal();
         this.loadConsultas();
-        alert('Consulta reagendada exitosamente');
+        alert('✅ Consulta reagendada exitosamente\n\nLa consulta ha sido reagendada y se ha enviado una notificación al paciente con la nueva fecha y hora.');
       },
       error: (error) => {
         console.error('❌ Error reagendando consulta:', error);
-        alert('Error al reagendar la consulta');
+        alert('❌ Error al reagendar la consulta\n\nPor favor, verifique su conexión e intente nuevamente. Si el problema persiste, contacte al administrador.');
       }
     });
   }

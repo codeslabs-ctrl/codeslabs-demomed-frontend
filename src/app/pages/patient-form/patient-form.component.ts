@@ -124,10 +124,17 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
                 email
                 pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
                 placeholder="usuario@dominio.com"
+                (blur)="validateEmail()"
                 #email="ngModel">
               <div class="error-message" *ngIf="email.invalid && email.touched">
                 <span *ngIf="email.errors?.['required']">El email es requerido</span>
                 <span *ngIf="email.errors?.['email'] || email.errors?.['pattern']">Ingresa un email válido (ej: usuario&#64;dominio.com)</span>
+              </div>
+              <div class="error-message" *ngIf="emailExists && email.valid">
+                <span class="email-duplicate-error">⚠️ Este email ya está registrado en el sistema</span>
+              </div>
+              <div class="success-message" *ngIf="emailChecked && !emailExists && email.valid">
+                <span class="email-available">✅ Email disponible</span>
               </div>
             </div>
             <div class="form-group">
@@ -475,6 +482,28 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
       margin-top: 0.25rem;
     }
 
+    .success-message {
+      color: #10b981;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+
+    .email-duplicate-error {
+      color: #ef4444;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .email-available {
+      color: #10b981;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
     .form-actions {
       display: flex;
       gap: 1rem;
@@ -776,6 +805,11 @@ export class PatientFormComponent implements OnInit {
   showSuccessActions = false;
   patientCreated = false;
   
+  // Variables para validación de email
+  emailExists = false;
+  emailChecked = false;
+  emailValidationTimeout: any;
+  
   // Variables para historias clínicas y archivos
   historicos: HistoricoWithDetails[] = [];
   historico: HistoricoWithDetails | null = null;
@@ -910,7 +944,13 @@ export class PatientFormComponent implements OnInit {
         });
       }
       
-      alert('Por favor completa todos los campos requeridos correctamente');
+      alert('⚠️ Campos requeridos incompletos\n\nPor favor, complete todos los campos marcados con (*) antes de continuar. Verifique que la información sea correcta.');
+      return;
+    }
+
+    // Verificar si hay email duplicado antes de enviar
+    if (this.emailExists) {
+      alert('⚠️ Email duplicado\n\nEl email ingresado ya está registrado en el sistema. Por favor, use un email diferente.');
       return;
     }
     
@@ -1017,12 +1057,12 @@ export class PatientFormComponent implements OnInit {
             this.router.navigate(['/patients']);
           } else {
             console.error('❌ Error actualizando datos médicos:', response.error);
-            alert('Error al actualizar los datos médicos');
+            alert('❌ Error al actualizar los datos médicos\n\nNo se pudieron guardar los cambios. Por favor, verifique su conexión e intente nuevamente.');
           }
         },
         error: (error) => {
           console.error('❌ Error actualizando datos médicos:', error);
-          alert('Error al actualizar los datos médicos');
+          alert('❌ Error al actualizar los datos médicos\n\nError de conexión. Por favor, verifique su internet e intente nuevamente.');
         }
       });
     } else {
@@ -1041,7 +1081,7 @@ export class PatientFormComponent implements OnInit {
       if (!medicoId) {
         console.error('❌ No se encontró medico_id en el usuario autenticado');
         console.error('❌ Usuario actual:', currentUser);
-        alert('Error: No se pudo identificar el médico');
+        alert('❌ Error de autenticación\n\nNo se pudo identificar el médico actual. Por favor, cierre sesión e inicie sesión nuevamente.');
         return;
       }
 
@@ -1066,7 +1106,7 @@ export class PatientFormComponent implements OnInit {
             this.router.navigate(['/patients']);
           } else {
             console.error('❌ Error creando historia médica:', response.error);
-            alert('Error al crear la historia médica: ' + (response.error?.message || 'Error desconocido'));
+            alert('❌ Error al crear la historia médica\n\n' + (response.error?.message || 'Error desconocido') + '\n\nPor favor, intente nuevamente o contacte al administrador.');
           }
         },
         error: (error) => {
@@ -1077,7 +1117,7 @@ export class PatientFormComponent implements OnInit {
           if (error.error) {
             console.error('❌ Error details:', error.error);
           }
-          alert('Error al crear la historia médica: ' + (error.error?.message || error.message || 'Error desconocido'));
+          alert('❌ Error al crear la historia médica\n\n' + (error.error?.message || error.message || 'Error desconocido') + '\n\nPor favor, verifique su conexión e intente nuevamente.');
         }
       });
     } else {
@@ -1197,6 +1237,43 @@ export class PatientFormComponent implements OnInit {
         cedulaControl.setErrors({ cedulaInvalid: true });
       }
     }
+  }
+
+  // Método para validar email duplicado
+  validateEmail() {
+    if (this.patient.email && this.patient.email.includes('@')) {
+      // Limpiar timeout anterior
+      if (this.emailValidationTimeout) {
+        clearTimeout(this.emailValidationTimeout);
+      }
+
+      // Debounce: esperar 500ms antes de validar
+      this.emailValidationTimeout = setTimeout(() => {
+        this.checkEmailAvailability();
+      }, 500);
+    } else {
+      // Reset validation state
+      this.emailExists = false;
+      this.emailChecked = false;
+    }
+  }
+
+  checkEmailAvailability() {
+    if (!this.patient.email || !this.patient.email.includes('@')) {
+      return;
+    }
+
+    this.patientService.checkEmailAvailability(this.patient.email).subscribe({
+      next: (response: any) => {
+        this.emailChecked = true;
+        this.emailExists = response.exists;
+      },
+      error: (error: any) => {
+        console.error('Error checking email availability:', error);
+        this.emailChecked = false;
+        this.emailExists = false;
+      }
+    });
   }
 
   // Algoritmo de validación de cédula venezolana
@@ -1390,14 +1467,14 @@ export class PatientFormComponent implements OnInit {
         next: (response) => {
           if (response.success) {
             archivo.descripcion = nuevaDescripcion;
-            alert('Descripción actualizada correctamente');
+            alert('✅ Descripción actualizada correctamente\n\nLa descripción del archivo ha sido modificada exitosamente.');
           } else {
-            alert('Error al actualizar la descripción');
+            alert('❌ Error al actualizar la descripción\n\nNo se pudo modificar la descripción del archivo. Por favor, intente nuevamente.');
           }
         },
         error: (error) => {
           console.error('Error actualizando descripción:', error);
-          alert('Error al actualizar la descripción');
+          alert('❌ Error al actualizar la descripción\n\nError de conexión. Por favor, verifique su internet e intente nuevamente.');
         }
       });
     }

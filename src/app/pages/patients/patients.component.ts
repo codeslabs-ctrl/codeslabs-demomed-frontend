@@ -7,16 +7,17 @@ import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
 import { Patient, PatientFilters } from '../../models/patient.model';
 import { APP_CONFIG } from '../../config/app.config';
+import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-modal.component';
 
 @Component({
   selector: 'app-patients',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ConfirmModalComponent],
   template: `
     <div class="patients-page">
       <div class="page-header">
         <h1>Gestión de Pacientes</h1>
-        <a routerLink="/patients/new" class="btn btn-primary">
+        <a routerLink="/patients/new" class="btn btn-new">
           ➕ Nuevo Paciente
         </a>
       </div>
@@ -69,7 +70,7 @@ import { APP_CONFIG } from '../../config/app.config';
           </div>
         </div>
         <div class="filters-actions">
-          <button class="btn btn-secondary" (click)="clearFilters()">
+          <button class="btn btn-clear" (click)="clearFilters()">
             🗑️ Limpiar Filtros
           </button>
         </div>
@@ -139,7 +140,7 @@ import { APP_CONFIG } from '../../config/app.config';
 
       <div class="pagination" *ngIf="pagination && pagination.pages > 1">
         <button 
-          class="btn btn-secondary" 
+          class="btn btn-clear" 
           [disabled]="currentPage === 1"
           (click)="changePage(currentPage - 1)">
           ← Anterior
@@ -148,7 +149,7 @@ import { APP_CONFIG } from '../../config/app.config';
           Página {{ currentPage }} de {{ pagination.pages }}
         </span>
         <button 
-          class="btn btn-secondary" 
+          class="btn btn-clear" 
           [disabled]="currentPage === pagination.pages"
           (click)="changePage(currentPage + 1)">
           Siguiente →
@@ -160,6 +161,21 @@ import { APP_CONFIG } from '../../config/app.config';
         <p>Cargando pacientes...</p>
       </div>
     </div>
+
+    <!-- Modal de confirmación eliminar -->
+    <app-confirm-modal 
+      *ngIf="showConfirmModal"
+      [show]="showConfirmModal"
+      title="Eliminar Paciente"
+      message="¿Estás seguro de que quieres eliminar este paciente?"
+      [itemName]="patientToDelete ? patientToDelete.nombres + ' ' + patientToDelete.apellidos : ''"
+      warningText="Esta acción eliminará permanentemente todos los datos del paciente, incluyendo historias médicas y archivos."
+      confirmText="🗑️ Eliminar"
+      cancelText="Cancelar"
+      type="danger"
+      (confirm)="onConfirmDelete()"
+      (cancel)="onCancelDelete()">
+    </app-confirm-modal>
   `,
   styles: [`
     .patients-page {
@@ -412,6 +428,10 @@ export class PatientsComponent implements OnInit {
   filters: PatientFilters = {};
   pageSizeOptions = APP_CONFIG.PAGINATION.PAGE_SIZE_OPTIONS;
   currentUser: User | null = null;
+  
+  // Modal de confirmación eliminar
+  showConfirmModal: boolean = false;
+  patientToDelete: Patient | null = null;
 
   constructor(
     private patientService: PatientService,
@@ -532,11 +552,20 @@ export class PatientsComponent implements OnInit {
   }
 
   deletePatient(id: number) {
-    if (confirm('¿Estás seguro de que quieres eliminar este paciente?')) {
-      this.patientService.deletePatient(id).subscribe({
+    const patient = this.patients.find(p => p.id === id);
+    if (patient) {
+      this.patientToDelete = patient;
+      this.showConfirmModal = true;
+    }
+  }
+
+  onConfirmDelete() {
+    if (this.patientToDelete) {
+      this.patientService.deletePatient(this.patientToDelete.id!).subscribe({
         next: (response) => {
           if (response.success) {
             this.loadPatients();
+            this.closeConfirmModal();
           }
         },
         error: (error) => {
@@ -544,5 +573,14 @@ export class PatientsComponent implements OnInit {
         }
       });
     }
+  }
+
+  onCancelDelete() {
+    this.closeConfirmModal();
+  }
+
+  closeConfirmModal() {
+    this.showConfirmModal = false;
+    this.patientToDelete = null;
   }
 }

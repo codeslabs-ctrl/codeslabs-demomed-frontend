@@ -43,6 +43,10 @@ export interface PacienteParaDifusion {
   apellidos: string;
   email: string;
   telefono?: string;
+  edad?: number;
+  sexo?: string;
+  activo?: boolean;
+  cedula?: string;
   medico_nombre?: string;
   especialidad_nombre?: string;
   ultima_consulta?: string;

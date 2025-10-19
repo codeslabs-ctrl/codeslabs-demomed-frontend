@@ -469,13 +469,13 @@ export class ChangePasswordModalComponent {
           this.passwordChanged.emit();
           this.closeModal();
         } else {
-          alert(response.error?.message || 'Error al cambiar la contraseña');
+          alert('❌ Error al cambiar la contraseña\n\n' + (response.error?.message || 'Error desconocido') + '\n\nPor favor, verifique los datos e intente nuevamente.');
         }
       },
       error: (error) => {
         this.isLoading = false;
         console.error('Error changing password:', error);
-        alert(error.error?.error?.message || 'Error al cambiar la contraseña');
+        alert('❌ Error al cambiar la contraseña\n\n' + (error.error?.error?.message || 'Error de conexión') + '\n\nPor favor, verifique su internet e intente nuevamente.');
       }
     });
   }

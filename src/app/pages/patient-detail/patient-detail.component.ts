@@ -753,7 +753,7 @@ export class PatientDetailComponent implements OnInit {
 
   onRemisionCreated(remision: any) {
     console.log('Remisión creada:', remision);
-    alert(`Paciente ${this.patient?.nombres} ${this.patient?.apellidos} remitido exitosamente`);
+    alert(`✅ Paciente remitido exitosamente\n\n${this.patient?.nombres} ${this.patient?.apellidos} ha sido remitido correctamente. Se ha enviado una notificación al médico especialista.`);
     this.showRemitirModal = false;
   }
 
@@ -934,7 +934,7 @@ export class PatientDetailComponent implements OnInit {
         },
         error: (error) => {
         console.error('Error downloading file:', error);
-        alert('Error al descargar el archivo');
+        alert('❌ Error al descargar el archivo\n\nNo se pudo descargar el archivo. Por favor, verifique su conexión e intente nuevamente.');
         }
       });
   }
