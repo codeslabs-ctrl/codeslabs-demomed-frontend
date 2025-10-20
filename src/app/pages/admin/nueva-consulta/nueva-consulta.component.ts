@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { ConsultaService } from '../../../services/consulta.service';
 import { PatientService } from '../../../services/patient.service';
 import { MedicoService } from '../../../services/medico.service';
@@ -18,10 +18,20 @@ import { Medico } from '../../../services/medico.service';
     <div class="nueva-consulta-page">
       <!-- Header -->
       <div class="page-header">
-        <h1>Nueva Consulta</h1>
-        <a routerLink="/admin/consultas" class="btn btn-clear">
-          ← Volver a Gestión de Consultas
-        </a>
+        <div>
+          <h1>
+            <i class="fas fa-calendar-plus"></i>
+            Nueva Consulta
+          </h1>
+          <p class="page-description">
+            Crear una nueva consulta médica
+          </p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" (click)="volver()">
+            ← Volver a Gestión de Consultas
+          </button>
+        </div>
       </div>
 
       <!-- Formulario -->
@@ -179,28 +189,43 @@ import { Medico } from '../../../services/medico.service';
   `,
   styles: [`
     .nueva-consulta-page {
-      min-height: 100vh;
-      background: #f8f9fa;
-      padding: 0;
-    }
-
-    .page-header {
-      background: white;
-      border-bottom: 1px solid #e9ecef;
-      padding: 1.5rem 2rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      padding: 2rem;
       max-width: 1200px;
       margin: 0 auto;
     }
 
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+      gap: 1rem;
+    }
+
     .page-header h1 {
+      margin: 0 0 0.5rem 0;
+      color: #1e293b;
+      font-size: 2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .page-header h1 i {
+      color: var(--color-primary, #E91E63);
+    }
+
+    .page-description {
+      color: #6b7280;
       margin: 0;
-      color: #2c3e50;
-      font-size: 1.75rem;
-      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
     }
 
     .form-container {
@@ -347,6 +372,8 @@ import { Medico } from '../../../services/medico.service';
       background: #E91E63;
       color: white;
       border-color: #E91E63;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .btn-outline {
@@ -425,6 +452,11 @@ import { Medico } from '../../../services/medico.service';
       .page-header h1 {
         font-size: 1.5rem;
       }
+
+      .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
     }
   `]
 })
@@ -451,7 +483,8 @@ export class NuevaConsultaComponent implements OnInit {
     private patientService: PatientService,
     private medicoService: MedicoService,
     private authService: AuthService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -573,6 +606,10 @@ export class NuevaConsultaComponent implements OnInit {
     this.isSubmitting = false;
     
     console.log('🧹 Formulario limpiado completamente');
+  }
+
+  volver() {
+    this.router.navigate(['/admin/consultas']);
   }
 
 }

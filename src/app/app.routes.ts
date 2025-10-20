@@ -80,6 +80,63 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'admin/informes-medicos',
+    loadComponent: () => import('./pages/admin/informes-medicos/informe-medico-dashboard/informe-medico-dashboard.component').then(m => m.InformeMedicoDashboardComponent),
+    canActivate: [authGuard]
+  },
+  // Rutas para administración de plantillas (DEBEN estar antes que las rutas generales)
+  {
+    path: 'admin/informes-medicos/plantillas',
+    loadComponent: () => import('./pages/admin/informes-medicos/templates-admin/template-list.component').then(m => m.TemplateListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/informes-medicos/plantillas/nueva',
+    loadComponent: () => import('./pages/admin/informes-medicos/templates-admin/template-form.component').then(m => m.TemplateFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/informes-medicos/plantillas/:id',
+    loadComponent: () => import('./pages/admin/informes-medicos/templates-admin/template-detail.component').then(m => m.TemplateDetailComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/informes-medicos/plantillas/:id/editar',
+    loadComponent: () => import('./pages/admin/informes-medicos/templates-admin/template-form.component').then(m => m.TemplateFormComponent),
+    canActivate: [authGuard]
+  },
+  // Rutas para informes médicos (después de las rutas específicas de plantillas)
+  {
+    path: 'admin/informes-medicos/nuevo',
+    loadComponent: () => import('./pages/admin/informes-medicos/informe-medico-form/informe-medico-form.component').then(m => m.InformeMedicoFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/informes-medicos/:id',
+    loadComponent: () => import('./pages/admin/informes-medicos/informe-medico-detail/informe-medico-detail.component').then(m => m.InformeMedicoDetailComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/informes-medicos/:id/editar',
+    loadComponent: () => import('./pages/admin/informes-medicos/informe-medico-form/informe-medico-form.component').then(m => m.InformeMedicoFormComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/informes-medicos/:id/firmar',
+    loadComponent: () => import('./pages/admin/informes-medicos/firmar-informe/firmar-informe.component').then(m => m.FirmarInformeComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/informes-medicos/:id/enviar',
+    loadComponent: () => import('./pages/admin/informes-medicos/enviar-informe/enviar-informe.component').then(m => m.EnviarInformeComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/informes-medicos/:id/resumen',
+    loadComponent: () => import('./pages/admin/informes-medicos/informe-resumen/informe-resumen.component').then(m => m.InformeResumenComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'statistics',
     loadComponent: () => import('./pages/statistics/statistics.component').then(m => m.StatisticsComponent),
     canActivate: [authGuard]

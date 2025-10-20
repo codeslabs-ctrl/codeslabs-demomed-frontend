@@ -231,3 +231,4 @@ export class ConfirmModalComponent {
     this.cancel.emit();
   }
 }
+

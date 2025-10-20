@@ -207,6 +207,19 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
               <div class="action-description">Administrar remisiones entre médicos</div>
             </div>
           </a>
+          
+          <a routerLink="/admin/informes-medicos" class="action-card">
+            <div class="action-icon informes">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                <path d="M8,12H16V14H8V12M8,16H13V18H8V16"/>
+              </svg>
+            </div>
+            <div class="action-content">
+              <div class="action-title">Informes Médicos</div>
+              <div class="action-description">Crear y gestionar informes con firma digital</div>
+            </div>
+          </a>
         </div>
       </div>
 
@@ -1405,6 +1418,10 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
 
     .action-icon.remisiones {
       background: linear-gradient(135deg, #F59E0B, #D97706);
+    }
+
+    .action-icon.informes {
+      background: linear-gradient(135deg, #8B5CF6, #7C3AED);
     }
 
     .action-content {

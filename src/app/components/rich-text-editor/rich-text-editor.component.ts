@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import Quill from 'quill';
 
@@ -43,7 +43,7 @@ import Quill from 'quill';
     }
   `]
 })
-export class RichTextEditorComponent implements OnInit, OnDestroy {
+export class RichTextEditorComponent implements OnInit, OnDestroy, OnChanges {
   @Input() value: string = '';
   @Input() placeholder: string = 'Escribe aquí...';
   @Input() height: number = 120;
@@ -60,6 +60,15 @@ export class RichTextEditorComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.quill) {
       this.quill.off('text-change');
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['value'] && this.quill) {
+      const newValue = changes['value'].currentValue;
+      if (newValue !== this.quill.root.innerHTML) {
+        this.quill.root.innerHTML = newValue || '';
+      }
     }
   }
   
