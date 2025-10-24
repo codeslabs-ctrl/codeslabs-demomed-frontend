@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { ConsultaService } from '../../../services/consulta.service';
 import { MedicoService } from '../../../services/medico.service';
 import { AuthService } from '../../../services/auth.service';
+import { ServiciosService, FinalizarConsultaRequest } from '../../../services/servicios.service';
 import { ConsultaWithDetails, ConsultaFilters } from '../../../models/consulta.model';
 import { Medico } from '../../../services/medico.service';
 
@@ -187,7 +188,7 @@ import { Medico } from '../../../services/medico.service';
                       <span class="btn-text">Cancelar</span>
                     </button>
                     <button 
-                      *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada'"
+                      *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada') && canFinalizarConsulta()"
                       class="action-btn btn-complete" 
                       (click)="finalizarConsulta(consulta)" 
                       title="Finalizar">
@@ -325,52 +326,6 @@ import { Medico } from '../../../services/medico.service';
         </div>
       </div>
 
-      <!-- Modal Finalizar Consulta -->
-      <div class="modal-overlay" *ngIf="showFinalizarModal" (click)="closeFinalizarModal()">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h3>Finalizar Consulta</h3>
-            <button class="close-btn" (click)="closeFinalizarModal()">×</button>
-          </div>
-          <div class="modal-body">
-            <div class="consulta-info" *ngIf="selectedConsulta">
-              <h4>{{ selectedConsulta.paciente_nombre }}</h4>
-              <p><strong>Fecha:</strong> {{ formatDate(selectedConsulta.fecha_pautada) }}</p>
-              <p><strong>Hora:</strong> {{ formatTime(selectedConsulta.hora_pautada) }}</p>
-            </div>
-
-            <div class="form-group">
-              <label for="diagnostico">Diagnóstico Preliminar *</label>
-              <textarea
-                id="diagnostico"
-                class="form-control textarea"
-                [(ngModel)]="diagnosticoPreliminar"
-                placeholder="Ingrese el diagnóstico preliminar..."
-                required
-              ></textarea>
-            </div>
-
-            <div class="form-group">
-              <label for="observaciones">Observaciones</label>
-              <textarea
-                id="observaciones"
-                class="form-control textarea"
-                [(ngModel)]="observacionesFinalizar"
-                placeholder="Observaciones adicionales (opcional)..."
-              ></textarea>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-clear" (click)="closeFinalizarModal()">Cancelar</button>
-            <button 
-              class="btn btn-success" 
-              (click)="confirmarFinalizar()"
-              [disabled]="!diagnosticoPreliminar.trim()">
-              Finalizar Consulta
-            </button>
-          </div>
-        </div>
-      </div>
 
       <!-- Modal Cancelar Consulta -->
       <div class="modal-overlay" *ngIf="showCancelarModal" (click)="closeCancelarModal()">
@@ -501,6 +456,7 @@ import { Medico } from '../../../services/medico.service';
           </div>
         </div>
       </div>
+
 
     </div>
   `,
@@ -1339,19 +1295,17 @@ export class ConsultasComponent implements OnInit {
     private consultaService: ConsultaService,
     private medicoService: MedicoService,
     private authService: AuthService,
+    private serviciosService: ServiciosService,
     private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
 
   // Propiedades para modales
   showVerModal = false;
-  showFinalizarModal = false;
   showCancelarModal = false;
   showReagendarModal = false;
 
   // Propiedades para formularios de modales
-  diagnosticoPreliminar = '';
-  observacionesFinalizar = '';
   motivoCancelacion = '';
   detallesCancelacion = '';
   nuevaFecha = '';
@@ -1404,6 +1358,8 @@ export class ConsultasComponent implements OnInit {
         error: (error) => {
           console.error('Error loading consultas:', error);
           this.loading = false;
+          const errorMessage = error?.error?.message || error?.message || 'Error cargando consultas';
+          alert(`❌ Error cargando consultas:\n\n${errorMessage}\n\nPor favor, recarga la página e intente nuevamente.`);
         }
       });
   }
@@ -1520,10 +1476,12 @@ export class ConsultasComponent implements OnInit {
   }
 
   finalizarConsulta(consulta: ConsultaWithDetails): void {
-    this.selectedConsulta = consulta;
-    this.diagnosticoPreliminar = '';
-    this.observacionesFinalizar = '';
-    this.showFinalizarModal = true;
+    // Navegar al componente de finalización
+    this.router.navigate(['/admin/consultas', consulta.id, 'finalizar']);
+  }
+
+  canFinalizarConsulta(): boolean {
+    return this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'administrador';
   }
 
   cancelConsulta(consulta: ConsultaWithDetails): void {
@@ -1541,12 +1499,6 @@ export class ConsultasComponent implements OnInit {
     this.selectedConsulta = null;
   }
 
-  closeFinalizarModal(): void {
-    this.showFinalizarModal = false;
-    this.diagnosticoPreliminar = '';
-    this.observacionesFinalizar = '';
-    this.selectedConsulta = null;
-  }
 
   closeCancelarModal(): void {
     this.showCancelarModal = false;
@@ -1564,30 +1516,6 @@ export class ConsultasComponent implements OnInit {
     this.selectedConsulta = null;
   }
 
-  // Métodos para confirmar acciones
-  confirmarFinalizar(): void {
-    if (!this.selectedConsulta || !this.diagnosticoPreliminar.trim()) {
-      return;
-    }
-
-    const data = {
-      diagnostico_preliminar: this.diagnosticoPreliminar,
-      observaciones: this.observacionesFinalizar || undefined
-    };
-
-    this.consultaService.finalizarConsulta(this.selectedConsulta.id, data).subscribe({
-      next: (response) => {
-        console.log('Consulta finalizada:', response);
-        this.closeFinalizarModal();
-        this.loadConsultas();
-        alert('✅ Consulta finalizada exitosamente\n\nLa consulta ha sido marcada como completada y se ha registrado en el historial del paciente.');
-      },
-      error: (error) => {
-        console.error('Error finalizando consulta:', error);
-        alert('❌ Error al finalizar la consulta\n\nPor favor, verifique su conexión e intente nuevamente. Si el problema persiste, contacte al administrador.');
-      }
-    });
-  }
 
   confirmarCancelar(): void {
     if (this.isSubmitting) return;

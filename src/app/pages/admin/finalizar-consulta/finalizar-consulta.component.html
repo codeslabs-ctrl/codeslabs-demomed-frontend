@@ -1,0 +1,194 @@
+<div class="finalizar-consulta-container">
+  <!-- Header estándar -->
+  <div class="page-header">
+    <div class="header-info">
+      <h1>Finalizar Consulta</h1>
+      <div class="consulta-details" *ngIf="consultaInfo">
+        <div class="detail-item">
+          <strong>Paciente:</strong> {{ consultaInfo.paciente_nombre }}
+        </div>
+        <div class="detail-item">
+          <strong>Médico:</strong> {{ consultaInfo.medico_nombre }}
+        </div>
+        <div class="detail-item">
+          <strong>Fecha:</strong> {{ formatDate(consultaInfo.fecha_pautada) }} a las {{ formatTime(consultaInfo.hora_pautada) }}
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-clear" (click)="volverAlDashboard()">
+        ← Volver al Dashboard
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="loading-spinner"></div>
+    <p>Cargando información de la consulta...</p>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" *ngIf="!isLoading">
+    <!-- Sección de Servicios -->
+    <div class="servicios-section">
+      <div class="section-header">
+        <h2>🏥 Servicios Ofrecidos</h2>
+        <p class="section-description">Seleccione los servicios proporcionados en esta consulta y ajuste los precios según corresponda.</p>
+      </div>
+
+      <div class="servicios-grid" *ngIf="serviciosDisponibles.length > 0">
+        <div class="servicio-card" *ngFor="let servicio of serviciosDisponibles">
+          <div class="servicio-header">
+            <label class="servicio-checkbox">
+              <input
+                type="checkbox"
+                [checked]="isServicioSeleccionado(servicio.id)"
+                (change)="toggleServicio(servicio)"
+              />
+              <span class="checkmark"></span>
+              <div class="servicio-details">
+                <div class="servicio-nombre">{{ servicio.nombre_servicio }}</div>
+                <div class="servicio-precio">Precio base: ${{ servicio.monto_base | number:'1.2-2' }} {{ servicio.moneda }}</div>
+              </div>
+            </label>
+          </div>
+          
+          <div class="servicio-form" *ngIf="isServicioSeleccionado(servicio.id)">
+            <div class="precio-base-info">
+              <small>Precio base: ${{ getServicioSeleccionado(servicio.id).monto_base | number:'1.2-2' }} {{ getServicioSeleccionado(servicio.id).moneda }}</small>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Monto Real Pagado *</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  [(ngModel)]="getServicioSeleccionado(servicio.id).monto_pagado"
+                  (input)="onMontoInput(servicio.id, $event)"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  required
+                />
+                <small class="form-text text-muted">Puede ser diferente al precio base</small>
+              </div>
+              <div class="form-group">
+                <label>Moneda *</label>
+                <select
+                  class="form-control"
+                  [(ngModel)]="getServicioSeleccionado(servicio.id).moneda"
+                  (change)="onMonedaChange(servicio.id, $event)"
+                  required
+                >
+                  <option value="VES">Bolívares (VES)</option>
+                  <option value="USD">Dólares (USD)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Observaciones</label>
+              <textarea
+                class="form-control"
+                [(ngModel)]="getServicioSeleccionado(servicio.id).observaciones"
+                (input)="onObservacionesInput(servicio.id, $event)"
+                placeholder="Observaciones adicionales (opcional)..."
+                rows="2"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="no-servicios" *ngIf="serviciosDisponibles.length === 0">
+        <div class="no-servicios-icon">🏥</div>
+        <div class="no-servicios-title">No hay servicios disponibles</div>
+        <div class="no-servicios-description">
+          No se encontraron servicios para la especialidad de esta consulta.
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumen de Servicios Seleccionados -->
+    <div class="resumen-section" *ngIf="serviciosSeleccionados.length > 0">
+      <h3>📋 Resumen de Servicios Seleccionados</h3>
+      <div class="resumen-table">
+        <div class="resumen-header">
+          <div>Servicio</div>
+          <div>Monto</div>
+          <div>Moneda</div>
+          <div>Acciones</div>
+        </div>
+        <div class="resumen-row" *ngFor="let servicio of serviciosSeleccionados">
+          <div class="servicio-nombre">{{ servicio.servicio_nombre }}</div>
+          <div class="monto">${{ servicio.monto_pagado | number:'1.2-2' }}</div>
+          <div class="moneda">{{ servicio.moneda }}</div>
+          <div class="acciones">
+            <button 
+              class="btn-remove" 
+              (click)="removeServicio(servicio.servicio_id)"
+              title="Quitar servicio">
+              ❌
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="totales">
+        <div class="total-ves" *ngIf="totalVES > 0">
+          <strong>Total VES: ${{ totalVES | number:'1.2-2' }}</strong>
+        </div>
+        <div class="total-usd" *ngIf="totalUSD > 0">
+          <strong>Total USD: ${{ totalUSD | number:'1.2-2' }}</strong>
+        </div>
+        <div class="total-general" *ngIf="totalVES > 0 || totalUSD > 0">
+          <strong>Total General: ${{ (totalVES + totalUSD) | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de Información Médica -->
+    <div class="medica-section">
+      <h3>🩺 Información Médica</h3>
+      <div class="form-group">
+        <label for="diagnostico">Diagnóstico Preliminar *</label>
+        <textarea
+          id="diagnostico"
+          class="form-control textarea"
+          [(ngModel)]="diagnosticoPreliminar"
+          placeholder="Ingrese el diagnóstico preliminar..."
+          required
+          rows="4"
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="observaciones">Observaciones Generales</label>
+        <textarea
+          id="observaciones"
+          class="form-control textarea"
+          [(ngModel)]="observacionesGenerales"
+          placeholder="Observaciones adicionales (opcional)..."
+          rows="3"
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- Botones de Acción -->
+    <div class="action-buttons">
+      <button 
+        class="btn btn-clear" 
+        (click)="volverAlDashboard()"
+        [disabled]="isSubmitting">
+        Cancelar
+      </button>
+      <button 
+        class="btn btn-new" 
+        (click)="finalizarConsulta()"
+        [disabled]="!canFinalizar() || isSubmitting">
+        <span *ngIf="isSubmitting" class="spinner"></span>
+        {{ isSubmitting ? 'Finalizando...' : 'Finalizar Consulta' }}
+      </button>
+    </div>
+  </div>
+</div>

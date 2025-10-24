@@ -882,12 +882,17 @@ export class PatientFormComponent implements OnInit {
             this.historicoDataReady = true;
             this.editorKey++;
             this.loadHistoricos();
+          } else {
+            const errorMessage = (response as any).error?.message || 'Error cargando paciente';
+            alert(`❌ Error cargando paciente:\n\n${errorMessage}\n\nPor favor, recarga la página e intente nuevamente.`);
           }
           this.loading = false;
         },
         error: (error) => {
           console.error('Error loading patient:', error);
           this.loading = false;
+          const errorMessage = error?.error?.message || error?.message || 'Error de conexión cargando paciente';
+          alert(`❌ Error cargando paciente:\n\n${errorMessage}\n\nPor favor, verifique su conexión e intente nuevamente.`);
         }
       });
     }
@@ -941,6 +946,8 @@ export class PatientFormComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error loading historicos:', error);
+          const errorMessage = error?.error?.message || error?.message || 'Error de conexión cargando historial médico';
+          alert(`❌ Error cargando historial médico:\n\n${errorMessage}\n\nPor favor, verifique su conexión e intente nuevamente.`);
         }
       });
     }
@@ -956,6 +963,8 @@ export class PatientFormComponent implements OnInit {
       error: (error) => {
         console.error('Error loading archivos:', error);
         this.archivos = [];
+        const errorMessage = error?.error?.message || error?.message || 'Error de conexión cargando archivos';
+        alert(`❌ Error cargando archivos:\n\n${errorMessage}\n\nPor favor, verifique su conexión e intente nuevamente.`);
       }
     });
   }
@@ -1110,7 +1119,7 @@ export class PatientFormComponent implements OnInit {
             console.log('✅ Datos médicos actualizados correctamente');
             this.router.navigate(['/patients']);
           } else {
-            console.error('❌ Error actualizando datos médicos:', response.error);
+            console.error('❌ Error actualizando datos médicos:', (response as any).error);
             alert('❌ Error al actualizar los datos médicos\n\nNo se pudieron guardar los cambios. Por favor, verifique su conexión e intente nuevamente.');
           }
         },
@@ -1159,8 +1168,8 @@ export class PatientFormComponent implements OnInit {
             console.log('✅ Nueva historia médica creada correctamente');
             this.router.navigate(['/patients']);
           } else {
-            console.error('❌ Error creando historia médica:', response.error);
-            alert('❌ Error al crear la historia médica\n\n' + (response.error?.message || 'Error desconocido') + '\n\nPor favor, intente nuevamente o contacte al administrador.');
+            console.error('❌ Error creando historia médica:', (response as any).error);
+            alert('❌ Error al crear la historia médica\n\n' + ((response as any).error?.message || 'Error desconocido') + '\n\nPor favor, intente nuevamente o contacte al administrador.');
           }
         },
         error: (error) => {
@@ -1454,14 +1463,20 @@ export class PatientFormComponent implements OnInit {
       this.archivoService.deleteArchivo(archivoId).subscribe({
         next: (response) => {
           if (response.success) {
+            alert('✅ Archivo eliminado exitosamente');
             // Recargar archivos
             if (this.historico) {
               this.loadArchivos(this.historico.id);
             }
+          } else {
+            const errorMessage = (response as any).error?.message || 'Error eliminando archivo';
+            alert(`❌ Error eliminando archivo:\n\n${errorMessage}\n\nPor favor, intente nuevamente.`);
           }
         },
         error: (error) => {
           console.error('Error deleting archivo:', error);
+          const errorMessage = error?.error?.message || error?.message || 'Error de conexión eliminando archivo';
+          alert(`❌ Error eliminando archivo:\n\n${errorMessage}\n\nPor favor, verifique su conexión e intente nuevamente.`);
         }
       });
     }
@@ -1472,21 +1487,23 @@ export class PatientFormComponent implements OnInit {
       console.error('Archivo ID is undefined');
       return;
     }
-    this.archivoService.downloadArchivo(archivo.id).subscribe({
-      next: (response) => {
-        // Crear enlace de descarga
-        const blob = new Blob([response], { type: archivo.tipo_mime });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = archivo.nombre_original;
-        link.click();
-        window.URL.revokeObjectURL(url);
-      },
-      error: (error) => {
-        console.error('Error downloading file:', error);
-      }
-    });
+      this.archivoService.downloadArchivo(archivo.id).subscribe({
+        next: (response) => {
+          // Crear enlace de descarga
+          const blob = new Blob([response], { type: archivo.tipo_mime });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = archivo.nombre_original;
+          link.click();
+          window.URL.revokeObjectURL(url);
+        },
+        error: (error) => {
+          console.error('Error downloading archivo:', error);
+          const errorMessage = error?.error?.message || error?.message || 'Error descargando archivo';
+          alert(`❌ Error descargando archivo:\n\n${errorMessage}\n\nPor favor, intente nuevamente.`);
+        }
+      });
   }
 
   getFileIcon(tipoMime: string): string {

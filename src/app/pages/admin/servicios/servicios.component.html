@@ -1,0 +1,254 @@
+<div class="servicios-page">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Gestión de Servicios Médicos</h1>
+      <p>Administre los servicios ofrecidos por especialidad</p>
+    </div>
+    <button 
+      class="btn btn-primary" 
+      (click)="openCreateModal()"
+      *ngIf="isAdmin()">
+      <span class="btn-icon">➕</span>
+      Nuevo Servicio
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-section">
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label>Buscar por nombre</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="filtroNombre"
+          (input)="applyFilters()"
+          placeholder="Nombre del servicio..."
+        />
+      </div>
+      
+      <div class="filter-group">
+        <label>Especialidad</label>
+        <select
+          class="form-control"
+          [(ngModel)]="filtroEspecialidad"
+          (change)="applyFilters()"
+        >
+          <option value="">Todas las especialidades</option>
+          <option *ngFor="let especialidad of especialidades" [value]="especialidad.id">
+            {{ especialidad.nombre_especialidad }}
+          </option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Estado</label>
+        <select
+          class="form-control"
+          [(ngModel)]="filtroActivo"
+          (change)="applyFilters()"
+        >
+          <option value="">Todos</option>
+          <option value="activo">Activos</option>
+          <option value="inactivo">Inactivos</option>
+        </select>
+      </div>
+      
+      <div class="filter-actions">
+        <button class="btn btn-secondary" (click)="clearFilters()">
+          Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de servicios -->
+  <div class="table-section">
+    <div class="table-header">
+      <h3>Servicios ({{ filteredServicios.length }})</h3>
+    </div>
+    
+    <div class="table-container" *ngIf="!loading">
+      <table class="servicios-table">
+        <thead>
+          <tr>
+            <th>Servicio</th>
+            <th>Especialidad</th>
+            <th>Monto Base</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let servicio of filteredServicios" class="servicio-row">
+            <td>
+              <div class="servicio-info">
+                <div class="servicio-nombre">{{ servicio.nombre_servicio }}</div>
+              </div>
+            </td>
+            <td>
+              <span class="especialidad-badge">
+                {{ getEspecialidadNombre(servicio.especialidad_id) }}
+              </span>
+            </td>
+            <td>
+              <div class="monto-info">
+                <span class="monto-valor">${{ servicio.monto_base | number:'1.2-2' }}</span>
+              </div>
+            </td>
+            <td>
+              <span 
+                class="status-badge" 
+                [class.active]="servicio.activo"
+                [class.inactive]="!servicio.activo">
+                {{ servicio.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button 
+                  class="btn-action btn-edit" 
+                  (click)="openEditModal(servicio)"
+                  *ngIf="isAdmin()"
+                  title="Editar servicio">
+                  ✏️
+                </button>
+                <button 
+                  class="btn-action btn-toggle" 
+                  (click)="toggleActivo(servicio)"
+                  [title]="servicio.activo ? 'Desactivar' : 'Activar'">
+                  {{ servicio.activo ? '⏸️' : '▶️' }}
+                </button>
+                <button 
+                  class="btn-action btn-delete" 
+                  (click)="confirmDeleteServicio(servicio)"
+                  *ngIf="isAdmin()"
+                  title="Eliminar servicio">
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <div class="no-data" *ngIf="filteredServicios.length === 0">
+        <div class="no-data-icon">📋</div>
+        <div class="no-data-title">No hay servicios</div>
+        <div class="no-data-description">
+          No se encontraron servicios que coincidan con los filtros aplicados.
+        </div>
+      </div>
+    </div>
+    
+    <div class="loading" *ngIf="loading">
+      <div class="loading-spinner">⏳</div>
+      <div class="loading-text">Cargando servicios...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Crear/Editar Servicio -->
+<div class="modal-overlay" *ngIf="showCreateModal || showEditModal" (click)="closeModals()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ showEditModal ? 'Editar Servicio' : 'Nuevo Servicio' }}</h3>
+      <button class="close-btn" (click)="closeModals()">×</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="nombre">Nombre del Servicio *</label>
+        <input
+          id="nombre"
+          type="text"
+          class="form-control"
+          [(ngModel)]="servicioForm.nombre_servicio"
+          placeholder="Ej: Consulta médica general"
+          required
+        />
+      </div>
+      
+      <div class="form-group">
+        <label for="especialidad">Especialidad *</label>
+        <select
+          id="especialidad"
+          class="form-control"
+          [(ngModel)]="servicioForm.especialidad_id"
+          required
+        >
+          <option value="">Seleccione una especialidad</option>
+          <option *ngFor="let especialidad of especialidades" [value]="especialidad.id">
+            {{ especialidad.nombre_especialidad }}
+          </option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="monto">Monto Base (VES) *</label>
+        <input
+          id="monto"
+          type="number"
+          class="form-control"
+          [(ngModel)]="servicioForm.monto_base"
+          min="0"
+          step="0.01"
+          placeholder="0.00"
+          required
+        />
+      </div>
+      
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            [(ngModel)]="servicioForm.activo"
+          />
+          <span class="checkmark"></span>
+          Servicio activo
+        </label>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModals()">Cancelar</button>
+      <button class="btn btn-primary" (click)="saveServicio()">
+        {{ showEditModal ? 'Actualizar' : 'Crear' }} Servicio
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Confirmar Eliminación -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeModals()">
+  <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Confirmar Eliminación</h3>
+      <button class="close-btn" (click)="closeModals()">×</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="confirm-message">
+        <div class="confirm-icon">⚠️</div>
+        <div class="confirm-text">
+          <strong>¿Está seguro de que desea eliminar este servicio?</strong>
+        </div>
+        <div class="confirm-details" *ngIf="selectedServicio">
+          <p><strong>Servicio:</strong> {{ selectedServicio.nombre_servicio }}</p>
+          <p><strong>Especialidad:</strong> {{ getEspecialidadNombre(selectedServicio.especialidad_id) }}</p>
+        </div>
+        <div class="confirm-warning">
+          Esta acción no se puede deshacer.
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeModals()">Cancelar</button>
+      <button class="btn btn-danger" (click)="deleteServicio()">
+        Eliminar Servicio
+      </button>
+    </div>
+  </div>
+</div>
+

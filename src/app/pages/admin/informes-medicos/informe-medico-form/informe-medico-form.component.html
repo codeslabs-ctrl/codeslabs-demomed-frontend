@@ -90,8 +90,10 @@
             <div class="form-group">
               <label class="form-label">
                 <i class="fas fa-user-md"></i> Médico *
+                <span *ngIf="esUsuarioMedico" class="label-info">(Pre-seleccionado)</span>
               </label>
-              <select class="form-input" formControlName="medico_id" (change)="onMedicoSeleccionado()">
+              <select class="form-input" formControlName="medico_id" (change)="onMedicoSeleccionado()" 
+                      [disabled]="esUsuarioMedico">
                 <option value="">Seleccionar médico</option>
                 <option *ngFor="let medico of medicos" [value]="medico.id">
                   {{ medico.nombres }} {{ medico.apellidos }}
@@ -99,6 +101,10 @@
               </select>
               <div *ngIf="medico_id?.invalid && medico_id?.touched" class="error-message">
                 {{ obtenerErrorCampo('medico_id') }}
+              </div>
+              <div *ngIf="esUsuarioMedico" class="form-help">
+                <i class="fas fa-info-circle"></i>
+                Como médico, usted será automáticamente asignado a este informe.
               </div>
             </div>
           </div>

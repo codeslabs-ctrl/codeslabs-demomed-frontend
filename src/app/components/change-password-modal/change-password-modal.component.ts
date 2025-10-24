@@ -469,7 +469,7 @@ export class ChangePasswordModalComponent {
           this.passwordChanged.emit();
           this.closeModal();
         } else {
-          alert('❌ Error al cambiar la contraseña\n\n' + (response.error?.message || 'Error desconocido') + '\n\nPor favor, verifique los datos e intente nuevamente.');
+          alert('❌ Error al cambiar la contraseña\n\n' + ((response as any).error?.message || 'Error desconocido') + '\n\nPor favor, verifique los datos e intente nuevamente.');
         }
       },
       error: (error) => {

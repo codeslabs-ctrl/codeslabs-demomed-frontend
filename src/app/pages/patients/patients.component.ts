@@ -564,12 +564,18 @@ export class PatientsComponent implements OnInit {
       this.patientService.deletePatient(this.patientToDelete.id!).subscribe({
         next: (response) => {
           if (response.success) {
+            alert('✅ Paciente eliminado exitosamente');
             this.loadPatients();
             this.closeConfirmModal();
+          } else {
+            const errorMessage = (response as any).error?.message || 'Error eliminando paciente';
+            alert(`❌ Error eliminando paciente:\n\n${errorMessage}\n\nPor favor, intente nuevamente.`);
           }
         },
         error: (error) => {
           console.error('Error deleting patient:', error);
+          const errorMessage = error?.error?.message || error?.message || 'Error de conexión eliminando paciente';
+          alert(`❌ Error eliminando paciente:\n\n${errorMessage}\n\nPor favor, verifique su conexión e intente nuevamente.`);
         }
       });
     }

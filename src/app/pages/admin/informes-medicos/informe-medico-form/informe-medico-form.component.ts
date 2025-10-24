@@ -8,6 +8,7 @@ import { PatientService } from '../../../../services/patient.service';
 import { MedicoService } from '../../../../services/medico.service';
 import { EspecialidadService } from '../../../../services/especialidad.service';
 import { ContextualDataService, DatosContextuales } from '../../../../services/contextual-data.service';
+import { AuthService } from '../../../../services/auth.service';
 import { 
   InformeMedico, 
   TemplateInforme, 
@@ -48,6 +49,11 @@ export class InformeMedicoFormComponent implements OnInit {
   sugerenciasDisponibles = false;
   historialDisponible = false;
 
+  // Usuario actual
+  usuarioActual: any = null;
+  esUsuarioMedico = false;
+  medicoActual: any = null;
+
   // Tipos de informe
   tiposInforme = [
     { valor: 'consulta', texto: 'Consulta Médica' },
@@ -68,7 +74,8 @@ export class InformeMedicoFormComponent implements OnInit {
     private patientService: PatientService,
     private medicoService: MedicoService,
     private especialidadService: EspecialidadService,
-    public contextualDataService: ContextualDataService
+    public contextualDataService: ContextualDataService,
+    private authService: AuthService
   ) {
     this.informeForm = this.fb.group({
       titulo: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
@@ -82,8 +89,23 @@ export class InformeMedicoFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.verificarUsuarioActual();
     this.cargarDatosIniciales();
     this.verificarModoEdicion();
+  }
+
+  verificarUsuarioActual(): void {
+    this.authService.currentUser$.subscribe(user => {
+      this.usuarioActual = user;
+      if (user && user.rol === 'medico' && user.medico_id) {
+        this.esUsuarioMedico = true;
+        this.medicoActual = user;
+        console.log('👨‍⚕️ Usuario médico detectado:', user);
+      } else {
+        this.esUsuarioMedico = false;
+        console.log('👤 Usuario no médico:', user?.rol);
+      }
+    });
   }
 
   cargarDatosIniciales(): void {
@@ -100,15 +122,25 @@ export class InformeMedicoFormComponent implements OnInit {
       }
     });
 
-    // Cargar médicos
-    this.medicoService.getAllMedicos().subscribe({
-      next: (response: any) => {
-        this.medicos = response.data || [];
-      },
-      error: (error: any) => {
-        console.error('Error cargando médicos:', error);
-      }
-    });
+    // Cargar médicos - comportamiento diferente según el usuario
+    if (this.esUsuarioMedico) {
+      // Si es médico, solo cargar su información
+      this.medicos = [this.medicoActual];
+      // Pre-seleccionar el médico actual
+      this.informeForm.patchValue({
+        medico_id: this.medicoActual.medico_id
+      });
+    } else {
+      // Si es admin, cargar todos los médicos
+      this.medicoService.getAllMedicos().subscribe({
+        next: (response: any) => {
+          this.medicos = response.data || [];
+        },
+        error: (error: any) => {
+          console.error('Error cargando médicos:', error);
+        }
+      });
+    }
 
     // Cargar especialidades
     this.especialidadService.getAllEspecialidades().subscribe({
@@ -254,6 +286,7 @@ export class InformeMedicoFormComponent implements OnInit {
         const informeId = response?.id || response?.data?.id;
         if (response && informeId) {
           console.log('✅ ID del informe encontrado:', informeId);
+          alert('✅ Informe médico creado exitosamente');
           this.router.navigate(['/admin/informes-medicos', informeId, 'resumen']);
         } else {
           console.error('❌ Error: No se recibió ID del informe creado');
@@ -266,6 +299,10 @@ export class InformeMedicoFormComponent implements OnInit {
         console.error('Error creando informe:', error);
         this.error = 'Error creando el informe médico';
         this.guardando = false;
+        
+        // Mostrar alert con el error específico
+        const errorMessage = error?.error?.message || error?.message || 'Error desconocido al crear el informe';
+        alert(`❌ Error creando informe médico:\n\n${errorMessage}\n\nPor favor, intenta de nuevo.`);
       }
     });
   }

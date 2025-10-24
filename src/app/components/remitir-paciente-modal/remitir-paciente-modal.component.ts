@@ -464,7 +464,7 @@ export class RemitirPacienteModalComponent implements OnInit, OnChanges {
           console.log('✅ Médicos cargados:', this.medicos);
           console.log('🔍 IDs de médicos disponibles:', this.medicos.map(m => ({ id: m.id, nombres: m.nombres, apellidos: m.apellidos })));
         } else {
-          console.error('❌ Error loading medicos:', response.error);
+          console.error('❌ Error loading medicos:', (response as any).error);
         }
       },
       error: (error) => {
@@ -481,7 +481,7 @@ export class RemitirPacienteModalComponent implements OnInit, OnChanges {
           this.especialidades = response.data;
           console.log('✅ Especialidades cargadas:', this.especialidades);
         } else {
-          console.error('❌ Error loading especialidades:', response.error);
+          console.error('❌ Error loading especialidades:', (response as any).error);
         }
       },
       error: (error) => {

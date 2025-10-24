@@ -60,8 +60,18 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'admin/servicios',
+    loadComponent: () => import('./pages/admin/servicios/servicios.component').then(m => m.ServiciosComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'admin/consultas/nueva',
     loadComponent: () => import('./pages/admin/nueva-consulta/nueva-consulta.component').then(m => m.NuevaConsultaComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/consultas/:id/finalizar',
+    loadComponent: () => import('./pages/admin/finalizar-consulta/finalizar-consulta.component').then(m => m.FinalizarConsultaComponent),
     canActivate: [authGuard]
   },
   {

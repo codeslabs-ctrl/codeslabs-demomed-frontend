@@ -1,0 +1,113 @@
+[33mcommit 328dc1d7b9aef1e56cdfe9572301f591c5e031a3[m[33m ([m[1;36mHEAD -> [m[1;32mmulti-clinicas[m[33m, [m[1;31morigin/multi-clinicas[m[33m)[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Mon Oct 20 10:09:28 2025 -0400
+
+    multi-clinicas y informe medico
+
+[33mcommit 3364ac15842819631b7342c600f40eda64fd713b[m[33m ([m[1;31morigin/mejoras[m[33m, [m[1;32mmejoras[m[33m)[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Sun Oct 19 12:04:40 2025 -0400
+
+    mejora diseno
+
+[33mcommit 337206d11b2639efe8557b7200e21c861ad7caf4[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Sat Oct 18 20:58:38 2025 -0400
+
+    mejora diseno
+
+[33mcommit 31152a0821af9cc5e262a13b9f9014893f9dac58[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Sun Oct 12 19:28:05 2025 -0400
+
+    email consultas, cambios varios
+
+[33mcommit fafa5b230a8db024d70a68d418a3f94e72e2741a[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Sun Oct 12 18:17:35 2025 -0400
+
+    email consultas, cambios varios
+
+[33mcommit 70b09dffb2e58600e9e8d83a58fc353fb1881292[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Sat Oct 11 18:08:12 2025 -0400
+
+    Gestion de Consulta, pacientes del dia, Gestion Pacientes
+
+[33mcommit 85aaadd7e5cba5564bcb0da8484e533f9a918f76[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Sat Oct 11 17:42:20 2025 -0400
+
+    Gestion de Consulta, pacientes del dia, Gestion Pacientes
+
+[33mcommit 902d15f50ddaa65aa1ced8d6edb198a708752375[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Wed Oct 8 21:08:23 2025 -0400
+
+    Gestion remitentes
+
+[33mcommit 005647646bc228a6526443e2e639925d639a77f8[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Tue Oct 7 18:28:52 2025 -0400
+
+    login y nuevo paciente
+
+[33mcommit 028ea8adb6b1d05b3bce8374df55df1dbe8cf344[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Tue Oct 7 17:30:50 2025 -0400
+
+    login y nuevo paciente
+
+[33mcommit 4d8c92b83e2f1acd7cb1c1fc7e415e1a9e47954b[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Fri Oct 3 15:53:02 2025 -0400
+
+    mejoras mensajes de difusion y attach de arcchivos en informa
+
+[33mcommit 5389183407d4e8f0d9822c1f447c72aa894d3df8[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Thu Oct 2 17:36:13 2025 -0400
+
+    mejoras
+
+[33mcommit 20c0f61291fa877f11359e6085d8862b61b3be31[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Thu Oct 2 17:02:45 2025 -0400
+
+    mejoras
+
+[33mcommit fedd7bb788f3c4bfc7433f161ee9970999789b75[m[33m ([m[1;31morigin/loginv1[m[33m)[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Tue Sep 30 19:42:24 2025 -0400
+
+    login version 1
+
+[33mcommit f5186e8eafae31ab7f7239b7a0a82f0ac785f76a[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Tue Sep 30 18:30:42 2025 -0400
+
+    login version1
+
+[33mcommit bd45c86900444c84c3e52c2f15fda8dd21a38978[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Mon Sep 29 10:56:51 2025 -0400
+
+    mejoras varias
+
+[33mcommit eb092e5360fb2bdbbc167721a7eb39014f1afea3[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Mon Sep 29 10:49:30 2025 -0400
+
+    mejoras varias
+
+[33mcommit 35b4ba83bac324acc9c9b86817d640da3fc669bf[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Sun Sep 28 17:44:02 2025 -0400
+
+    mejora
+
+[33mcommit 35d38837b0a4617acbfe97e41c4973f51dbfbf43[m
+Author: Ramon Eduardo Gonzalez Benitez <Ramon.Gonzalez@farmatodo.com>
+Date:   Sun Sep 28 14:47:09 2025 -0400
+
+    first commit

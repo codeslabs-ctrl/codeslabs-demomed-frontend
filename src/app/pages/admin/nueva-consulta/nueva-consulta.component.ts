@@ -96,6 +96,7 @@ import { Medico } from '../../../services/medico.service';
                   class="form-control" 
                   [(ngModel)]="consultaForm.fecha_pautada" 
                   name="fecha_pautada"
+                  [min]="getTodayDate()"
                   required>
               </div>
               
@@ -562,6 +563,23 @@ export class NuevaConsultaComponent implements OnInit {
       alert('⚠️ Fecha requerida\n\nPor favor, seleccione una fecha para la consulta.');
       return;
     }
+    
+    // Validar que la fecha sea futura (manejo de zona horaria)
+    const fechaConsulta = new Date(this.consultaForm.fecha_pautada + 'T00:00:00.000Z'); // Forzar UTC
+    const fechaActual = new Date();
+    fechaActual.setUTCHours(0, 0, 0, 0); // Usar UTC para evitar problemas de zona horaria
+    
+    // Verificar que la fecha sea válida
+    if (isNaN(fechaConsulta.getTime())) {
+      alert('⚠️ Fecha inválida\n\nPor favor, seleccione una fecha válida.');
+      return;
+    }
+    
+    if (fechaConsulta < fechaActual) {
+      alert('⚠️ Fecha inválida\n\nLa fecha de la consulta debe ser futura (posterior a hoy).');
+      return;
+    }
+    
     if (!this.consultaForm.hora_pautada) {
       alert('⚠️ Hora requerida\n\nPor favor, seleccione una hora para la consulta.');
       return;
@@ -576,7 +594,7 @@ export class NuevaConsultaComponent implements OnInit {
           this.resetForm();
           // La navegación se maneja con routerLink en el template
         } else {
-          alert('❌ Error al crear la consulta\n\n' + (response.error?.message || 'Error desconocido') + '\n\nPor favor, intente nuevamente o contacte al administrador.');
+          alert('❌ Error al crear la consulta\n\n' + ((response as any).error?.message || 'Error desconocido') + '\n\nPor favor, intente nuevamente o contacte al administrador.');
         }
         this.isSubmitting = false;
       },
@@ -606,6 +624,11 @@ export class NuevaConsultaComponent implements OnInit {
     this.isSubmitting = false;
     
     console.log('🧹 Formulario limpiado completamente');
+  }
+
+  getTodayDate(): string {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
   }
 
   volver() {
