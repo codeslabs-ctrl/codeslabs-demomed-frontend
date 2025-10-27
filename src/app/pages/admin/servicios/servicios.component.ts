@@ -52,7 +52,22 @@ export class ServiciosComponent implements OnInit {
     this.loading = true;
     this.serviciosService.getServicios().subscribe({
       next: (response: any) => {
-        this.servicios = response.data || [];
+        console.log('Response from servicios service:', response);
+        console.log('Raw servicios data:', response.data);
+        
+        // Transformar los datos para incluir especialidad_id y especialidad_nombre
+        this.servicios = (response.data || []).map((servicio: any) => {
+          console.log('Servicio individual:', servicio);
+          console.log('Especialidades del servicio:', servicio.especialidades);
+          
+          return {
+          ...servicio,
+          especialidad_id: servicio.especialidades?.id,
+          especialidad_nombre: servicio.especialidades?.nombre_especialidad
+          };
+        });
+        
+        console.log('Servicios transformados:', this.servicios);
         this.applyFilters();
         this.loading = false;
       },
@@ -203,7 +218,20 @@ export class ServiciosComponent implements OnInit {
   }
 
   getEspecialidadNombre(especialidadId: number): string {
+    console.log('Buscando especialidad para ID:', especialidadId);
+    console.log('Servicios disponibles:', this.servicios);
+    console.log('Especialidades disponibles:', this.especialidades);
+    
+    // Primero buscar en los servicios si ya tienen el nombre de especialidad
+    const servicio = this.servicios.find(s => s.especialidad_id === especialidadId);
+    if (servicio && servicio.especialidad_nombre) {
+      console.log('Encontrado en servicio:', servicio.especialidad_nombre);
+      return servicio.especialidad_nombre;
+    }
+    
+    // Si no, buscar en la lista de especialidades
     const especialidad = this.especialidades.find(e => e.id === especialidadId);
+    console.log('Especialidad encontrada:', especialidad);
     return especialidad ? especialidad.nombre_especialidad : 'N/A';
   }
 

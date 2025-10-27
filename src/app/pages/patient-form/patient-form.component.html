@@ -1,0 +1,324 @@
+<div class="patient-form-page">
+  <div class="page-header">
+    <h1>{{ isEdit ? 'Editar Paciente' : 'Nuevo Paciente' }}</h1>
+    <button type="button" class="btn btn-secondary" (click)="onCancel()">
+      ← Volver a Pacientes
+    </button>
+  </div>
+
+  <form class="patient-form" (ngSubmit)="onSubmit(patientForm)" #patientForm="ngForm">
+    
+    <div class="form-section">
+      <h3>Información Personal</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nombres *</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="patient.nombres"
+            name="nombres"
+            required
+            placeholder="Ingrese los nombres"
+            #nombres="ngModel">
+          <div class="error-message" *ngIf="nombres.invalid && nombres.touched">
+            <span *ngIf="nombres.errors?.['required']">Los nombres son requeridos</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Apellidos *</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="patient.apellidos"
+            name="apellidos"
+            required
+            placeholder="Ingrese los apellidos"
+            #apellidos="ngModel">
+          <div class="error-message" *ngIf="apellidos.invalid && apellidos.touched">
+            <span *ngIf="apellidos.errors?.['required']">Los apellidos son requeridos</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cédula</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="patient.cedula"
+            name="cedula"
+            pattern="^[VEJPG][0-9]{7,8}$"
+            placeholder="Ej: V12345678, E1234567"
+            (blur)="validateCedula()"
+            #cedula="ngModel">
+          <div class="error-message" *ngIf="cedula.invalid && cedula.touched">
+            <span *ngIf="cedula.errors?.['pattern']">Formato inválido. Usa: V12345678, E1234567, J12345678, P12345678, G12345678</span>
+            <span *ngIf="cedula.errors?.['cedulaInvalid']">Cédula inválida. Verifica el número</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Edad *</label>
+          <input 
+            type="number" 
+            class="form-input" 
+            [(ngModel)]="patient.edad"
+            name="edad"
+            required
+            min="0"
+            max="120"
+            #edad="ngModel">
+          <div class="error-message" *ngIf="edad.invalid && edad.touched">
+            <span *ngIf="edad.errors?.['required']">La edad es requerida</span>
+            <span *ngIf="edad.errors?.['min']">La edad debe ser mayor a 0</span>
+            <span *ngIf="edad.errors?.['max']">La edad debe ser menor a 120</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sexo *</label>
+          <select 
+            class="form-input" 
+            [(ngModel)]="patient.sexo"
+            name="sexo"
+            required
+            #sexo="ngModel">
+            <option value="">Seleccionar sexo</option>
+            <option value="Femenino">Femenino</option>
+            <option value="Masculino">Masculino</option>
+          </select>
+          <div class="error-message" *ngIf="sexo.invalid && sexo.touched">
+            El sexo es requerido
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Información de Contacto</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Email *</label>
+          <input 
+            type="email" 
+            class="form-input" 
+            [(ngModel)]="patient.email"
+            name="email"
+            required
+            email
+            pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+            placeholder="usuario@dominio.com"
+            (blur)="validateEmail()"
+            #email="ngModel">
+          <div class="error-message" *ngIf="email.invalid && email.touched">
+            <span *ngIf="email.errors?.['required']">El email es requerido</span>
+            <span *ngIf="email.errors?.['email'] || email.errors?.['pattern']">Ingresa un email válido (ej: usuario&#64;dominio.com)</span>
+          </div>
+          <div class="error-message" *ngIf="emailExists && email.valid">
+            <span class="email-duplicate-error">⚠️ Este email ya está registrado en el sistema</span>
+          </div>
+          <div class="success-message" *ngIf="emailChecked && !emailExists && email.valid">
+            <span class="email-available">✅ Email disponible</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono *</label>
+          <input 
+            type="tel" 
+            class="form-input" 
+            [(ngModel)]="patient.telefono"
+            name="telefono"
+            required
+            pattern="^(\\+58|0)(4[0-9]{2}|2[0-9]{2})[0-9]{7}$"
+            placeholder="Ej: 04141234567 o +584141234567"
+            #telefono="ngModel">
+          <div class="error-message" *ngIf="telefono.invalid && telefono.touched">
+            <span *ngIf="telefono.errors?.['required']">El teléfono es requerido</span>
+            <span *ngIf="telefono.errors?.['pattern']">Formato inválido. Usa: 04141234567 o +584141234567 (celular venezolano)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de Historias Clínicas Existentes (solo en modo edición) -->
+    <div class="form-section" *ngIf="isEdit && historicos.length > 0">
+      <h3>
+        Historias Clínicas Existentes
+        <span class="history-count" *ngIf="historicos.length > 1">
+          ({{ historicos.length }} historias)
+        </span>
+      </h3>
+      
+      
+      <!-- Selector de Historias Clínicas -->
+      <div class="history-selector" *ngIf="historicos.length > 1">
+        <label for="historico-select">Seleccionar Historia Clínica para Contexto:</label>
+        <select 
+          id="historico-select" 
+          class="form-control" 
+          [value]="historico?.id" 
+          (change)="onHistoricoChange($event)">
+          <option *ngFor="let h of historicos" [value]="h.id">
+            {{ getHistoricoDisplayText(h) }}
+          </option>
+        </select>
+        <div class="history-note" *ngIf="shouldCreateNewHistory">
+          <span class="note-icon">ℹ️</span>
+          <span class="note-text">Mostrando historia anterior para contexto. Se creará una nueva historia para el médico actual.</span>
+        </div>
+      </div>
+
+      <!-- Información básica de la Historia Seleccionada -->
+      <div class="existing-medical-info" *ngIf="historico">
+        <div class="info-item">
+          <label>Fecha de Consulta:</label>
+          <span>{{ formatDate(historico.fecha_consulta) }}</span>
+        </div>
+        <div class="info-item" *ngIf="historico.nombre_medico">
+          <label>Médico Tratante:</label>
+          <span>{{ historico.nombre_medico }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section" *ngIf="isEdit">
+      <h3>Información Médica</h3>
+      <div class="form-group">
+        <label class="form-label">Motivo de Consulta *</label>
+        <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
+          <app-rich-text-editor
+            *ngIf="!loading"
+            [value]="patient.motivo_consulta || ''"
+            placeholder="Describa el motivo de la consulta"
+            (valueChange)="onMotivoConsultaChange($event)">
+          </app-rich-text-editor>
+        </ng-container>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Diagnóstico</label>
+        <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
+          <app-rich-text-editor
+            *ngIf="!loading"
+            [value]="patient.diagnostico || ''"
+            placeholder="Diagnóstico médico"
+            (valueChange)="onDiagnosticoChange($event)">
+          </app-rich-text-editor>
+        </ng-container>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Conclusiones</label>
+        <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
+          <app-rich-text-editor
+            *ngIf="!loading"
+            [value]="patient.conclusiones || ''"
+            placeholder="Conclusiones y recomendaciones"
+            (valueChange)="onConclusionesChange($event)">
+          </app-rich-text-editor>
+        </ng-container>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Plan de Tratamiento</label>
+        <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
+          <app-rich-text-editor
+            *ngIf="!loading"
+            [value]="patient.plan || ''"
+            placeholder="Plan de acciones a seguir en el tratamiento del paciente"
+            (valueChange)="onPlanChange($event)">
+          </app-rich-text-editor>
+        </ng-container>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="onCancel()">
+        Cancelar
+      </button>
+      <button 
+        type="submit" 
+        class="btn btn-primary"
+        [disabled]="loading">
+        <span *ngIf="loading" class="spinner"></span>
+        {{ isEdit ? 'Actualizar' : 'Crear' }} Paciente
+      </button>
+      <button 
+        *ngIf="patient.id && !isEdit" 
+        type="button" 
+        class="btn btn-success"
+        (click)="onFinish()">
+        Finalizar y Volver
+      </button>
+    </div>
+  </form>
+
+  <!-- Botones de acción después de crear paciente exitosamente -->
+  <div class="success-actions" *ngIf="showSuccessActions && !isEdit">
+    <div class="success-message">
+      <h3>✅ Paciente creado exitosamente</h3>
+      <p>¿Qué deseas hacer ahora?</p>
+    </div>
+    <div class="action-buttons">
+      <button type="button" class="btn btn-secondary" (click)="goToPatients()">
+        ← Volver a Pacientes
+      </button>
+      <button type="button" class="btn btn-primary" (click)="createConsulta()">
+        📅 Nueva Consulta
+      </button>
+    </div>
+  </div>
+
+  <div class="loading" *ngIf="loading && !isEdit">
+    <div class="spinner"></div>
+    <p>Cargando datos del paciente...</p>
+  </div>
+
+  <!-- Sección de Archivos Anexos Existentes (solo en modo edición) -->
+  <div class="form-section" *ngIf="isEdit && archivos.length > 0">
+    <h3 class="archivos-title">Archivos Anexos Existentes</h3>
+    <div class="archivos-container">
+      <div class="archivo-item-enhanced" *ngFor="let archivo of archivos">
+        <div class="archivo-header">
+          <div class="archivo-icono">
+            <span [innerHTML]="getFileIcon(archivo.tipo_mime)"></span>
+          </div>
+          <div class="archivo-info">
+            <div class="archivo-nombre">{{ archivo.nombre_original }}</div>
+            <div class="archivo-descripcion" *ngIf="archivo.descripcion">
+              <i class="fas fa-file-alt"></i> {{ archivo.descripcion }}
+            </div>
+            <div class="archivo-meta">
+              <span class="archivo-tipo">{{ getFileType(archivo.tipo_mime) }}</span>
+              <span class="archivo-tamano">{{ formatFileSize(archivo.tamano_bytes) }}</span>
+              <span class="archivo-fecha">{{ formatDate(archivo.fecha_subida || '') }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="archivo-actions">
+          <button class="btn-download" (click)="downloadFile(archivo)" title="Descargar">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+          </button>
+          <button class="btn-edit" (click)="editFileDescription(archivo)" title="Editar descripción">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+            </svg>
+          </button>
+          <button class="btn-delete" (click)="deleteArchivo(archivo.id!)" title="Eliminar">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Componente de archivos anexos -->
+  <!-- Sección de Archivos Anexos eliminada - solo se mantiene "Archivos Anexos Existentes" -->
+
+  <app-file-upload 
+    *ngIf="canUploadFiles()" 
+    [historiaId]="getHistoriaId()"
+    (filesUpdated)="onFilesUpdated($event)">
+  </app-file-upload>
+</div>

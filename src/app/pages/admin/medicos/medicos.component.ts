@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { MedicoService } from '../../../services/medico.service';
 import { EspecialidadService, Especialidad as EspecialidadFromService } from '../../../services/especialidad.service';
 import { ConfirmModalComponent } from '../../../components/confirm-modal/confirm-modal.component';
+import { AuthService } from '../../../services/auth.service';
 
 export interface Medico {
   id?: number;
@@ -56,7 +58,9 @@ export class MedicosComponent implements OnInit {
 
   constructor(
     private medicoService: MedicoService,
-    private especialidadService: EspecialidadService
+    private especialidadService: EspecialidadService,
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -126,22 +130,26 @@ export class MedicosComponent implements OnInit {
     this.filteredMedicos = [...this.medicos];
   }
 
-  openAddModal() {
-    this.isEditing = false;
-    this.medicoData = {
-      nombres: '',
-      apellidos: '',
-      email: '',
-      telefono: '',
-      especialidad_id: 0
-    };
-    this.showModal = true;
+  crearMedico() {
+    this.router.navigate(['/admin/medicos/crear']);
   }
 
-  openEditModal(medico: Medico) {
-    this.isEditing = true;
-    this.medicoData = { ...medico };
-    this.showModal = true;
+  editarMedico(medico: Medico) {
+    this.router.navigate(['/admin/medicos/editar', medico.id]);
+  }
+
+  /**
+   * Verifica si el usuario actual puede eliminar médicos
+   * Solo administrador y secretaria pueden eliminar médicos
+   */
+  canDeleteMedico(): boolean {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      return false;
+    }
+    
+    const allowedRoles = ['administrador', 'secretaria'];
+    return allowedRoles.includes(currentUser.rol);
   }
 
   closeModal() {
@@ -266,17 +274,38 @@ export class MedicosComponent implements OnInit {
 
   updateMedico() {
     this.saving = true;
+    this.hideSnackbar();
+    
     this.medicoService.updateMedico(this.medicoData.id!, this.medicoData).subscribe({
       next: (response) => {
         if (response.success) {
+          this.showSnackbarMessage(
+            `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente.`,
+            'success'
+          );
+          
+          // Recargar lista de médicos
           this.loadMedicos();
-          this.closeModal();
+          
+          // Cerrar modal después de 2 segundos
+          setTimeout(() => {
+            this.closeModal();
+          }, 2000);
         }
         this.saving = false;
       },
       error: (error) => {
         console.error('Error updating medico:', error);
+        console.error('Error details:', error.error);
+        
+        let errorMessage = '❌ Error al actualizar el médico. Por favor, intente nuevamente.';
+        
+        if (error.error && error.error.error && error.error.error.message) {
+          errorMessage = `❌ ${error.error.error.message}`;
+        }
+        
         this.saving = false;
+        this.showSnackbarMessage(errorMessage, 'error');
       }
     });
   }

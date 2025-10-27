@@ -17,7 +17,10 @@ import { Medico } from '../../../services/medico.service';
     <div class="consultas-page">
       <!-- Header -->
       <div class="page-header">
-        <h1>Gestión de Consultas</h1>
+        <h1>
+          <i class="fas fa-calendar-check"></i>
+          Gestión de Consultas
+        </h1>
         <button class="btn btn-new" (click)="navigateToNuevaConsulta()">
           ➕ Nueva Consulta
         </button>

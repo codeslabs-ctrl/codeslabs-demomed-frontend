@@ -13,6 +13,11 @@ export interface Servicio {
   created_at: string;
   updated_at: string;
   especialidad_nombre?: string;
+  especialidades?: {
+    id: number;
+    nombre_especialidad: string;
+    descripcion?: string;
+  };
 }
 
 export interface ServicioConsulta {

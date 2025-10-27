@@ -1,11 +1,13 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
+import { FinanzasGuard } from './guards/finanzas.guard';
+import { roleRedirectGuard } from './guards/role-redirect.guard';
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/dashboard',
-    pathMatch: 'full'
+    canActivate: [roleRedirectGuard],
+    children: []
   },
   {
     path: 'login',
@@ -47,6 +49,16 @@ export const routes: Routes = [
   {
     path: 'admin/medicos',
     loadComponent: () => import('./pages/admin/medicos/medicos.component').then(m => m.MedicosComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/medicos/crear',
+    loadComponent: () => import('./pages/admin/medicos/crear-medico/crear-medico.component').then(m => m.CrearMedicoComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/medicos/editar/:id',
+    loadComponent: () => import('./pages/admin/medicos/editar-medico/editar-medico.component').then(m => m.EditarMedicoComponent),
     canActivate: [authGuard]
   },
   {
@@ -145,6 +157,11 @@ export const routes: Routes = [
     path: 'admin/informes-medicos/:id/resumen',
     loadComponent: () => import('./pages/admin/informes-medicos/informe-resumen/informe-resumen.component').then(m => m.InformeResumenComponent),
     canActivate: [authGuard]
+  },
+  {
+    path: 'admin/finanzas',
+    loadComponent: () => import('./pages/admin/finanzas/finanzas.component').then(m => m.FinanzasComponent),
+    canActivate: [FinanzasGuard]
   },
   {
     path: 'statistics',

@@ -29,9 +29,9 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit() {
-    // Si ya está autenticado, redirigir al dashboard
+    // Si ya está autenticado, redirigir según el rol
     if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/dashboard']);
+      this.redirectBasedOnRole();
     }
   }
 
@@ -44,8 +44,12 @@ export class LoginComponent implements OnInit {
 
       this.authService.login(username, password).subscribe({
         next: (response) => {
+          console.log('🔐 Login successful, response:', response);
           this.isLoading = false;
-          this.router.navigate(['/dashboard']);
+          // Esperar un momento para que el usuario se cargue completamente
+          setTimeout(() => {
+            this.redirectBasedOnRole();
+          }, 100);
         },
         error: (error) => {
           this.isLoading = false;
@@ -59,5 +63,22 @@ export class LoginComponent implements OnInit {
 
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
+  }
+
+  private redirectBasedOnRole() {
+    const currentUser = this.authService.getCurrentUser();
+    console.log('🔍 Current user for redirection:', currentUser);
+    console.log('🔍 User role:', currentUser?.rol);
+    console.log('🔍 Role comparison:', currentUser?.rol === 'finanzas');
+    
+    if (currentUser?.rol === 'finanzas') {
+      console.log('✅ Redirecting to finanzas panel');
+      // Redirigir directamente al panel de finanzas
+      this.router.navigate(['/admin/finanzas']);
+    } else {
+      console.log('✅ Redirecting to general dashboard');
+      // Para otros roles, ir al dashboard general
+      this.router.navigate(['/dashboard']);
+    }
   }
 }

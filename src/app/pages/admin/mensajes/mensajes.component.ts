@@ -16,7 +16,10 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
   template: `
     <div class="mensajes-page">
       <div class="page-header">
-        <h1>Mensajes de Difusión</h1>
+        <h1>
+          <i class="fas fa-envelope"></i>
+          Mensajes de Difusión
+        </h1>
         <button class="btn btn-new" (click)="openCreateModal()">
           <span>📧</span>
           Nuevo Mensaje

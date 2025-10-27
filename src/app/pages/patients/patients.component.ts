@@ -16,7 +16,7 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
   template: `
     <div class="patients-page">
       <div class="page-header">
-        <h1>Gestión de Pacientes</h1>
+        <h1><i class="fas fa-users"></i> Gestión de Pacientes</h1>
         <a routerLink="/patients/new" class="btn btn-new">
           ➕ Nuevo Paciente
         </a>

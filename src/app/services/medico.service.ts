@@ -15,6 +15,7 @@ export interface Medico {
   especialidad_nombre?: string;
   fecha_creacion?: string;
   fecha_actualizacion?: string;
+  firma_digital?: string;
 }
 
 @Injectable({
