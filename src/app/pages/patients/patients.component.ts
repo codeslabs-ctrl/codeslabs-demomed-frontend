@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PatientService } from '../../services/patient.service';
+import { HistoricoService } from '../../services/historico.service';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
 import { Patient, PatientFilters } from '../../models/patient.model';
@@ -121,6 +122,17 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
                     </svg>
                     Editar
                   </a>
+                  <button 
+                    class="action-btn history-btn" 
+                    [class.has-history]="tieneHistoriaMedica(patient)"
+                    (click)="gestionarHistoriaMedica(patient)" 
+                    [title]="getHistoriaTooltip(patient)">
+                    <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                    </svg>
+                    {{ tieneHistoriaMedica(patient) ? 'Editar Historia' : 'Crear Historia' }}
+                    <span *ngIf="tieneHistoriaMedica(patient)" class="history-indicator">✓</span>
+                  </button>
                   <button class="action-btn delete-btn" (click)="deletePatient(patient.id)" title="Eliminar paciente">
                     <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
@@ -350,6 +362,39 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
       box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
     }
 
+    .history-btn {
+      background: #10b981;
+      color: white;
+      position: relative;
+    }
+
+    .history-btn:hover {
+      background: #059669;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .history-btn.has-history {
+      background: #059669;
+      border-left: 4px solid #34d399;
+    }
+
+    .history-indicator {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background: #34d399;
+      color: white;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
     .no-patients {
       text-align: center;
       padding: 2rem;
@@ -435,7 +480,9 @@ export class PatientsComponent implements OnInit {
 
   constructor(
     private patientService: PatientService,
-    private authService: AuthService
+    private historicoService: HistoricoService,
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -588,5 +635,25 @@ export class PatientsComponent implements OnInit {
   closeConfirmModal() {
     this.showConfirmModal = false;
     this.patientToDelete = null;
+  }
+
+  // Método para verificar si el paciente tiene historia médica
+  tieneHistoriaMedica(patient: Patient): boolean {
+    // Verificar si existe historico_id o si hay datos médicos
+    return !!(patient.historico_id || 
+             (patient.motivo_consulta && patient.diagnostico));
+  }
+
+  // Método para obtener el tooltip del botón de historia
+  getHistoriaTooltip(patient: Patient): string {
+    return this.tieneHistoriaMedica(patient) 
+      ? 'Editar historia médica existente' 
+      : 'Crear nueva historia médica';
+  }
+
+  // Método para gestionar la historia médica
+  gestionarHistoriaMedica(patient: Patient): void {
+    // Navegar al componente de historia médica
+    this.router.navigate(['/patients', patient.id, 'historia-medica']);
   }
 }

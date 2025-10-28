@@ -5,6 +5,8 @@ import { RouterModule } from '@angular/router';
 import { FinanzasService } from '../../../services/finanzas.service';
 import { AuthService } from '../../../services/auth.service';
 import { MedicoService } from '../../../services/medico.service';
+import { EspecialidadService } from '../../../services/especialidad.service';
+import { DateService } from '../../../services/date.service';
 import { 
   ConsultaFinanciera, 
   ResumenFinanciero, 
@@ -26,6 +28,7 @@ export class FinanzasComponent implements OnInit {
   consultas: ConsultaFinanciera[] = [];
   resumen: ResumenFinancieroMejorado | null = null;
   medicos: Medico[] = [];
+  especialidades: any[] = [];
   loading = false;
   currentUser: any = null;
 
@@ -60,7 +63,9 @@ export class FinanzasComponent implements OnInit {
   constructor(
     private finanzasService: FinanzasService,
     private authService: AuthService,
-    private medicoService: MedicoService
+    private medicoService: MedicoService,
+    private especialidadService: EspecialidadService,
+    private dateService: DateService
   ) {}
 
   ngOnInit(): void {
@@ -77,13 +82,18 @@ export class FinanzasComponent implements OnInit {
       }
     });
 
-    // Establecer fechas por defecto (último mes)
+    // Cargar especialidades para mapeo
+    this.loadEspecialidades();
+
+    // Establecer fechas por defecto (último mes) usando zona horaria de Venezuela
+    this.filtros.fecha_desde = this.dateService.getCurrentDateISO();
+    this.filtros.fecha_hasta = this.dateService.getCurrentDateISO();
+    
+    // Calcular hace un mes
     const hoy = new Date();
     const haceUnMes = new Date();
     haceUnMes.setMonth(hoy.getMonth() - 1);
-
     this.filtros.fecha_desde = haceUnMes.toISOString().split('T')[0];
-    this.filtros.fecha_hasta = hoy.toISOString().split('T')[0];
     
     console.log('📅 Filtros iniciales:', this.filtros);
 
@@ -381,16 +391,13 @@ export class FinanzasComponent implements OnInit {
     }
   }
 
-  // Métodos de utilidad
+  // Métodos de utilidad - usando DateService para Venezuela
   formatDate(dateString: string): string {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES');
+    return this.dateService.formatDate(dateString);
   }
 
   formatTime(timeString: string): string {
-    if (!timeString) return '';
-    return timeString.substring(0, 5);
+    return this.dateService.formatTime(timeString);
   }
 
   formatCurrency(amount: number, currency: string = 'COP'): string {
@@ -420,6 +427,42 @@ export class FinanzasComponent implements OnInit {
 
   getEstadoClass(estado: string): string {
     return estado === 'pagado' ? 'pagado' : 'pendiente';
+  }
+
+  // Métodos para manejo de especialidades
+  loadEspecialidades(): void {
+    this.especialidadService.getAllEspecialidades().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.especialidades = response.data || [];
+          console.log('🏥 Especialidades cargadas:', this.especialidades.length);
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error cargando especialidades:', error);
+      }
+    });
+  }
+
+  getEspecialidadNombre(consulta: ConsultaFinanciera): string {
+    if (consulta.especialidad_nombre) {
+      // Primero verificar si ya es el nombre correcto
+      const especialidad = this.especialidades.find(esp => 
+        esp.nombre_especialidad === consulta.especialidad_nombre
+      );
+      if (especialidad) {
+        return consulta.especialidad_nombre;
+      } else {
+        // Si no, buscar por descripción y devolver el nombre
+        const especialidadPorDescripcion = this.especialidades.find(esp => 
+          esp.descripcion === consulta.especialidad_nombre
+        );
+        if (especialidadPorDescripcion) {
+          return especialidadPorDescripcion.nombre_especialidad;
+        }
+      }
+    }
+    return consulta.especialidad_nombre || 'Sin especialidad';
   }
 }
 

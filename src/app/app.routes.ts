@@ -82,6 +82,16 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'admin/consultas/:id/editar',
+    loadComponent: () => import('./pages/admin/editar-consulta/editar-consulta.component').then(m => m.EditarConsultaComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'patients/:id/historia-medica',
+    loadComponent: () => import('./pages/admin/historia-medica/historia-medica.component').then(m => m.HistoriaMedicaComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'admin/consultas/:id/finalizar',
     loadComponent: () => import('./pages/admin/finalizar-consulta/finalizar-consulta.component').then(m => m.FinalizarConsultaComponent),
     canActivate: [authGuard]

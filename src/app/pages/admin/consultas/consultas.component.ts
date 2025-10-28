@@ -2,8 +2,10 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { ConsultaService } from '../../../services/consulta.service';
 import { MedicoService } from '../../../services/medico.service';
+import { DateService } from '../../../services/date.service';
 import { AuthService } from '../../../services/auth.service';
 import { ServiciosService, FinalizarConsultaRequest } from '../../../services/servicios.service';
 import { ConsultaWithDetails, ConsultaFilters } from '../../../models/consulta.model';
@@ -947,6 +949,7 @@ import { Medico } from '../../../services/medico.service';
       background: #c7d2fe;
     }
 
+
     .btn-info {
       background: #f3f4f6;
       color: #374151;
@@ -1282,6 +1285,7 @@ export class ConsultasComponent implements OnInit {
 
   // Lista de médicos para filtros
   medicos: Medico[] = [];
+  especialidades: any[] = [];
   selectedConsulta: ConsultaWithDetails | null = null;
 
   // Propiedades para filtros
@@ -1297,10 +1301,12 @@ export class ConsultasComponent implements OnInit {
   constructor(
     private consultaService: ConsultaService,
     private medicoService: MedicoService,
+    private dateService: DateService,
     private authService: AuthService,
     private serviciosService: ServiciosService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private http: HttpClient
   ) {}
 
   // Propiedades para modales
@@ -1325,6 +1331,7 @@ export class ConsultasComponent implements OnInit {
     
     this.loadConsultas();
     this.loadMedicos();
+    this.loadEspecialidades();
   }
 
   loadConsultas(): void {
@@ -1354,7 +1361,12 @@ export class ConsultasComponent implements OnInit {
     this.consultaService.getConsultas(searchFilters)
       .subscribe({
         next: (response) => {
-          this.consultas = response.data;
+          // Mapear datos para asegurar que se muestre el nombre correcto de la especialidad
+          this.consultas = response.data.map(consulta => ({
+            ...consulta,
+            // Si especialidad_nombre contiene la descripción, mapear al nombre correcto
+            especialidad_nombre: this.getEspecialidadNombre(consulta)
+          }));
           this.totalPages = 1; // Simplificado por ahora
           this.loading = false;
         },
@@ -1377,6 +1389,49 @@ export class ConsultasComponent implements OnInit {
         console.error('Error loading medicos:', error);
       }
     });
+  }
+
+  loadEspecialidades(): void {
+    // Importar el servicio de especialidades dinámicamente
+    import('../../../services/especialidad.service').then(({ EspecialidadService }) => {
+      const especialidadService = new EspecialidadService(this.http);
+      especialidadService.getAllEspecialidades().subscribe({
+        next: (response) => {
+          this.especialidades = response.data || [];
+          console.log('🏥 Especialidades cargadas:', this.especialidades.length);
+        },
+        error: (error) => {
+          console.error('Error loading especialidades:', error);
+        }
+      });
+    });
+  }
+
+  getEspecialidadNombre(consulta: ConsultaWithDetails): string {
+    // Si ya tiene especialidad_nombre, verificar si es el nombre correcto
+    if (consulta.especialidad_nombre) {
+      // Buscar en la lista de especialidades para ver si coincide con el nombre
+      const especialidad = this.especialidades.find(esp => 
+        esp.nombre_especialidad === consulta.especialidad_nombre
+      );
+      
+      if (especialidad) {
+        // Si coincide con el nombre, devolverlo
+        return consulta.especialidad_nombre;
+      } else {
+        // Si no coincide, buscar por descripción
+        const especialidadPorDescripcion = this.especialidades.find(esp => 
+          esp.descripcion === consulta.especialidad_nombre
+        );
+        
+        if (especialidadPorDescripcion) {
+          return especialidadPorDescripcion.nombre_especialidad;
+        }
+      }
+    }
+    
+    // Si no encuentra nada, devolver el valor original
+    return consulta.especialidad_nombre || 'Sin especialidad';
   }
 
   navigateToNuevaConsulta(): void {
@@ -1441,10 +1496,10 @@ export class ConsultasComponent implements OnInit {
       return;
     }
     
-    // Implementar lógica de edición para consultas no expiradas
-    console.log('Editar consulta:', consulta);
-    // TODO: Implementar modal de edición
+    // Navegar al componente de edición
+    this.router.navigate(['/admin/consultas', consulta.id, 'editar']);
   }
+
 
   // Método para verificar si una consulta está expirada
   isConsultaExpirada(consulta: ConsultaWithDetails): boolean {
@@ -1456,19 +1511,7 @@ export class ConsultasComponent implements OnInit {
     const ahora = new Date();
     
     // Una consulta está expirada si la fecha/hora ya pasó
-    const estaExpirada = fechaHoraConsulta < ahora;
-    
-    // Debug logs
-    console.log('🔍 Verificando consulta expirada:', {
-      id: consulta.id,
-      fecha: consulta.fecha_pautada,
-      hora: consulta.hora_pautada,
-      fechaHoraConsulta: fechaHoraConsulta,
-      ahora: ahora,
-      estaExpirada: estaExpirada
-    });
-    
-    return estaExpirada;
+    return fechaHoraConsulta < ahora;
   }
 
   reagendarConsulta(consulta: ConsultaWithDetails): void {
@@ -1579,22 +1622,13 @@ export class ConsultasComponent implements OnInit {
     });
   }
 
-  // Métodos de utilidad
+  // Métodos de utilidad - usando DateService para Venezuela
   formatDate(dateString: string): string {
-    if (!dateString) return '';
-    // Crear la fecha directamente sin conversión de zona horaria
-    const [year, month, day] = dateString.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
+    return this.dateService.formatDate(dateString);
   }
 
   formatTime(timeString: string): string {
-    if (!timeString) return '';
-    return timeString.substring(0, 5); // HH:MM
+    return this.dateService.formatTime(timeString);
   }
 
   getEstadoText(estado: string): string {
@@ -1630,7 +1664,6 @@ export class ConsultasComponent implements OnInit {
   }
 
   getTodayDate(): string {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    return this.dateService.getCurrentDateISO();
   }
 }

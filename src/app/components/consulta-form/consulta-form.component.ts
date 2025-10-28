@@ -75,7 +75,7 @@ import { Especialidad } from '../../services/especialidad.service';
                 [disabled]="!selectedEspecialidadId">
                 <option value="">Seleccionar médico</option>
                 <option *ngFor="let medico of medicosFiltrados" [value]="medico.id">
-                  {{ medico.nombres }} {{ medico.apellidos }}
+                  {{ medico.nombres }} {{ medico.apellidos }} - {{ medico.especialidad_nombre || 'Sin especialidad' }}
                 </option>
               </select>
             </div>

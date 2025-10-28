@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { tap, map, switchMap } from 'rxjs/operators';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { tap, map, switchMap, catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { User, LoginResponse } from '../models/user.model';
 import { MedicoService } from './medico.service';
@@ -27,10 +27,17 @@ export class AuthService {
   }
 
   login(username: string, password: string): Observable<LoginResponse> {
-    return this.http.post<any>(`${this.API_URL}/auth/login`, {
+    console.log('🔍 Login attempt for user:', username);
+    console.log('🔍 Password length:', password.length);
+    console.log('🔍 API URL:', `${this.API_URL}/auth/login`);
+    
+    const loginData = {
       username,
       password
-    }).pipe(
+    };
+    console.log('🔍 Login data being sent:', loginData);
+    
+    return this.http.post<any>(`${this.API_URL}/auth/login`, loginData).pipe(
       switchMap(response => {
         console.log('🔐 Login response received:', response);
         
@@ -85,6 +92,21 @@ export class AuthService {
         } else {
           throw new Error('Invalid login response format');
         }
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('🚨 Login error details:', error);
+        console.error('🚨 Error status:', error.status);
+        console.error('🚨 Error message:', error.message);
+        console.error('🚨 Error body:', error.error);
+        console.error('🚨 Full error object:', error);
+        
+        // Si el error viene del rate limiting, asegurar que el mensaje esté disponible
+        if (error.status === 429 || (error.status === 401 && error.error?.message?.includes('Demasiados intentos'))) {
+          console.log('🚫 Rate limiting detected, preserving error message');
+        }
+        
+        // Re-throw the error so the component can handle it
+        return throwError(() => error);
       })
     );
   }

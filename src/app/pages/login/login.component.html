@@ -50,11 +50,13 @@
       <button 
         type="submit" 
         class="login-btn" 
-        [disabled]="loginForm.invalid || isLoading"
+        [disabled]="loginForm.invalid || isLoading || isRateLimited"
         [class.loading]="isLoading"
+        [class.rate-limited]="isRateLimited"
       >
-        <span *ngIf="!isLoading">Iniciar Sesión</span>
+        <span *ngIf="!isLoading && !isRateLimited">Iniciar Sesión</span>
         <span *ngIf="isLoading">Iniciando...</span>
+        <span *ngIf="isRateLimited">Bloqueado ({{ getFormattedTimeRemaining() }})</span>
       </button>
 
       <div class="forgot-password-container">

@@ -17,6 +17,24 @@
   margin: 0;
 }
 
+.mode-indicator {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+}
+
+.mode-indicator.create-mode {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.mode-indicator.edit-mode {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
 .patient-form {
   background: white;
   border-radius: 0.75rem;
@@ -35,6 +53,13 @@
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid #e5e7eb;
+}
+
+.optional-label {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #6B7280;
+  font-style: italic;
 }
 
 .archivos-title {

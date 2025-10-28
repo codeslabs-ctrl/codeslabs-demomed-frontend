@@ -27,11 +27,7 @@ export class PatientFormComponent implements OnInit {
     edad: 0,
     sexo: 'Femenino',
     email: '',
-    telefono: '',
-    motivo_consulta: '',
-    diagnostico: '',
-    conclusiones: '',
-    plan: ''
+    telefono: ''
   };
   isEdit = false;
   loading = false;
@@ -295,8 +291,8 @@ export class PatientFormComponent implements OnInit {
         .subscribe({
           next: (response) => {
             if (response.success) {
-              // Actualizar también los campos médicos en el historico si hay cambios
-              this.updateMedicalData();
+              console.log('✅ Paciente actualizado correctamente');
+              this.router.navigate(['/patients']);
             }
             this.loading = false;
           },
@@ -308,96 +304,9 @@ export class PatientFormComponent implements OnInit {
     }
   }
 
-  updateMedicalData() {
-    if (this.shouldCreateNewHistory) {
-      // Crear nueva historia médica para el médico actual
-      console.log('🆕 Creando nueva historia médica para médico:', this.currentMedicoId);
-      this.createNewMedicalHistory();
-    } else if (this.historico && this.historico.id) {
-      // Actualizar historia médica existente del mismo médico
-      const medicalData = {
-        motivo_consulta: this.patient.motivo_consulta,
-        diagnostico: this.patient.diagnostico,
-        conclusiones: this.patient.conclusiones,
-        plan: this.patient.plan
-      };
-      
-      console.log('🔄 Actualizando historia médica existente:', this.historico.id);
-      this.historicoService.updateHistorico(this.historico.id, medicalData).subscribe({
-        next: (response) => {
-          if (response.success) {
-            console.log('✅ Datos médicos actualizados correctamente');
-            this.router.navigate(['/patients']);
-          } else {
-            console.error('❌ Error actualizando datos médicos:', (response as any).error);
-            alert('❌ Error al actualizar los datos médicos\n\nNo se pudieron guardar los cambios. Por favor, verifique su conexión e intente nuevamente.');
-          }
-        },
-        error: (error) => {
-          console.error('❌ Error actualizando datos médicos:', error);
-          alert('❌ Error al actualizar los datos médicos\n\nError de conexión. Por favor, verifique su internet e intente nuevamente.');
-        }
-      });
-    } else {
-      // Si no hay historico, crear nueva historia médica
-      console.log('🔄 No hay historia médica existente, creando nueva...');
-      this.createNewMedicalHistory();
-    }
-  }
+  // Los datos médicos se manejan por separado en las historias clínicas
+  // No se actualizan desde el formulario de edición de paciente
 
-  createNewMedicalHistory() {
-    if (this.patientId) {
-      // Obtener el medico_id del usuario autenticado
-      const currentUser = this.authService.getCurrentUser();
-      const medicoId = currentUser?.medico_id;
-      
-      if (!medicoId) {
-        console.error('❌ No se encontró medico_id en el usuario autenticado');
-        console.error('❌ Usuario actual:', currentUser);
-        alert('❌ Error de autenticación\n\nNo se pudo identificar el médico actual. Por favor, cierre sesión e inicie sesión nuevamente.');
-        return;
-      }
-
-      const medicalData = {
-        paciente_id: this.patientId,
-        medico_id: medicoId,
-        motivo_consulta: this.patient.motivo_consulta || '',
-        diagnostico: this.patient.diagnostico || '',
-        conclusiones: this.patient.conclusiones || '',
-        plan: this.patient.plan || '',
-        fecha_consulta: new Date().toISOString().split('T')[0] // Fecha actual
-      };
-      
-      console.log('🔄 Creando nueva historia médica:', medicalData);
-      console.log('🔍 Datos enviados al backend:', JSON.stringify(medicalData, null, 2));
-      
-      this.historicoService.createHistorico(medicalData).subscribe({
-        next: (response) => {
-          console.log('✅ Respuesta del backend:', response);
-          if (response.success) {
-            console.log('✅ Nueva historia médica creada correctamente');
-            this.router.navigate(['/patients']);
-          } else {
-            console.error('❌ Error creando historia médica:', (response as any).error);
-            alert('❌ Error al crear la historia médica\n\n' + ((response as any).error?.message || 'Error desconocido') + '\n\nPor favor, intente nuevamente o contacte al administrador.');
-          }
-        },
-        error: (error) => {
-          console.error('❌ Error creando historia médica:', error);
-          console.error('❌ Error completo:', error);
-          console.error('❌ Error status:', error.status);
-          console.error('❌ Error message:', error.message);
-          if (error.error) {
-            console.error('❌ Error details:', error.error);
-          }
-          alert('❌ Error al crear la historia médica\n\n' + (error.error?.message || error.message || 'Error desconocido') + '\n\nPor favor, verifique su conexión e intente nuevamente.');
-        }
-      });
-    } else {
-      console.error('❌ No hay patientId para crear historia médica');
-      this.router.navigate(['/patients']);
-    }
-  }
 
   onCancel() {
     console.log('🔄 onCancel() ejecutado - navegando a /patients');

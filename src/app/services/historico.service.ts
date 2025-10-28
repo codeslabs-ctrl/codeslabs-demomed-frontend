@@ -50,6 +50,11 @@ export class HistoricoService {
     return this.http.get<ApiResponse<HistoricoWithDetails[]>>(`${this.baseUrl}/by-medico/${medicoId}`);
   }
 
+  // Obtener historial por ID
+  getHistoricoById(historicoId: number): Observable<ApiResponse<HistoricoWithDetails>> {
+    return this.http.get<ApiResponse<HistoricoWithDetails>>(`${this.baseUrl}/${historicoId}`);
+  }
+
   // Obtener historial completo
   getHistoricoCompleto(): Observable<ApiResponse<HistoricoWithDetails[]>> {
     return this.http.get<ApiResponse<HistoricoWithDetails[]>>(this.baseUrl);

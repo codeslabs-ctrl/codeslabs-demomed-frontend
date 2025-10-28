@@ -112,8 +112,15 @@
 
 .error-message {
   color: #ef4444;
-  font-size: 0.8rem;
-  margin-top: 0.25rem;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  text-align: center;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .login-btn {
@@ -137,6 +144,18 @@
 .login-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.login-btn.rate-limited {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  cursor: not-allowed;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { opacity: 0.8; }
 }
 
 .login-btn.loading {

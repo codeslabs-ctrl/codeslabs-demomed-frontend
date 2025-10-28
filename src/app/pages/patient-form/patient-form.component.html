@@ -1,6 +1,9 @@
 <div class="patient-form-page">
   <div class="page-header">
     <h1>{{ isEdit ? 'Editar Paciente' : 'Nuevo Paciente' }}</h1>
+    <div class="mode-indicator" [class.edit-mode]="isEdit" [class.create-mode]="!isEdit">
+      {{ isEdit ? '✏️ Modo Edición' : '➕ Modo Creación' }}
+    </div>
     <button type="button" class="btn btn-secondary" (click)="onCancel()">
       ← Volver a Pacientes
     </button>
@@ -146,7 +149,6 @@
         </span>
       </h3>
       
-      
       <!-- Selector de Historias Clínicas -->
       <div class="history-selector" *ngIf="historicos.length > 1">
         <label for="historico-select">Seleccionar Historia Clínica para Contexto:</label>
@@ -178,53 +180,6 @@
       </div>
     </div>
 
-    <div class="form-section" *ngIf="isEdit">
-      <h3>Información Médica</h3>
-      <div class="form-group">
-        <label class="form-label">Motivo de Consulta *</label>
-        <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
-          <app-rich-text-editor
-            *ngIf="!loading"
-            [value]="patient.motivo_consulta || ''"
-            placeholder="Describa el motivo de la consulta"
-            (valueChange)="onMotivoConsultaChange($event)">
-          </app-rich-text-editor>
-        </ng-container>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Diagnóstico</label>
-        <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
-          <app-rich-text-editor
-            *ngIf="!loading"
-            [value]="patient.diagnostico || ''"
-            placeholder="Diagnóstico médico"
-            (valueChange)="onDiagnosticoChange($event)">
-          </app-rich-text-editor>
-        </ng-container>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Conclusiones</label>
-        <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
-          <app-rich-text-editor
-            *ngIf="!loading"
-            [value]="patient.conclusiones || ''"
-            placeholder="Conclusiones y recomendaciones"
-            (valueChange)="onConclusionesChange($event)">
-          </app-rich-text-editor>
-        </ng-container>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Plan de Tratamiento</label>
-        <ng-container *ngFor="let _ of [editorKey]; trackBy: trackByEditorKey">
-          <app-rich-text-editor
-            *ngIf="!loading"
-            [value]="patient.plan || ''"
-            placeholder="Plan de acciones a seguir en el tratamiento del paciente"
-            (valueChange)="onPlanChange($event)">
-          </app-rich-text-editor>
-        </ng-container>
-      </div>
-    </div>
 
     <div class="form-actions">
       <button 

@@ -41,6 +41,10 @@ export interface ConsultaWithDetails extends Consulta {
   creado_por_usuario?: string;
   actualizado_por_usuario?: string;
   cancelado_por_usuario?: string;
+  historico_id?: number;
+  diagnostico?: string;
+  conclusiones?: string;
+  plan?: string;
 }
 
 export interface ConsultaFormData {

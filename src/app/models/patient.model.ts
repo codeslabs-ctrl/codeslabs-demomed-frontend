@@ -9,9 +9,9 @@ export interface Patient {
   telefono: string;
   plan?: string;
   medico_id?: number;
-  motivo_consulta: string;
-  diagnostico?: string;
-  conclusiones?: string;
+  motivo_consulta?: string; // Opcional - solo para edición
+  diagnostico?: string; // Opcional - solo para edición
+  conclusiones?: string; // Opcional - solo para edición
   fecha_creacion: string;
   fecha_actualizacion: string;
   historico_id?: number; // ID del historial médico asociado

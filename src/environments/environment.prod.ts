@@ -7,7 +7,7 @@ export const environment = {
     defaultPageSize: 10,
     maxPageSize: 100
   },
-  dateFormat: 'es-ES',
-  currency: 'USD',
-  timezone: 'America/Mexico_City'
+  dateFormat: 'es-VE',
+  currency: 'VES',
+  timezone: 'America/Caracas'
 };

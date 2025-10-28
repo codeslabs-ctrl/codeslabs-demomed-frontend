@@ -96,22 +96,26 @@ export class EditarMedicoComponent implements OnInit {
         cedula: this.medicoData.cedula,
         email: this.medicoData.email!,
         telefono: this.medicoData.telefono!,
-        especialidad_id: Number(this.medicoData.especialidad_id),
-        firma_digital: this.medicoData.firma_digital
+        especialidad_id: Number(this.medicoData.especialidad_id)
       };
       
       this.medicoService.updateMedico(this.medicoData.id!, medicoDataToSend).subscribe({
         next: (response) => {
           if (response.success) {
-            this.showSnackbarMessage(
-              `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente.`,
-              'success'
-            );
-            
-            // Redirigir después de 2 segundos
-            setTimeout(() => {
-              this.router.navigate(['/admin/medicos']);
-            }, 2000);
+            // Si hay firma digital seleccionada, subirla después de actualizar el médico
+            if (this.firmaFile) {
+              this.uploadFirmaAfterUpdate();
+            } else {
+              this.showSnackbarMessage(
+                `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente.`,
+                'success'
+              );
+              
+              // Redirigir después de 2 segundos
+              setTimeout(() => {
+                this.router.navigate(['/admin/medicos']);
+              }, 2000);
+            }
           }
           this.saving = false;
         },
@@ -217,6 +221,54 @@ export class EditarMedicoComponent implements OnInit {
   removeFirma() {
     this.firmaFile = null;
     this.firmaPreview = null;
+  }
+
+  uploadFirmaAfterUpdate() {
+    if (!this.firmaFile || !this.medicoData.id) {
+      return;
+    }
+    
+    this.uploadingFirma = true;
+    
+    this.firmaService.subirFirma(this.medicoData.id, this.firmaFile).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.medicoData.firma_digital = response.data.firma_digital;
+          this.showSnackbarMessage(
+            `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente con firma digital.`,
+            'success'
+          );
+          this.firmaFile = null;
+          this.firmaPreview = null;
+        } else {
+          this.showSnackbarMessage(
+            `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente. Error al subir firma digital.`,
+            'success'
+          );
+        }
+        
+        // Redirigir después de 2 segundos
+        setTimeout(() => {
+          this.router.navigate(['/admin/medicos']);
+        }, 2000);
+        
+        this.uploadingFirma = false;
+      },
+      error: (error) => {
+        console.error('Error uploading firma after update:', error);
+        this.showSnackbarMessage(
+          `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente. Error al subir firma digital.`,
+          'success'
+        );
+        
+        // Redirigir después de 2 segundos
+        setTimeout(() => {
+          this.router.navigate(['/admin/medicos']);
+        }, 2000);
+        
+        this.uploadingFirma = false;
+      }
+    });
   }
 
   volver() {
