@@ -35,6 +35,11 @@ export class PatientFormComponent implements OnInit {
   emailChecked = false;
   emailValidationTimeout: any;
   
+  // Variables para validación de cédula
+  cedulaExists = false;
+  cedulaChecked = false;
+  cedulaValidationTimeout: any;
+  
   // Variables para lógica de médico
   currentMedicoId: number | null = null;
   shouldCreateNewHistory = false;
@@ -88,6 +93,17 @@ export class PatientFormComponent implements OnInit {
   }
 
   onSubmit(form: any) {
+    // Verificar validaciones adicionales
+    if (this.emailExists && this.emailChecked) {
+      alert('❌ Error: El email ya está registrado en el sistema.');
+      return;
+    }
+    
+    if (this.cedulaExists && this.cedulaChecked) {
+      alert('❌ Error: La cédula ya está registrada en el sistema.');
+      return;
+    }
+    
     if (form.valid) {
       if (this.isEdit) {
         this.updatePatient();
@@ -95,7 +111,7 @@ export class PatientFormComponent implements OnInit {
         this.createPatient();
       }
     } else {
-      alert('Por favor, complete todos los campos requeridos.');
+      alert('Por favor, complete todos los campos requeridos correctamente.');
     }
   }
 
@@ -133,8 +149,28 @@ export class PatientFormComponent implements OnInit {
         error: (error) => {
           console.error('Error creating patient:', error);
           this.loading = false;
-          const errorMessage = error?.error?.message || error?.message || 'Error de conexión creando paciente';
-          alert(`❌ Error creando paciente:\n\n${errorMessage}\n\nPor favor, verifique su conexión e intente nuevamente.`);
+          
+          // Manejar errores específicos del backend
+          let errorMessage = 'Error de conexión creando paciente';
+          
+          if (error?.error?.message) {
+            errorMessage = error.error.message;
+          } else if (error?.message) {
+            errorMessage = error.message;
+          }
+          
+          // Mostrar mensaje específico para duplicados
+          if (errorMessage.includes('email ya está registrado') || errorMessage.includes('Email ya está registrado')) {
+            this.emailExists = true;
+            this.emailChecked = true;
+            alert('❌ Error: El email ya está registrado en el sistema.');
+          } else if (errorMessage.includes('cédula ya está registrada') || errorMessage.includes('Cédula ya está registrada')) {
+            this.cedulaExists = true;
+            this.cedulaChecked = true;
+            alert('❌ Error: La cédula ya está registrada en el sistema.');
+          } else {
+            alert(`❌ Error creando paciente:\n\n${errorMessage}\n\nPor favor, verifique su conexión e intente nuevamente.`);
+          }
         }
       });
   }
@@ -200,7 +236,12 @@ export class PatientFormComponent implements OnInit {
       this.emailValidationTimeout = setTimeout(() => {
         this.patientService.getPatientByEmail(this.patient.email!).subscribe({
           next: (response) => {
-            this.emailExists = response.success && response.data !== null;
+            // Si es modo edición, verificar que no sea el paciente actual
+            if (this.isEdit && this.patientId) {
+              this.emailExists = response.success && response.data !== null && response.data.id !== this.patientId;
+            } else {
+              this.emailExists = response.success && response.data !== null;
+            }
             this.emailChecked = true;
           },
           error: (error) => {
@@ -224,7 +265,35 @@ export class PatientFormComponent implements OnInit {
       if (!cedulaPattern.test(this.patient.cedula)) {
         // Marcar como inválida si no cumple el formato
         console.log('Formato de cédula inválido');
+        this.cedulaExists = false;
+        this.cedulaChecked = false;
+        return;
       }
+      
+      // Si el formato es válido, verificar duplicados
+      clearTimeout(this.cedulaValidationTimeout);
+      this.cedulaValidationTimeout = setTimeout(() => {
+        this.patientService.searchPatientsByCedula(this.patient.cedula!).subscribe({
+          next: (response) => {
+            // Si es modo edición, excluir el paciente actual
+            if (this.isEdit && this.patientId) {
+              const otherPatients = response.data.filter(p => p.id !== this.patientId);
+              this.cedulaExists = otherPatients.length > 0;
+            } else {
+              this.cedulaExists = response.data.length > 0;
+            }
+            this.cedulaChecked = true;
+          },
+          error: (error) => {
+            console.error('Error validating cedula:', error);
+            this.cedulaExists = false;
+            this.cedulaChecked = true;
+          }
+        });
+      }, 500);
+    } else {
+      this.cedulaExists = false;
+      this.cedulaChecked = false;
     }
   }
 

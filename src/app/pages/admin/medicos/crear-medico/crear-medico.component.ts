@@ -33,6 +33,16 @@ export class CrearMedicoComponent implements OnInit {
   firmaFile: File | null = null;
   firmaPreview: string | null = null;
   uploadingFirma = false;
+  
+  // Variables para validación de email
+  emailExists = false;
+  emailChecked = false;
+  emailValidationTimeout: any;
+  
+  // Variables para validación de cédula
+  cedulaExists = false;
+  cedulaChecked = false;
+  cedulaValidationTimeout: any;
 
   constructor(
     private medicoService: MedicoService,
@@ -60,6 +70,17 @@ export class CrearMedicoComponent implements OnInit {
   }
 
   onSubmit() {
+    // Verificar validaciones adicionales
+    if (this.emailExists && this.emailChecked) {
+      this.showSnackbarMessage('❌ Error: El email ya está registrado en el sistema.', 'error');
+      return;
+    }
+    
+    if (this.cedulaExists && this.cedulaChecked) {
+      this.showSnackbarMessage('❌ Error: La cédula ya está registrada en el sistema.', 'error');
+      return;
+    }
+    
     if (this.validateForm()) {
       this.saving = true;
       this.hideSnackbar();
@@ -100,14 +121,29 @@ export class CrearMedicoComponent implements OnInit {
           console.error('Error creating medico:', error);
           console.error('Error details:', error.error);
           
+          // Manejar errores específicos del backend
           let errorMessage = '❌ Error al crear el médico. Por favor, intente nuevamente.';
           
           if (error.error && error.error.error && error.error.error.message) {
             errorMessage = `❌ ${error.error.error.message}`;
+          } else if (error.error && error.error.message) {
+            errorMessage = `❌ ${error.error.message}`;
+          }
+          
+          // Mostrar mensaje específico para duplicados
+          if (errorMessage.includes('Email already exists') || errorMessage.includes('email ya está registrado')) {
+            this.emailExists = true;
+            this.emailChecked = true;
+            this.showSnackbarMessage('❌ Error: El email ya está registrado en el sistema.', 'error');
+          } else if (errorMessage.includes('cédula ya está registrada') || errorMessage.includes('Cédula ya está registrada')) {
+            this.cedulaExists = true;
+            this.cedulaChecked = true;
+            this.showSnackbarMessage('❌ Error: La cédula ya está registrada en el sistema.', 'error');
+          } else {
+            this.showSnackbarMessage(errorMessage, 'error');
           }
           
           this.saving = false;
-          this.showSnackbarMessage(errorMessage, 'error');
         }
       });
     }
@@ -230,5 +266,65 @@ export class CrearMedicoComponent implements OnInit {
 
   hideSnackbar() {
     this.showSnackbar = false;
+  }
+
+  // Validación de email
+  validateEmail() {
+    if (this.medicoData.email && this.medicoData.email.length > 0) {
+      clearTimeout(this.emailValidationTimeout);
+      this.emailValidationTimeout = setTimeout(() => {
+        this.medicoService.searchMedicos(this.medicoData.email!).subscribe({
+          next: (response) => {
+            // Filtrar por email exacto
+            const existingMedicos = response.data.filter(m => m.email.toLowerCase() === this.medicoData.email!.toLowerCase());
+            this.emailExists = existingMedicos.length > 0;
+            this.emailChecked = true;
+          },
+          error: (error) => {
+            console.error('Error validating email:', error);
+            this.emailExists = false;
+            this.emailChecked = true;
+          }
+        });
+      }, 500);
+    } else {
+      this.emailExists = false;
+      this.emailChecked = false;
+    }
+  }
+
+  // Validación de cédula
+  validateCedula() {
+    if (this.medicoData.cedula && this.medicoData.cedula.length > 0) {
+      // Validar formato de cédula venezolana
+      const cedulaPattern = /^[VEJPG][0-9]{7,8}$/;
+      if (!cedulaPattern.test(this.medicoData.cedula)) {
+        console.log('Formato de cédula inválido');
+        this.cedulaExists = false;
+        this.cedulaChecked = false;
+        return;
+      }
+      
+      // Si el formato es válido, verificar duplicados
+      clearTimeout(this.cedulaValidationTimeout);
+      this.cedulaValidationTimeout = setTimeout(() => {
+        this.medicoService.searchMedicos(this.medicoData.cedula!).subscribe({
+          next: (response) => {
+            // Filtrar por cédula exacta
+            const existingMedicos = response.data.filter(m => m.cedula === this.medicoData.cedula);
+            this.cedulaExists = existingMedicos.length > 0;
+            this.cedulaChecked = true;
+          },
+          error: (error) => {
+            console.error('Error validating cedula:', error);
+            this.cedulaExists = false;
+            this.cedulaChecked = true;
+          }
+        });
+      }, 500);
+    } else {
+      this.cedulaExists = false;
+      this.cedulaChecked = false;
+    }
   }
 }

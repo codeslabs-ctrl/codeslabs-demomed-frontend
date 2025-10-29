@@ -42,11 +42,12 @@
             <span *ngIf="apellidos.errors?.['required']">Los apellidos son requeridos</span>
           </div>
         </div>
-        <div class="form-group">
+        <div class="form-group" [class.has-duplicate-error]="cedulaExists && cedulaChecked">
           <label class="form-label">Cédula</label>
           <input 
             type="text" 
             class="form-input" 
+            [class.duplicate-error]="cedulaExists && cedulaChecked"
             [(ngModel)]="patient.cedula"
             name="cedula"
             pattern="^[VEJPG][0-9]{7,8}$"
@@ -56,6 +57,9 @@
           <div class="error-message" *ngIf="cedula.invalid && cedula.touched">
             <span *ngIf="cedula.errors?.['pattern']">Formato inválido. Usa: V12345678, E1234567, J12345678, P12345678, G12345678</span>
             <span *ngIf="cedula.errors?.['cedulaInvalid']">Cédula inválida. Verifica el número</span>
+          </div>
+          <div class="error-message" *ngIf="cedulaExists && cedulaChecked">
+            <span>Esta cédula ya está registrada</span>
           </div>
         </div>
         <div class="form-group">
@@ -97,11 +101,12 @@
     <div class="form-section">
       <h3>Información de Contacto</h3>
       <div class="form-grid">
-        <div class="form-group">
+        <div class="form-group" [class.has-duplicate-error]="emailExists && emailChecked">
           <label class="form-label">Email *</label>
           <input 
             type="email" 
             class="form-input" 
+            [class.duplicate-error]="emailExists && emailChecked"
             [(ngModel)]="patient.email"
             name="email"
             required
@@ -142,7 +147,7 @@
       <button 
         type="submit" 
         class="btn btn-primary"
-        [disabled]="loading || emailExists">
+        [disabled]="loading || emailExists || cedulaExists">
         <span *ngIf="loading" class="spinner"></span>
         {{ isEdit ? 'Actualizar' : 'Crear' }} Paciente
       </button>

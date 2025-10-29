@@ -35,6 +35,16 @@ export class EditarMedicoComponent implements OnInit {
   firmaFile: File | null = null;
   firmaPreview: string | null = null;
   uploadingFirma = false;
+  
+  // Variables para validación de email
+  emailExists = false;
+  emailChecked = false;
+  emailValidationTimeout: any;
+  
+  // Variables para validación de cédula
+  cedulaExists = false;
+  cedulaChecked = false;
+  cedulaValidationTimeout: any;
 
   constructor(
     private medicoService: MedicoService,
@@ -83,6 +93,17 @@ export class EditarMedicoComponent implements OnInit {
   }
 
   onSubmit() {
+    // Verificar validaciones adicionales
+    if (this.emailExists && this.emailChecked) {
+      this.showSnackbarMessage('❌ Error: El email ya está registrado en el sistema.', 'error');
+      return;
+    }
+    
+    if (this.cedulaExists && this.cedulaChecked) {
+      this.showSnackbarMessage('❌ Error: La cédula ya está registrada en el sistema.', 'error');
+      return;
+    }
+    
     if (this.validateForm()) {
       this.saving = true;
       this.hideSnackbar();
@@ -287,5 +308,71 @@ export class EditarMedicoComponent implements OnInit {
 
   hideSnackbar() {
     this.showSnackbar = false;
+  }
+
+  // Validación de email
+  validateEmail() {
+    if (this.medicoData.email && this.medicoData.email.length > 0) {
+      clearTimeout(this.emailValidationTimeout);
+      this.emailValidationTimeout = setTimeout(() => {
+        this.medicoService.searchMedicos(this.medicoData.email!).subscribe({
+          next: (response) => {
+            // Filtrar por email exacto y excluir el médico actual
+            const existingMedicos = response.data.filter(m => 
+              m.email.toLowerCase() === this.medicoData.email!.toLowerCase() && 
+              m.id !== this.medicoData.id
+            );
+            this.emailExists = existingMedicos.length > 0;
+            this.emailChecked = true;
+          },
+          error: (error) => {
+            console.error('Error validating email:', error);
+            this.emailExists = false;
+            this.emailChecked = true;
+          }
+        });
+      }, 500);
+    } else {
+      this.emailExists = false;
+      this.emailChecked = false;
+    }
+  }
+
+  // Validación de cédula
+  validateCedula() {
+    if (this.medicoData.cedula && this.medicoData.cedula.length > 0) {
+      // Validar formato de cédula venezolana
+      const cedulaPattern = /^[VEJPG][0-9]{7,8}$/;
+      if (!cedulaPattern.test(this.medicoData.cedula)) {
+        console.log('Formato de cédula inválido');
+        this.cedulaExists = false;
+        this.cedulaChecked = false;
+        return;
+      }
+      
+      // Si el formato es válido, verificar duplicados
+      clearTimeout(this.cedulaValidationTimeout);
+      this.cedulaValidationTimeout = setTimeout(() => {
+        this.medicoService.searchMedicos(this.medicoData.cedula!).subscribe({
+          next: (response) => {
+            // Filtrar por cédula exacta y excluir el médico actual
+            const existingMedicos = response.data.filter(m => 
+              m.cedula === this.medicoData.cedula && 
+              m.id !== this.medicoData.id
+            );
+            this.cedulaExists = existingMedicos.length > 0;
+            this.cedulaChecked = true;
+          },
+          error: (error) => {
+            console.error('Error validating cedula:', error);
+            this.cedulaExists = false;
+            this.cedulaChecked = true;
+          }
+        });
+      }, 500);
+    } else {
+      this.cedulaExists = false;
+      this.cedulaChecked = false;
+    }
   }
 }

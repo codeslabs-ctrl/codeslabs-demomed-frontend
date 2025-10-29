@@ -32,26 +32,37 @@
             [disabled]="saving"
             placeholder="Ingrese los apellidos">
         </div>
-        <div class="form-group">
+        <div class="form-group" [class.has-duplicate-error]="cedulaExists && cedulaChecked">
           <label class="form-label">Cédula</label>
           <input 
             type="text" 
             class="form-input" 
+            [class.duplicate-error]="cedulaExists && cedulaChecked"
             [(ngModel)]="medicoData.cedula"
             name="cedula"
+            pattern="^[VEJPG][0-9]{7,8}$"
             [disabled]="saving"
-            placeholder="Ingrese la cédula (opcional)">
+            placeholder="Ej: V12345678, E1234567"
+            (blur)="validateCedula()">
+          <div class="error-message" *ngIf="cedulaExists && cedulaChecked">
+            <span>Esta cédula ya está registrada</span>
+          </div>
         </div>
-        <div class="form-group">
+        <div class="form-group" [class.has-duplicate-error]="emailExists && emailChecked">
           <label class="form-label">Email *</label>
           <input 
             type="email" 
             class="form-input" 
+            [class.duplicate-error]="emailExists && emailChecked"
             [(ngModel)]="medicoData.email"
             name="email"
             required
             [disabled]="saving"
-            placeholder="Ingrese el email">
+            placeholder="ejemplo@correo.com"
+            (blur)="validateEmail()">
+          <div class="error-message" *ngIf="emailExists && emailChecked">
+            <span>Este email ya está registrado</span>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Teléfono *</label>
@@ -128,7 +139,7 @@
       <button 
         type="submit" 
         class="btn btn-primary"
-        [disabled]="saving || !medicoForm.form.valid">
+        [disabled]="saving || !medicoForm.form.valid || emailExists || cedulaExists">
         <span *ngIf="saving" class="spinner"></span>
         {{ saving ? 'Creando...' : 'Crear Médico' }}
       </button>
