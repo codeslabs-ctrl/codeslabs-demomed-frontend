@@ -48,6 +48,33 @@
         <!-- Separador para médicos -->
         <div class="settings-divider" *ngIf="currentUser?.rol === 'medico'"></div>
         
+        <!-- Opciones para Secretarias -->
+        <div class="settings-section" *ngIf="currentUser?.rol === 'secretaria'">
+          <div class="settings-section-title">Secretaría</div>
+          <a routerLink="/patients" class="settings-item" (click)="closeSettingsMenu()">
+            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01.99L14 10.5l-1.5-2c-.47-.62-1.21-.99-2.01-.99H9.46c-.8 0-1.54.37-2.01.99L5 10.5l-1.5-2C3.03 8.37 2.29 8 1.5 8H.5l2.54 7.63A1.5 1.5 0 0 0 4.46 18H7v4h2v-4h2v4h2v-4h2v4h2v-4h2v4h2z"/>
+            </svg>
+            <span>Gestión de Pacientes</span>
+          </a>
+          <a routerLink="/admin/consultas" class="settings-item" (click)="closeSettingsMenu()">
+            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+            </svg>
+            <span>Gestión de Consultas</span>
+          </a>
+          <a routerLink="/admin/informes-medicos" class="settings-item" (click)="closeSettingsMenu()">
+            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+              <path d="M8,12H16V14H8V12M8,16H13V18H8V16"/>
+            </svg>
+            <span>Informes Médicos</span>
+          </a>
+        </div>
+        
+        <!-- Separador para secretarias -->
+        <div class="settings-divider" *ngIf="currentUser?.rol === 'secretaria'"></div>
+        
         <!-- Opciones de Finanzas (solo para finanzas y administradores) -->
         <div class="settings-section" *ngIf="currentUser?.rol === 'finanzas' || currentUser?.rol === 'administrador'">
           <div class="settings-section-title">Finanzas</div>

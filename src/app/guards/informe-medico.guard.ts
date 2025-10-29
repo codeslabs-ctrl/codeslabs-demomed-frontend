@@ -51,9 +51,9 @@ export class InformeMedicoGuard implements CanActivate {
       }
     }
 
-    // Verificar si la ruta requiere permisos de médico o administrador
+    // Verificar si la ruta requiere permisos de médico, administrador o secretaria
     if (medicoOrAdminRoutes.some(route => url.includes(route.replace('/admin/informes-medicos', '')))) {
-      if (currentUser.rol !== 'medico' && currentUser.rol !== 'administrador') {
+      if (currentUser.rol !== 'medico' && currentUser.rol !== 'administrador' && currentUser.rol !== 'secretaria') {
         this.router.navigate(['/dashboard']);
         return false;
       }
@@ -130,8 +130,8 @@ export class InformeMedicoMedicoGuard implements CanActivate {
       return false;
     }
 
-    // Solo médicos y administradores pueden acceder
-    if (currentUser.rol !== 'medico' && currentUser.rol !== 'administrador') {
+    // Solo médicos, administradores y secretarias pueden acceder
+    if (currentUser.rol !== 'medico' && currentUser.rol !== 'administrador' && currentUser.rol !== 'secretaria') {
       this.router.navigate(['/dashboard']);
       return false;
     }

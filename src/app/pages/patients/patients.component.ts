@@ -78,7 +78,9 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
       </div>
 
       <div class="patients-table" *ngIf="!loading">
-        <table class="table">
+        <!-- Vista de tabla para desktop -->
+        <div class="table-desktop">
+          <table class="table">
           <thead>
             <tr>
               <th>ID</th>
@@ -89,6 +91,7 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
               <th>Email</th>
               <th>Teléfono</th>
               <th>Motivo Consulta</th>
+              <th>Estado</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -109,6 +112,11 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
               <td>{{ patient.telefono }}</td>
               <td>{{ patient.motivo_consulta }}</td>
               <td>
+                <span class="status-badge" [class.active]="patient.activo" [class.inactive]="!patient.activo">
+                  {{ patient.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td>
                 <div class="action-buttons">
                   <a routerLink="/patients/{{ patient.id }}" class="action-btn view-btn" title="Ver detalles">
                     <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -123,6 +131,7 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
                     Editar
                   </a>
                   <button 
+                    *ngIf="currentUser?.rol === 'medico' || currentUser?.rol === 'administrador'"
                     class="action-btn history-btn" 
                     [class.has-history]="tieneHistoriaMedica(patient)"
                     (click)="gestionarHistoriaMedica(patient)" 
@@ -133,17 +142,107 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
                     {{ tieneHistoriaMedica(patient) ? 'Editar Historia' : 'Crear Historia' }}
                     <span *ngIf="tieneHistoriaMedica(patient)" class="history-indicator">✓</span>
                   </button>
-                  <button class="action-btn delete-btn" (click)="deletePatient(patient.id)" title="Eliminar paciente">
+                  <button 
+                    class="action-btn" 
+                    [class.delete-btn]="!patient.activo"
+                    [class.activate-btn]="patient.activo"
+                    (click)="deletePatient(patient.id)" 
+                    [title]="patient.activo ? 'Desactivar paciente' : 'Activar paciente'">
                     <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                     </svg>
-                    Eliminar
+                    {{ patient.activo ? 'Desactivar' : 'Activar' }}
                   </button>
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
+        </div>
+
+        <!-- Vista de tarjetas para móvil -->
+        <div class="table-mobile">
+          <div class="patient-card" *ngFor="let patient of patients">
+            <div class="card-header">
+              <div class="patient-info">
+                <h3 class="patient-name">{{ patient.nombres }} {{ patient.apellidos }}</h3>
+                <div class="patient-meta">
+                  <span class="patient-id">ID: {{ patient.id }}</span>
+                  <span class="status-badge" [class.active]="patient.activo" [class.inactive]="!patient.activo">
+                    {{ patient.activo ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card-body">
+              <div class="info-row">
+                <span class="label">Cédula:</span>
+                <span class="value">{{ patient.cedula || 'N/A' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Edad:</span>
+                <span class="value">{{ patient.edad }} años</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Sexo:</span>
+                <span class="sex-badge" [class.female]="patient.sexo === 'Femenino'">
+                  {{ patient.sexo }}
+                </span>
+              </div>
+              <div class="info-row">
+                <span class="label">Email:</span>
+                <span class="value">{{ patient.email }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Teléfono:</span>
+                <span class="value">{{ patient.telefono }}</span>
+              </div>
+              <div class="info-row" *ngIf="patient.motivo_consulta">
+                <span class="label">Motivo Consulta:</span>
+                <span class="value">{{ patient.motivo_consulta }}</span>
+              </div>
+            </div>
+            
+            <div class="card-actions">
+              <a routerLink="/patients/{{ patient.id }}" class="action-btn view-btn" title="Ver detalles">
+                <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+                Ver
+              </a>
+              <a routerLink="/patients/{{ patient.id }}/edit" class="action-btn edit-btn" title="Editar paciente">
+                <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+                Editar
+              </a>
+              <button 
+                *ngIf="currentUser?.rol === 'medico' || currentUser?.rol === 'administrador'"
+                class="action-btn history-btn" 
+                [class.has-history]="tieneHistoriaMedica(patient)"
+                (click)="gestionarHistoriaMedica(patient)" 
+                [title]="getHistoriaTooltip(patient)">
+                <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                </svg>
+                {{ tieneHistoriaMedica(patient) ? 'Editar Historia' : 'Crear Historia' }}
+                <span *ngIf="tieneHistoriaMedica(patient)" class="history-indicator">✓</span>
+              </button>
+              <button 
+                class="action-btn" 
+                [class.delete-btn]="!patient.activo"
+                [class.activate-btn]="patient.activo"
+                (click)="deletePatient(patient.id)" 
+                [title]="patient.activo ? 'Desactivar paciente' : 'Activar paciente'">
+                <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>
+                {{ patient.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div class="no-patients" *ngIf="patients.length === 0">
           <p>No se encontraron pacientes con los filtros aplicados.</p>
@@ -460,6 +559,202 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
         height: 10px;
       }
     }
+
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+
+    .status-badge.active {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status-badge.inactive {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .activate-btn {
+      background-color: #28a745 !important;
+      color: white !important;
+    }
+
+    .activate-btn:hover {
+      background-color: #218838 !important;
+    }
+
+    /* Vista de tabla para desktop */
+    .table-desktop {
+      display: block;
+    }
+
+    /* Vista de tarjetas para móvil */
+    .table-mobile {
+      display: none;
+    }
+
+    /* Estilos para las tarjetas móviles */
+    .patient-card {
+      background: white;
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: #f8fafc;
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .patient-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .patient-name {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 0;
+    }
+
+    .patient-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .patient-id {
+      font-size: 0.875rem;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .card-body {
+      padding: 1rem;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .label {
+      font-weight: 600;
+      color: #374151;
+      font-size: 0.875rem;
+      min-width: 100px;
+    }
+
+    .value {
+      color: #64748b;
+      font-size: 0.875rem;
+      text-align: right;
+      flex: 1;
+      margin-left: 1rem;
+    }
+
+    .card-actions {
+      padding: 1rem;
+      background: #f8fafc;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+
+    .card-actions .action-btn {
+      font-size: 0.75rem;
+      padding: 0.5rem;
+      justify-content: center;
+    }
+
+    /* Media queries para responsividad */
+    @media (max-width: 1024px) {
+      .table-desktop {
+        display: none;
+      }
+      
+      .table-mobile {
+        display: block;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .page-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+      }
+
+      .filters-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .patient-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+
+      .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+
+      .value {
+        text-align: left;
+        margin-left: 0;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .patients-page {
+        padding: 0.5rem;
+      }
+
+      .filters-section {
+        padding: 1rem;
+      }
+
+      .card-header,
+      .card-body,
+      .card-actions {
+        padding: 0.75rem;
+      }
+
+      .patient-name {
+        font-size: 1rem;
+      }
+
+      .action-btn {
+        font-size: 0.7rem;
+        padding: 0.375rem 0.5rem;
+      }
+    }
   `]
 })
 export class PatientsComponent implements OnInit {
@@ -501,14 +796,16 @@ export class PatientsComponent implements OnInit {
       return;
     }
 
-    // Si es administrador, cargar todos los pacientes
-    if (this.currentUser.rol === 'administrador') {
+    // Si es administrador o secretaria, cargar todos los pacientes
+    if (this.currentUser.rol === 'administrador' || this.currentUser.rol === 'secretaria') {
       this.patientService.getAllPatients(this.filters, { page: this.currentPage, limit: this.pageSize })
         .subscribe({
           next: (response) => {
             if (response.success) {
               this.patients = response.data;
               this.pagination = response.pagination;
+              // Verificar historia médica para cada paciente
+              this.patients.forEach(patient => this.verificarHistoriaMedica(patient));
             }
             this.loading = false;
           },
@@ -531,6 +828,8 @@ export class PatientsComponent implements OnInit {
                 total: response.data.total,
                 pages: response.data.totalPages
               };
+              // Verificar historia médica para cada paciente
+              this.patients.forEach(patient => this.verificarHistoriaMedica(patient));
             }
             this.loading = false;
           },
@@ -601,8 +900,46 @@ export class PatientsComponent implements OnInit {
   deletePatient(id: number) {
     const patient = this.patients.find(p => p.id === id);
     if (patient) {
-      this.patientToDelete = patient;
-      this.showConfirmModal = true;
+      // Verificar si el paciente tiene consultas asociadas
+      this.patientService.hasConsultations(patient.id!).subscribe({
+        next: (response) => {
+          if (response.success && response.data.hasConsultations) {
+            // Si tiene consultas, cambiar estado activo/inactivo
+            this.togglePatientStatus(patient);
+          } else {
+            // Si no tiene consultas, eliminar físicamente
+            this.patientToDelete = patient;
+            this.showConfirmModal = true;
+          }
+        },
+        error: (error) => {
+          console.error('Error verificando consultas:', error);
+          alert('❌ Error verificando el estado del paciente. Por favor, intente nuevamente.');
+        }
+      });
+    }
+  }
+
+  togglePatientStatus(patient: Patient) {
+    const newStatus = !patient.activo;
+    const action = newStatus ? 'activar' : 'desactivar';
+    
+    if (confirm(`¿Estás seguro de que quieres ${action} a ${patient.nombres} ${patient.apellidos}?`)) {
+      this.patientService.togglePatientStatus(patient.id!, newStatus).subscribe({
+        next: (response) => {
+          if (response.success) {
+            patient.activo = newStatus;
+            alert(`✅ Paciente ${action}do exitosamente`);
+            this.loadPatients(); // Recargar la lista
+          } else {
+            alert(`❌ Error al ${action} paciente. Por favor, intente nuevamente.`);
+          }
+        },
+        error: (error) => {
+          console.error(`Error al ${action} paciente:`, error);
+          alert(`❌ Error al ${action} paciente. Por favor, intente nuevamente.`);
+        }
+      });
     }
   }
 
@@ -639,9 +976,31 @@ export class PatientsComponent implements OnInit {
 
   // Método para verificar si el paciente tiene historia médica
   tieneHistoriaMedica(patient: Patient): boolean {
-    // Verificar si existe historico_id o si hay datos médicos
-    return !!(patient.historico_id || 
-             (patient.motivo_consulta && patient.diagnostico));
+    // Verificar si existe historico_id en el objeto Patient
+    if (patient.historico_id) {
+      return true;
+    }
+    
+    // Si no hay historico_id, verificar si hay datos médicos básicos
+    // (esto es un fallback para casos donde el backend no incluye historico_id)
+    return !!(patient.motivo_consulta || patient.diagnostico);
+  }
+
+  // Método mejorado para verificar historia médica consultando el servicio
+  verificarHistoriaMedica(patient: Patient): void {
+    if (patient.id) {
+      this.historicoService.getLatestHistoricoByPaciente(patient.id).subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            // Actualizar el paciente con el historico_id
+            patient.historico_id = response.data.id;
+          }
+        },
+        error: (error) => {
+          console.log('No se encontró historia médica para el paciente:', patient.id);
+        }
+      });
+    }
   }
 
   // Método para obtener el tooltip del botón de historia

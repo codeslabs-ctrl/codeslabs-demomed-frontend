@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
+import { adminMedicoGuard } from './guards/admin-medico.guard';
+import { adminOnlyGuard } from './guards/admin-only.guard';
 import { FinanzasGuard } from './guards/finanzas.guard';
 import { roleRedirectGuard } from './guards/role-redirect.guard';
 
@@ -74,7 +76,7 @@ export const routes: Routes = [
   {
     path: 'admin/servicios',
     loadComponent: () => import('./pages/admin/servicios/servicios.component').then(m => m.ServiciosComponent),
-    canActivate: [authGuard]
+    canActivate: [adminMedicoGuard]
   },
   {
     path: 'admin/consultas/nueva',

@@ -14,11 +14,14 @@ import { ConsultaWithDetails } from '../../../models/consulta.model';
 import { HistoricoWithDetails } from '../../../services/historico.service';
 import { ArchivoAnexo } from '../../../models/archivo.model';
 import { FileUploadComponent } from '../../../components/file-upload/file-upload.component';
+import { RemitirPacienteModalComponent } from '../../../components/remitir-paciente-modal/remitir-paciente-modal.component';
+import { RichTextEditorComponent } from '../../../components/rich-text-editor/rich-text-editor.component';
+import { Patient } from '../../../models/patient.model';
 
 @Component({
   selector: 'app-historia-medica',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, FileUploadComponent],
+  imports: [CommonModule, FormsModule, RouterModule, FileUploadComponent, RemitirPacienteModalComponent, RichTextEditorComponent],
   styleUrls: ['./historia-medica.component.css'],
   template: `
     <div class="historia-medica-page">
@@ -81,6 +84,38 @@ import { FileUploadComponent } from '../../../components/file-upload/file-upload
           </div>
         </div>
 
+        <!-- Selector de Médico para Historia -->
+        <div *ngIf="mostrarSelectorMedico" class="medico-selector-section">
+          <h3>Seleccionar Historia Médica</h3>
+          <div class="medico-selector">
+            <label for="medicoSelect">Ver historia de:</label>
+            <select id="medicoSelect" (change)="onMedicoChange($event)" 
+                    class="form-control" name="medicoSelect">
+              <option [value]="medicoActual?.medico_id" [selected]="medicoSeleccionado?.medico_id === medicoActual?.medico_id">
+                Mi historia ({{ medicoActual?.medico_nombre }} {{ medicoActual?.medico_apellidos }})
+              </option>
+              <option *ngFor="let medico of medicosConHistoria" [value]="medico.medico_id" 
+                      [selected]="medicoSeleccionado?.medico_id === medico.medico_id">
+                Dr./Dra. {{ medico.medico_nombre }} {{ medico.medico_apellidos }} - {{ medico.especialidad_nombre }}
+              </option>
+            </select>
+          </div>
+          
+          <!-- Información del Médico Seleccionado -->
+          <div *ngIf="medicoSeleccionado" class="medico-seleccionado-info">
+            <div class="medico-header">
+              <h4>Dr./Dra. {{ medicoSeleccionado.medico_nombre }} {{ medicoSeleccionado.medico_apellidos }}</h4>
+              <span class="badge" [class.editable]="esEditable" [class.readonly]="!esEditable">
+                {{ esEditable ? 'Editable' : 'Solo Lectura' }}
+              </span>
+            </div>
+            <p class="medico-specialty">{{ medicoSeleccionado.especialidad_nombre }}</p>
+            <p *ngIf="medicoSeleccionado.ultima_consulta" class="medico-date">
+              Última consulta: {{ formatDate(medicoSeleccionado.ultima_consulta) }}
+            </p>
+          </div>
+        </div>
+
         <!-- Formulario de Historia Médica -->
         <form (ngSubmit)="guardarHistoria()" #historiaFormRef="ngForm">
           <div class="form-section">
@@ -88,48 +123,46 @@ import { FileUploadComponent } from '../../../components/file-upload/file-upload
             
             <div class="form-group">
               <label for="motivo_consulta">Motivo de Consulta *</label>
-              <textarea 
-                id="motivo_consulta" 
-                class="form-control" 
-                [(ngModel)]="historiaForm.motivo_consulta" 
-                name="motivo_consulta"
-                rows="4"
-                placeholder="Describa el motivo de la consulta..."
-                required></textarea>
+              <app-rich-text-editor
+                [value]="historiaForm.motivo_consulta"
+                [placeholder]="'Describa el motivo de la consulta...'"
+                [height]="120"
+                (valueChange)="historiaForm.motivo_consulta = $event"
+                [class.readonly]="!esEditable">
+              </app-rich-text-editor>
             </div>
 
             <div class="form-group">
               <label for="diagnostico">Diagnóstico *</label>
-              <textarea 
-                id="diagnostico" 
-                class="form-control" 
-                [(ngModel)]="historiaForm.diagnostico" 
-                name="diagnostico"
-                rows="4"
-                placeholder="Diagnóstico médico..."
-                required></textarea>
+              <app-rich-text-editor
+                [value]="historiaForm.diagnostico"
+                [placeholder]="'Diagnóstico médico...'"
+                [height]="120"
+                (valueChange)="historiaForm.diagnostico = $event"
+                [class.readonly]="!esEditable">
+              </app-rich-text-editor>
             </div>
 
             <div class="form-group">
               <label for="conclusiones">Conclusiones</label>
-              <textarea 
-                id="conclusiones" 
-                class="form-control" 
-                [(ngModel)]="historiaForm.conclusiones" 
-                name="conclusiones"
-                rows="4"
-                placeholder="Conclusiones y recomendaciones..."></textarea>
+              <app-rich-text-editor
+                [value]="historiaForm.conclusiones"
+                [placeholder]="'Conclusiones y recomendaciones...'"
+                [height]="120"
+                (valueChange)="historiaForm.conclusiones = $event"
+                [class.readonly]="!esEditable">
+              </app-rich-text-editor>
             </div>
 
             <div class="form-group">
               <label for="plan">Plan de Tratamiento</label>
-              <textarea 
-                id="plan" 
-                class="form-control" 
-                [(ngModel)]="historiaForm.plan" 
-                name="plan"
-                rows="4"
-                placeholder="Plan de acciones a seguir en el tratamiento..."></textarea>
+              <app-rich-text-editor
+                [value]="historiaForm.plan"
+                [placeholder]="'Plan de acciones a seguir en el tratamiento...'"
+                [height]="120"
+                (valueChange)="historiaForm.plan = $event"
+                [class.readonly]="!esEditable">
+              </app-rich-text-editor>
             </div>
           </div>
 
@@ -204,7 +237,7 @@ import { FileUploadComponent } from '../../../components/file-upload/file-upload
           </div>
 
           <!-- Botones de acción -->
-          <div class="form-actions">
+          <div class="form-actions" *ngIf="esEditable">
             <button 
               type="button" 
               class="btn btn-outline" 
@@ -213,6 +246,17 @@ import { FileUploadComponent } from '../../../components/file-upload/file-upload
               <span class="btn-icon">🔄</span>
               <span class="btn-text">Restaurar</span>
             </button>
+            
+            <!-- Botón de Interconsultas -->
+            <button 
+              type="button" 
+              class="btn btn-info" 
+              (click)="abrirModalInterconsultas()"
+              [disabled]="isSubmitting || !consultaData?.paciente_id">
+              <span class="btn-icon">🔄</span>
+              <span class="btn-text">Interconsultas</span>
+            </button>
+            
             <button 
               type="submit" 
               class="btn btn-primary" 
@@ -222,9 +266,34 @@ import { FileUploadComponent } from '../../../components/file-upload/file-upload
               <span class="btn-text">{{isSubmitting ? 'Guardando...' : (mode === 'edit' ? 'Actualizar Historia' : 'Crear Historia')}}</span>
             </button>
           </div>
+
+          <!-- Mensaje de solo lectura -->
+          <div *ngIf="!esEditable" class="readonly-message">
+            <div class="readonly-content">
+              <i class="fas fa-eye"></i>
+              <h4>Modo Solo Lectura</h4>
+              <p>Esta historia médica pertenece a otro médico. Solo puedes visualizar la información, no editarla.</p>
+              <button 
+                type="button" 
+                class="btn btn-outline" 
+                (click)="cambiarAMiHistoria()"
+                *ngIf="medicoActual">
+                <span class="btn-icon">✏️</span>
+                <span class="btn-text">Editar Mi Historia</span>
+              </button>
+            </div>
+          </div>
         </form>
       </div>
     </div>
+
+    <!-- Modal de Interconsultas -->
+    <app-remitir-paciente-modal
+      [isOpen]="showInterconsultasModal"
+      [patient]="pacienteData"
+      (close)="cerrarModalInterconsultas()"
+      (remisionCreated)="onRemisionCreated($event)">
+    </app-remitir-paciente-modal>
   `,
   styles: [`
     .historia-medica-page {
@@ -379,6 +448,169 @@ import { FileUploadComponent } from '../../../components/file-upload/file-upload
       font-style: italic;
     }
 
+    /* Estilos para selector de médico */
+    .medico-selector-section {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .medico-selector-section h3 {
+      color: #1e293b;
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: 0 0 1rem 0;
+    }
+
+    .medico-selector {
+      margin-bottom: 1.5rem;
+    }
+
+    .medico-selector label {
+      display: block;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 0.5rem;
+    }
+
+    .medico-selector select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: white;
+      font-size: 0.875rem;
+      height: 48px;
+      line-height: 1.5;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      background-size: 1rem;
+      padding-right: 2.5rem;
+      cursor: pointer;
+    }
+
+    .medico-selector select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .medico-seleccionado-info {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 1rem;
+    }
+
+    .medico-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .medico-header h4 {
+      color: #1e293b;
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .badge.editable {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge.readonly {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .medico-specialty {
+      color: #64748b;
+      font-size: 0.875rem;
+      margin: 0 0 0.25rem 0;
+    }
+
+    .medico-date {
+      color: #9ca3af;
+      font-size: 0.75rem;
+      margin: 0;
+    }
+
+    /* Estilos para campos de solo lectura */
+    .form-control.readonly {
+      background-color: #f9fafb;
+      color: #6b7280;
+      cursor: not-allowed;
+      border-color: #e5e7eb;
+    }
+
+    /* Estilos para rich text editor en modo solo lectura */
+    .rich-text-editor.readonly {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .rich-text-editor.readonly :host ::ng-deep .ql-toolbar {
+      display: none;
+    }
+
+    .rich-text-editor.readonly :host ::ng-deep .ql-container {
+      border: 1px solid #e5e7eb;
+      background-color: #f9fafb;
+    }
+
+    .rich-text-editor.readonly :host ::ng-deep .ql-editor {
+      color: #6b7280;
+      cursor: not-allowed;
+    }
+
+    /* Estilos para mensaje de solo lectura */
+    .readonly-message {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+    }
+
+    .readonly-content {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .readonly-content i {
+      font-size: 2rem;
+      color: #f59e0b;
+      margin-bottom: 1rem;
+    }
+
+    .readonly-content h4 {
+      color: #92400e;
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .readonly-content p {
+      color: #92400e;
+      font-size: 0.875rem;
+      margin: 0 0 1rem 0;
+    }
+
     .form-section {
       background: white;
       border-radius: 8px;
@@ -467,6 +699,19 @@ import { FileUploadComponent } from '../../../components/file-upload/file-upload
       background: #C2185B;
       transform: translateY(-2px);
       box-shadow: 0 6px 16px rgba(233, 30, 99, 0.4);
+    }
+
+    .btn-info {
+      background: #17a2b8;
+      color: white;
+      box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+      font-weight: 500;
+    }
+
+    .btn-info:hover:not(:disabled) {
+      background: #138496;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(23, 162, 184, 0.4);
     }
 
     .btn-secondary {
@@ -567,6 +812,18 @@ export class HistoriaMedicaComponent implements OnInit {
   archivos: ArchivoAnexo[] = [];
   archivosCargando = false;
   archivosError: string | null = null;
+
+  // Propiedades para interconsultas
+  showInterconsultasModal = false;
+  pacienteData: Patient | null = null;
+
+  // Propiedades para selector de médico
+  medicosConHistoria: any[] = [];
+  medicoSeleccionado: any = null;
+  medicoActual: any = null;
+  modoVisualizacion: 'lectura' | 'edicion' = 'edicion';
+  esEditable = true;
+  mostrarSelectorMedico = false;
 
   constructor(
     private consultaService: ConsultaService,
@@ -748,56 +1005,222 @@ export class HistoriaMedicaComponent implements OnInit {
   verificarHistoriaExistente(): void {
     if (!this.consultaData) return;
 
-    // Verificar si ya existe historia médica
-    if (this.consultaData.historico_id) {
-      this.mode = 'edit';
-      this.cargarHistoriaExistente();
-    } else {
-      this.mode = 'create';
-      this.loading = false;
-    }
+    // Cargar médicos que han creado historias para este paciente
+    this.cargarMedicosConHistoria();
   }
 
-  cargarHistoriaExistente(): void {
-    if (!this.consultaData?.historico_id) return;
+  cargarMedicosConHistoria(): void {
+    if (!this.consultaData) return;
 
-    this.historicoService.getHistoricoById(this.consultaData.historico_id).subscribe({
-      next: (response: any) => {
+    this.historicoService.getMedicosConHistoriaByPaciente(this.consultaData.paciente_id).subscribe({
+      next: (response) => {
         if (response.success && response.data) {
-          this.historiaData = response.data;
-          if (this.historiaData) {
-            this.historiaForm = {
-              motivo_consulta: this.historiaData.motivo_consulta || '',
-              diagnostico: this.historiaData.diagnostico || '',
-              conclusiones: this.historiaData.conclusiones || '',
-              plan: this.historiaData.plan || ''
-            };
-            this.historiaOriginal = { ...this.historiaForm };
-            
-            // Cargar archivos existentes
-            this.cargarArchivos();
-          }
+          this.medicosConHistoria = response.data;
+          console.log('✅ Médicos con historia cargados:', this.medicosConHistoria);
+          
+          // Configurar médico actual
+          this.configurarMedicoActual();
+        } else {
+          this.medicosConHistoria = [];
+          this.configurarMedicoActual();
         }
         this.loading = false;
       },
-      error: (error: any) => {
-        console.error('❌ Error cargando historia:', error);
-        this.error = 'Error al cargar la historia médica existente';
+      error: (error) => {
+        console.error('❌ Error cargando médicos con historia:', error);
+        this.medicosConHistoria = [];
+        this.configurarMedicoActual();
         this.loading = false;
       }
     });
   }
 
+  configurarMedicoActual(): void {
+    if (!this.consultaData) return;
+
+    // Obtener información del médico actual
+    this.medicoActual = {
+      medico_id: this.consultaData.medico_id,
+      medico_nombre: this.consultaData.medico_nombre,
+      medico_apellidos: this.consultaData.medico_apellidos,
+      especialidad_nombre: this.consultaData.especialidad_nombre
+    };
+
+    // Verificar si el médico actual tiene historia
+    const tieneHistoriaActual = this.medicosConHistoria.some(medico => 
+      medico.medico_id === this.medicoActual.medico_id
+    );
+
+    // Verificar si hay historial de otros médicos
+    const tieneHistoriaOtrosMedicos = this.medicosConHistoria.some(medico => 
+      medico.medico_id !== this.medicoActual.medico_id
+    );
+
+    if (tieneHistoriaActual && !tieneHistoriaOtrosMedicos) {
+      // Solo el médico actual tiene historia, no mostrar selector
+      this.mostrarSelectorMedico = false;
+      this.seleccionarMedico(this.medicoActual.medico_id);
+      console.log('ℹ️ Solo el médico actual tiene historia, modo edición directo');
+    } else if (tieneHistoriaOtrosMedicos) {
+      // Hay historial de otros médicos, mostrar selector
+      this.mostrarSelectorMedico = true;
+      this.seleccionarMedico(this.medicoActual.medico_id);
+      console.log('ℹ️ Hay historial de otros médicos, mostrando selector');
+    } else {
+      // No hay historial médico, modo creación directo
+      this.mostrarSelectorMedico = false;
+      this.mode = 'create';
+      this.medicoSeleccionado = this.medicoActual;
+      this.esEditable = true;
+      this.modoVisualizacion = 'edicion';
+      console.log('ℹ️ No hay historial médico, modo creación directo');
+    }
+  }
+
+  onMedicoChange(event: any): void {
+    const selectedMedicoId = parseInt(event.target.value);
+    console.log('🔍 ID del médico seleccionado:', selectedMedicoId);
+    
+    if (selectedMedicoId && !isNaN(selectedMedicoId)) {
+      // Buscar el médico completo en la lista
+      const medico = this.medicosConHistoria.find(m => m.medico_id === selectedMedicoId) || this.medicoActual;
+      this.medicoSeleccionado = medico;
+      console.log('🔍 Médico encontrado:', medico);
+      
+      this.seleccionarMedico(selectedMedicoId);
+    } else {
+      console.log('❌ ID de médico inválido');
+    }
+  }
+
+  cambiarAMiHistoria(): void {
+    if (!this.medicoActual) return;
+
+    console.log('🔍 Cambiando a mi historia:', this.medicoActual);
+
+    // Configurar para el médico actual
+    this.medicoSeleccionado = this.medicoActual;
+    this.esEditable = true;
+    this.modoVisualizacion = 'edicion';
+
+    // Cargar o crear historia del médico actual
+    this.historicoService.getHistoricoByPacienteAndMedico(this.consultaData!.paciente_id, this.medicoActual.medico_id).subscribe({
+      next: (response) => {
+        console.log('🔍 Respuesta del backend para mi historia:', response);
+        
+        if (response.success && response.data) {
+          // Existe historia del médico actual
+          this.mode = 'edit';
+          this.historiaData = response.data;
+          this.historiaForm = {
+            motivo_consulta: this.historiaData.motivo_consulta || '',
+            diagnostico: this.historiaData.diagnostico || '',
+            conclusiones: this.historiaData.conclusiones || '',
+            plan: this.historiaData.plan || ''
+          };
+          this.historiaOriginal = { ...this.historiaForm };
+          
+          // Cargar archivos si existe la historia
+          this.cargarArchivos();
+          
+          console.log('✅ Mi historia cargada:', this.historiaData);
+        } else {
+          // No existe historia del médico actual, modo creación
+          this.mode = 'create';
+          this.historiaData = null;
+          this.historiaForm = {
+            motivo_consulta: '',
+            diagnostico: '',
+            conclusiones: '',
+            plan: ''
+          };
+          console.log('ℹ️ No existe mi historia, modo creación');
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error cargando mi historia:', error);
+        this.mode = 'create';
+        this.historiaData = null;
+      }
+    });
+  }
+
+  seleccionarMedico(medicoId: number): void {
+    if (!this.consultaData) return;
+
+    console.log('🔍 Seleccionando médico ID:', medicoId);
+    console.log('🔍 Médicos disponibles:', this.medicosConHistoria);
+
+    const medico = this.medicosConHistoria.find(m => m.medico_id === medicoId);
+    if (!medico) {
+      console.log('❌ Médico no encontrado en la lista');
+      return;
+    }
+
+    console.log('✅ Médico encontrado:', medico);
+
+    this.medicoSeleccionado = medico;
+    this.esEditable = medicoId === this.medicoActual.medico_id;
+    this.modoVisualizacion = this.esEditable ? 'edicion' : 'lectura';
+
+    console.log('🔍 Es editable:', this.esEditable);
+    console.log('🔍 Modo visualización:', this.modoVisualizacion);
+
+    // Cargar historia del médico seleccionado
+    this.historicoService.getHistoricoByPacienteAndMedico(this.consultaData.paciente_id, medicoId).subscribe({
+      next: (response) => {
+        console.log('🔍 Respuesta del backend:', response);
+        
+        if (response.success && response.data) {
+          this.mode = 'edit';
+          this.historiaData = response.data;
+          this.historiaForm = {
+            motivo_consulta: this.historiaData.motivo_consulta || '',
+            diagnostico: this.historiaData.diagnostico || '',
+            conclusiones: this.historiaData.conclusiones || '',
+            plan: this.historiaData.plan || ''
+          };
+          this.historiaOriginal = { ...this.historiaForm };
+          
+          // Cargar archivos si existe la historia
+          this.cargarArchivos();
+          
+          console.log('✅ Historia del médico seleccionado cargada:', this.historiaData);
+        } else {
+          // No existe historia para este médico
+          this.mode = 'create';
+          this.historiaData = null;
+          this.historiaForm = {
+            motivo_consulta: '',
+            diagnostico: '',
+            conclusiones: '',
+            plan: ''
+          };
+          console.log('ℹ️ No existe historia para el médico seleccionado');
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error cargando historia del médico:', error);
+        this.mode = 'create';
+        this.historiaData = null;
+      }
+    });
+  }
+
+
   guardarHistoria(): void {
     if (this.isSubmitting) return;
 
-    // Validaciones básicas
-    if (!this.historiaForm.motivo_consulta.trim()) {
+    // Validaciones básicas (remover HTML tags para validar contenido)
+    const motivoText = this.stripHtml(this.historiaForm.motivo_consulta).trim();
+    const diagnosticoText = this.stripHtml(this.historiaForm.diagnostico).trim();
+
+    if (!motivoText) {
       alert('⚠️ Motivo de consulta requerido\n\nPor favor, ingrese el motivo de la consulta.');
       return;
     }
 
-    if (!this.historiaForm.diagnostico.trim()) {
+    if (!diagnosticoText) {
       alert('⚠️ Diagnóstico requerido\n\nPor favor, ingrese el diagnóstico médico.');
       return;
     }
@@ -906,6 +1329,14 @@ export class HistoriaMedicaComponent implements OnInit {
     });
   }
 
+  stripHtml(html: string): string {
+    if (!html) return '';
+    // Crear un elemento temporal para extraer solo el texto
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    return temp.textContent || temp.innerText || '';
+  }
+
   volver() {
     this.router.navigate(['/patients']);
   }
@@ -997,5 +1428,60 @@ export class HistoriaMedicaComponent implements OnInit {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  // Métodos para manejar interconsultas
+  abrirModalInterconsultas(): void {
+    if (!this.consultaData?.paciente_id) {
+      console.error('❌ No hay datos del paciente disponibles');
+      return;
+    }
+
+    // Crear objeto Patient con los datos disponibles del contexto clínico
+    this.pacienteData = {
+      id: this.consultaData.paciente_id,
+      nombres: this.consultaData.paciente_nombre || '',
+      apellidos: this.consultaData.paciente_apellidos || '',
+      cedula: this.consultaData.paciente_cedula,
+      edad: 0, // Se puede obtener del paciente si es necesario
+      sexo: 'Femenino' as const,
+      email: this.consultaData.paciente_email || '',
+      telefono: '',
+      fecha_creacion: '',
+      fecha_actualizacion: '',
+      activo: true // Por defecto activo
+    };
+
+    console.log('🔄 Abriendo modal de interconsultas con contexto clínico:', {
+      paciente: this.pacienteData,
+      diagnostico: this.historiaForm.diagnostico,
+      motivoConsulta: this.historiaForm.motivo_consulta,
+      consultaId: this.consultaData.id
+    });
+
+    this.showInterconsultasModal = true;
+  }
+
+  cerrarModalInterconsultas(): void {
+    this.showInterconsultasModal = false;
+    this.pacienteData = null;
+  }
+
+  onRemisionCreated(remision: any): void {
+    console.log('✅ Interconsulta creada exitosamente:', remision);
+    
+    // Mostrar mensaje de éxito con contexto clínico
+    const mensaje = `✅ Interconsulta creada exitosamente
+
+📋 Paciente: ${this.pacienteData?.nombres} ${this.pacienteData?.apellidos}
+🩺 Diagnóstico actual: ${this.historiaForm.diagnostico || 'No especificado'}
+📝 Motivo de consulta: ${this.historiaForm.motivo_consulta || 'No especificado'}
+
+La remisión ha sido procesada y se ha enviado una notificación al médico de destino. El paciente será contactado para coordinar la cita.`;
+
+    alert(mensaje);
+    
+    // Cerrar el modal
+    this.cerrarModalInterconsultas();
   }
 }

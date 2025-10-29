@@ -8,7 +8,7 @@ export interface Servicio {
   nombre_servicio: string;
   especialidad_id: number;
   monto_base: number;
-  moneda: 'VES' | 'USD';
+  moneda: 'VES' | 'USD' | 'EUR' | 'COP';
   activo: boolean;
   created_at: string;
   updated_at: string;
@@ -25,7 +25,7 @@ export interface ServicioConsulta {
   consulta_id: number;
   servicio_id: number;
   monto_pagado: number;
-  moneda: 'VES' | 'USD';
+  moneda: 'VES' | 'USD' | 'EUR' | 'COP';
   observaciones?: string;
   created_at: string;
   servicio_nombre?: string;
@@ -35,7 +35,7 @@ export interface FinalizarConsultaRequest {
   servicios: {
     servicio_id: number;
     monto_pagado: number;
-    moneda: 'VES' | 'USD';
+    moneda: 'VES' | 'USD' | 'EUR' | 'COP';
     observaciones?: string;
   }[];
   diagnostico_preliminar: string;
@@ -63,7 +63,8 @@ export class ServiciosService {
 
   // Obtener todos los servicios
   getServicios(): Observable<{ success: boolean; data: Servicio[] }> {
-    return this.http.get<{ success: boolean; data: Servicio[] }>(this.apiUrl);
+    const timestamp = new Date().getTime();
+    return this.http.get<{ success: boolean; data: Servicio[] }>(`${this.apiUrl}?t=${timestamp}`);
   }
 
   // Obtener servicios por especialidad

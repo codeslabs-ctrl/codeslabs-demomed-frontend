@@ -60,6 +60,16 @@ export class HistoricoService {
     return this.http.get<ApiResponse<HistoricoWithDetails[]>>(this.baseUrl);
   }
 
+  // Obtener médicos que han creado historias para un paciente
+  getMedicosConHistoriaByPaciente(pacienteId: number): Observable<ApiResponse<any[]>> {
+    return this.http.get<ApiResponse<any[]>>(`${this.baseUrl}/by-paciente/${pacienteId}/medicos`);
+  }
+
+  // Obtener historia específica de un médico para un paciente
+  getHistoricoByPacienteAndMedico(pacienteId: number, medicoId: number): Observable<ApiResponse<HistoricoWithDetails>> {
+    return this.http.get<ApiResponse<HistoricoWithDetails>>(`${this.baseUrl}/by-paciente/${pacienteId}/medico/${medicoId}`);
+  }
+
   // Obtener historial filtrado
   getHistoricoFiltrado(pacienteId?: number, medicoId?: number): Observable<ApiResponse<HistoricoWithDetails[]>> {
     let params = new HttpParams();

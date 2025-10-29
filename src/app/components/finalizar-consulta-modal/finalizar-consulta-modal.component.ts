@@ -8,7 +8,7 @@ export interface ServicioSeleccionado {
   servicio_nombre: string;
   monto_base: number;        // Precio base del servicio
   monto_pagado: number;      // Precio real pagado (editable)
-  moneda: 'VES' | 'USD';
+  moneda: 'VES' | 'USD' | 'EUR' | 'COP';
   observaciones?: string;
 }
 
@@ -110,7 +110,7 @@ export class FinalizarConsultaModalComponent implements OnInit {
         servicio_nombre: servicioOriginal?.nombre_servicio || '',
         monto_base: servicioOriginal?.monto_base || 0,
         monto_pagado: servicioOriginal?.monto_base || 0,
-        moneda: servicioOriginal?.moneda || 'VES',
+        moneda: (servicioOriginal?.moneda as 'VES' | 'USD' | 'EUR' | 'COP') || 'VES',
         observaciones: ''
       };
       this.serviciosSeleccionados.push(servicio);

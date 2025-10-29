@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ServiciosService, Servicio } from '../../../services/servicios.service';
 import { EspecialidadService } from '../../../services/especialidad.service';
 import { AuthService } from '../../../services/auth.service';
+import { DateService } from '../../../services/date.service';
 
 @Component({
   selector: 'app-servicios',
@@ -16,6 +17,14 @@ export class ServiciosComponent implements OnInit {
   servicios: Servicio[] = [];
   especialidades: any[] = [];
   filteredServicios: Servicio[] = [];
+  
+  // Opciones de moneda
+  monedas = [
+    { code: 'VES', name: 'Bolívar Soberano', symbol: 'Bs.S' },
+    { code: 'USD', name: 'Dólar Americano', symbol: '$' },
+    { code: 'EUR', name: 'Euro', symbol: '€' },
+    { code: 'COP', name: 'Peso Colombiano', symbol: '$' }
+  ];
   
   // Filtros
   filtroNombre = '';
@@ -34,45 +43,38 @@ export class ServiciosComponent implements OnInit {
     nombre_servicio: '',
     especialidad_id: null as number | null,
     monto_base: 0,
+    moneda: 'VES' as 'VES' | 'USD' | 'EUR' | 'COP',
     activo: true
   };
 
   constructor(
     private serviciosService: ServiciosService,
     private especialidadService: EspecialidadService,
-    private authService: AuthService
+    private authService: AuthService,
+    private dateService: DateService
   ) {}
 
   ngOnInit(): void {
+    console.log('🔍 ngOnInit - loading:', this.loading);
     this.loadServicios();
     this.loadEspecialidades();
   }
 
   loadServicios(): void {
     this.loading = true;
+    console.log('🔍 Iniciando carga de servicios...');
     this.serviciosService.getServicios().subscribe({
       next: (response: any) => {
-        console.log('Response from servicios service:', response);
-        console.log('Raw servicios data:', response.data);
-        
-        // Transformar los datos para incluir especialidad_id y especialidad_nombre
-        this.servicios = (response.data || []).map((servicio: any) => {
-          console.log('Servicio individual:', servicio);
-          console.log('Especialidades del servicio:', servicio.especialidades);
-          
-          return {
-          ...servicio,
-          especialidad_id: servicio.especialidades?.id,
-          especialidad_nombre: servicio.especialidades?.nombre_especialidad
-          };
-        });
-        
-        console.log('Servicios transformados:', this.servicios);
+        console.log('🔍 Respuesta del backend:', response);
+        this.servicios = response.data || [];
+        console.log('🔍 Servicios asignados:', this.servicios.length);
         this.applyFilters();
+        console.log('🔍 Servicios filtrados:', this.filteredServicios.length);
         this.loading = false;
+        console.log('🔍 Loading finalizado - loading:', this.loading);
       },
       error: (error: any) => {
-        console.error('Error loading servicios:', error);
+        console.error('❌ Error loading servicios:', error);
         alert('❌ Error cargando servicios\n\nPor favor, intente nuevamente.');
         this.loading = false;
       }
@@ -85,7 +87,7 @@ export class ServiciosComponent implements OnInit {
         this.especialidades = response.data || [];
       },
       error: (error) => {
-        console.error('Error loading especialidades:', error);
+        console.error('❌ Error loading especialidades:', error);
       }
     });
   }
@@ -95,6 +97,7 @@ export class ServiciosComponent implements OnInit {
       nombre_servicio: '',
       especialidad_id: null,
       monto_base: 0,
+      moneda: 'VES',
       activo: true
     };
     this.showCreateModal = true;
@@ -106,6 +109,7 @@ export class ServiciosComponent implements OnInit {
       nombre_servicio: servicio.nombre_servicio,
       especialidad_id: servicio.especialidad_id,
       monto_base: servicio.monto_base,
+      moneda: servicio.moneda || 'VES',
       activo: servicio.activo
     };
     this.showEditModal = true;
@@ -118,10 +122,15 @@ export class ServiciosComponent implements OnInit {
     }
 
     const servicioData = {
-      ...this.servicioForm,
-      especialidad_id: this.servicioForm.especialidad_id || undefined,
-      monto_base: Number(this.servicioForm.monto_base)
+      nombre_servicio: this.servicioForm.nombre_servicio,
+      especialidad_id: Number(this.servicioForm.especialidad_id),
+      monto_base: Number(this.servicioForm.monto_base),
+      moneda: this.servicioForm.moneda,
+      activo: this.servicioForm.activo
     };
+
+    console.log('🔍 Datos del servicio a enviar:', servicioData);
+    console.log('🔍 Formulario completo:', this.servicioForm);
 
     if (this.showEditModal && this.selectedServicio) {
       // Actualizar servicio existente
@@ -146,7 +155,27 @@ export class ServiciosComponent implements OnInit {
         },
         error: (error: any) => {
           console.error('Error creating servicio:', error);
-          alert('❌ Error creando servicio\n\nPor favor, intente nuevamente.');
+          console.error('Error details:', error.error);
+          console.error('Error status:', error.status);
+          console.error('Error message:', error.message);
+          
+          let errorMessage = '❌ Error creando servicio\n\n';
+          if (error.error && error.error.error) {
+            if (error.error.error.includes('clinica_alias')) {
+              errorMessage += '⚠️ Error del servidor: La base de datos no está sincronizada.\n\n';
+              errorMessage += 'Por favor, contacte al administrador del sistema.';
+            } else {
+              errorMessage += `Detalles: ${error.error.error}`;
+            }
+          } else if (error.error && error.error.message) {
+            errorMessage += `Detalles: ${error.error.message}`;
+          } else if (error.error && typeof error.error === 'string') {
+            errorMessage += `Detalles: ${error.error}`;
+          } else {
+            errorMessage += 'Por favor, intente nuevamente.';
+          }
+          
+          alert(errorMessage);
         }
       });
     }
@@ -188,6 +217,10 @@ export class ServiciosComponent implements OnInit {
   }
 
   applyFilters(): void {
+    console.log('🔍 Aplicando filtros...');
+    console.log('🔍 Servicios disponibles:', this.servicios.length);
+    console.log('🔍 Filtros:', { nombre: this.filtroNombre, especialidad: this.filtroEspecialidad, activo: this.filtroActivo });
+    
     this.filteredServicios = this.servicios.filter(servicio => {
       const matchesNombre = !this.filtroNombre || 
         servicio.nombre_servicio.toLowerCase().includes(this.filtroNombre.toLowerCase());
@@ -201,6 +234,8 @@ export class ServiciosComponent implements OnInit {
       
       return matchesNombre && matchesEspecialidad && matchesActivo;
     });
+    
+    console.log('🔍 Servicios filtrados:', this.filteredServicios.length);
   }
 
   clearFilters(): void {
@@ -218,24 +253,20 @@ export class ServiciosComponent implements OnInit {
   }
 
   getEspecialidadNombre(especialidadId: number): string {
-    console.log('Buscando especialidad para ID:', especialidadId);
-    console.log('Servicios disponibles:', this.servicios);
-    console.log('Especialidades disponibles:', this.especialidades);
-    
-    // Primero buscar en los servicios si ya tienen el nombre de especialidad
-    const servicio = this.servicios.find(s => s.especialidad_id === especialidadId);
-    if (servicio && servicio.especialidad_nombre) {
-      console.log('Encontrado en servicio:', servicio.especialidad_nombre);
-      return servicio.especialidad_nombre;
+    if (!especialidadId || !this.especialidades.length) {
+      return 'N/A';
     }
     
-    // Si no, buscar en la lista de especialidades
+    // Buscar en la lista de especialidades
     const especialidad = this.especialidades.find(e => e.id === especialidadId);
-    console.log('Especialidad encontrada:', especialidad);
     return especialidad ? especialidad.nombre_especialidad : 'N/A';
   }
 
   isAdmin(): boolean {
     return this.authService.getCurrentUser()?.rol === 'administrador';
+  }
+
+  getCurrencySymbol(currencyCode?: string): string {
+    return this.dateService.getCurrencySymbol(currencyCode);
   }
 }

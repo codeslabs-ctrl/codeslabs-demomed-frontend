@@ -243,9 +243,17 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
         console.error('❌ Error finalizando consulta:', response);
         alert('Error al finalizar la consulta. Por favor, intente nuevamente.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error finalizando consulta:', error);
-      alert('Error al finalizar la consulta. Por favor, intente nuevamente.');
+      console.error('❌ Error details:', error.error);
+      console.error('❌ Error status:', error.status);
+      console.error('❌ Error message:', error.message);
+      
+      let errorMessage = 'Error al finalizar la consulta. Por favor, intente nuevamente.';
+      if (error.error && error.error.error) {
+        errorMessage = `Error: ${error.error.error}`;
+      }
+      alert(errorMessage);
     } finally {
       this.isSubmitting = false;
     }

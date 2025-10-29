@@ -63,74 +63,150 @@
 
   <!-- Tabla de servicios -->
   <div class="table-container" *ngIf="!loading">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Servicio</th>
-          <th>Especialidad</th>
-          <th>Monto Base</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let servicio of filteredServicios">
-          <td>
+    <!-- Vista de escritorio -->
+    <div class="table-desktop">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Servicio</th>
+            <th>Especialidad</th>
+            <th>Monto Base</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let servicio of filteredServicios">
+            <td>
+              <div class="servicio-name">{{ servicio.nombre_servicio }}</div>
+            </td>
+            <td>
+              <span class="especialidad-badge">
+                {{ getEspecialidadNombre(servicio.especialidad_id) }}
+              </span>
+            </td>
+            <td>
+              <span class="monto-valor">{{ servicio.monto_base | number:'1.2-2' }} {{ getCurrencySymbol(servicio.moneda) }}</span>
+            </td>
+            <td>
+              <span 
+                class="status-badge" 
+                [class.active]="servicio.activo"
+                [class.inactive]="!servicio.activo">
+                {{ servicio.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button 
+                  class="action-btn edit-btn" 
+                  (click)="openEditModal(servicio)"
+                  *ngIf="isAdmin()"
+                  title="Editar servicio">
+                  <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                  </svg>
+                  Editar
+                </button>
+                <button 
+                  class="action-btn edit-btn" 
+                  (click)="toggleActivo(servicio)"
+                  [title]="servicio.activo ? 'Desactivar' : 'Activar'">
+                  <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path *ngIf="servicio.activo" d="M6 19h12v2H6zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    <path *ngIf="!servicio.activo" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/>
+                  </svg>
+                  {{ servicio.activo ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button 
+                  class="action-btn delete-btn" 
+                  (click)="confirmDeleteServicio(servicio)"
+                  *ngIf="isAdmin()"
+                  title="Eliminar servicio">
+                  <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                  Eliminar
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Vista móvil -->
+    <div class="table-mobile">
+      <div class="servicio-card" *ngFor="let servicio of filteredServicios">
+        <div class="card-header">
+          <div class="servicio-info">
             <div class="servicio-name">{{ servicio.nombre_servicio }}</div>
-          </td>
-          <td>
-            <span class="especialidad-badge">
-              {{ getEspecialidadNombre(servicio.especialidad_id) }}
-            </span>
-          </td>
-          <td>
-            <span class="monto-valor">${{ servicio.monto_base | number:'1.2-2' }}</span>
-          </td>
-          <td>
+            <div class="servicio-meta">
+              <span class="servicio-id">ID: {{ servicio.id }}</span>
+            </div>
+          </div>
+          <div class="servicio-status">
             <span 
               class="status-badge" 
               [class.active]="servicio.activo"
               [class.inactive]="!servicio.activo">
               {{ servicio.activo ? 'Activo' : 'Inactivo' }}
             </span>
-          </td>
-          <td>
-            <div class="action-buttons">
-              <button 
-                class="action-btn edit-btn" 
-                (click)="openEditModal(servicio)"
-                *ngIf="isAdmin()"
-                title="Editar servicio">
-                <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                </svg>
-                Editar
-              </button>
-              <button 
-                class="action-btn edit-btn" 
-                (click)="toggleActivo(servicio)"
-                [title]="servicio.activo ? 'Desactivar' : 'Activar'">
-                <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path *ngIf="servicio.activo" d="M6 19h12v2H6zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                  <path *ngIf="!servicio.activo" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/>
-                </svg>
-                {{ servicio.activo ? 'Desactivar' : 'Activar' }}
-              </button>
-              <button 
-                class="action-btn delete-btn" 
-                (click)="confirmDeleteServicio(servicio)"
-                *ngIf="isAdmin()"
-                title="Eliminar servicio">
-                <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                </svg>
-                Eliminar
-              </button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <div class="info-row">
+            <span class="label">Especialidad:</span>
+            <span class="value">
+              <span class="especialidad-badge">
+                {{ getEspecialidadNombre(servicio.especialidad_id) }}
+              </span>
+            </span>
+          </div>
+          
+          <div class="info-row">
+            <span class="label">Monto Base:</span>
+            <span class="value monto-valor">
+              {{ servicio.monto_base | number:'1.2-2' }} {{ getCurrencySymbol(servicio.moneda) }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="card-actions">
+          <button 
+            class="action-btn edit-btn" 
+            (click)="openEditModal(servicio)"
+            *ngIf="isAdmin()"
+            title="Editar servicio">
+            <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+            </svg>
+            Editar
+          </button>
+          <button 
+            class="action-btn toggle-btn" 
+            (click)="toggleActivo(servicio)"
+            [title]="servicio.activo ? 'Desactivar' : 'Activar'">
+            <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path *ngIf="servicio.activo" d="M6 19h12v2H6zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              <path *ngIf="!servicio.activo" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/>
+            </svg>
+            {{ servicio.activo ? 'Desactivar' : 'Activar' }}
+          </button>
+          <button 
+            class="action-btn delete-btn" 
+            (click)="confirmDeleteServicio(servicio)"
+            *ngIf="isAdmin()"
+            title="Eliminar servicio">
+            <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
     
     <div class="no-data" *ngIf="filteredServicios.length === 0">
       <div class="no-data-icon">📋</div>
@@ -181,7 +257,21 @@
       </div>
       
       <div class="form-group">
-        <label for="monto" class="form-label">Monto Base (VES) *</label>
+        <label for="moneda" class="form-label">Moneda *</label>
+        <select
+          id="moneda"
+          class="form-input"
+          [(ngModel)]="servicioForm.moneda"
+          required
+        >
+          <option *ngFor="let moneda of monedas" [value]="moneda.code">
+            {{ moneda.name }} ({{ moneda.symbol }})
+          </option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="monto" class="form-label">Monto Base ({{ getCurrencySymbol(servicioForm.moneda) }}) *</label>
         <input
           id="monto"
           type="number"

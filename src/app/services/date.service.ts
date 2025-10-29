@@ -7,6 +7,7 @@ import { environment } from '../../environments/environment';
 export class DateService {
   private readonly timezone = environment.timezone;
   private readonly dateFormat = environment.dateFormat;
+  private readonly currency = environment.currency;
 
   constructor() {}
 
@@ -168,5 +169,25 @@ export class DateService {
     const d2 = new Date(date2);
     const diffTime = Math.abs(d2.getTime() - d1.getTime());
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  }
+
+  /**
+   * Obtiene el símbolo de moneda configurado
+   * @param currencyCode - Código de moneda específico (opcional)
+   * @returns Símbolo de moneda (ej: Bs.S, $, €)
+   */
+  getCurrencySymbol(currencyCode?: string): string {
+    // Mapeo de códigos de moneda a símbolos
+    const currencySymbols: { [key: string]: string } = {
+      'VES': 'Bs.S',
+      'USD': '$',
+      'EUR': '€',
+      'COP': '$',
+      'ARS': '$',
+      'MXN': '$'
+    };
+    
+    const code = currencyCode || this.currency;
+    return currencySymbols[code] || code;
   }
 }

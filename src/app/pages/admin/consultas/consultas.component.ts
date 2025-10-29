@@ -88,21 +88,23 @@ import { Medico } from '../../../services/medico.service';
 
       <!-- Tabla de Consultas -->
       <div class="consultas-container">
-        <div class="table-container">
-          <table class="consultas-table">
-            <thead>
-              <tr>
-                <th>Paciente</th>
-                <th>Médico</th>
-                <th>Fecha y Hora</th>
-                <th>Estado</th>
-                <th>Prioridad</th>
-                <th>Tipo</th>
-                <th>Motivo</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
+        <!-- Vista de tabla para desktop -->
+        <div class="table-desktop">
+          <div class="table-container">
+            <table class="consultas-table">
+              <thead>
+                <tr>
+                  <th>Paciente</th>
+                  <th>Médico</th>
+                  <th>Fecha y Hora</th>
+                  <th>Estado</th>
+                  <th>Prioridad</th>
+                  <th>Tipo</th>
+                  <th>Motivo</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
               <tr *ngIf="loading">
                 <td colspan="8" class="loading">
                   <div class="spinner"></div>
@@ -177,7 +179,7 @@ import { Medico } from '../../../services/medico.service';
                       <span class="btn-text">Editar</span>
                     </button>
                     <button 
-                      *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada' || consulta.estado_consulta === 'por_agendar'"
+                      *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada' || consulta.estado_consulta === 'por_agendar') && canReagendarConsulta()"
                       class="action-btn btn-reschedule" 
                       (click)="reagendarConsulta(consulta)" 
                       title="Reagendar">
@@ -205,6 +207,88 @@ import { Medico } from '../../../services/medico.service';
               </tr>
             </tbody>
           </table>
+          </div>
+        </div>
+
+        <!-- Vista de tarjetas para móvil -->
+        <div class="table-mobile">
+          <div class="consulta-card" *ngFor="let consulta of consultas">
+            <div class="card-header">
+              <div class="consulta-info">
+                <h3 class="paciente-name">{{ consulta.paciente_nombre }} {{ consulta.paciente_apellidos }}</h3>
+                <div class="consulta-meta">
+                  <span class="consulta-id">ID: {{ consulta.id }}</span>
+                  <span class="estado-badge" [class]="'estado-' + consulta.estado_consulta">
+                    {{ getEstadoText(consulta.estado_consulta) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card-body">
+              <div class="info-row">
+                <span class="label">Médico:</span>
+                <span class="value">{{ consulta.medico_nombre }} {{ consulta.medico_apellidos }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Especialidad:</span>
+                <span class="value">{{ consulta.especialidad_nombre }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Fecha y Hora:</span>
+                <span class="value">{{ formatDate(consulta.fecha_pautada) }} {{ formatTime(consulta.hora_pautada) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Prioridad:</span>
+                <span class="prioridad-badge" [class]="'prioridad-' + consulta.prioridad">
+                  {{ getPrioridadText(consulta.prioridad) }}
+                </span>
+              </div>
+              <div class="info-row">
+                <span class="label">Tipo:</span>
+                <span class="value">{{ consulta.tipo_consulta || 'Presencial' }}</span>
+              </div>
+              <div class="info-row" *ngIf="consulta.motivo_consulta">
+                <span class="label">Motivo:</span>
+                <span class="value">{{ consulta.motivo_consulta }}</span>
+              </div>
+            </div>
+            
+            <div class="card-actions">
+              <button class="action-btn view-btn" (click)="viewConsulta(consulta)" title="Ver detalles">
+                <i class="fas fa-eye"></i>
+                Ver
+              </button>
+              <button class="action-btn edit-btn" (click)="editarConsulta(consulta)" title="Editar consulta">
+                <i class="fas fa-edit"></i>
+                Editar
+              </button>
+              <button 
+                *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada' || consulta.estado_consulta === 'por_agendar') && canReagendarConsulta()"
+                class="action-btn warning-btn" 
+                (click)="reagendarConsulta(consulta)" 
+                title="Reagendar consulta">
+                <i class="fas fa-calendar-alt"></i>
+                Reagendar
+              </button>
+              <button 
+                *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada'"
+                class="action-btn danger-btn" 
+                (click)="cancelConsulta(consulta)" 
+                title="Cancelar consulta">
+                <i class="fas fa-times"></i>
+                Cancelar
+              </button>
+              <button 
+                *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada') && canFinalizarConsulta()"
+                class="action-btn success-btn" 
+                (click)="finalizarConsulta(consulta)" 
+                title="Finalizar consulta">
+                <i class="fas fa-check"></i>
+                Finalizar
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Paginación -->
@@ -1267,10 +1351,178 @@ import { Medico } from '../../../services/medico.service';
       background: #047857;
     }
 
+    /* Vista de tabla para desktop */
+    .table-desktop {
+      display: block;
+    }
+
+    /* Vista de tarjetas para móvil */
+    .table-mobile {
+      display: none;
+    }
+
+    /* Estilos para las tarjetas móviles */
+    .consulta-card {
+      background: white;
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: #f8fafc;
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .consulta-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .paciente-name {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 0;
+    }
+
+    .consulta-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .consulta-id {
+      font-size: 0.875rem;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .card-body {
+      padding: 1rem;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .label {
+      font-weight: 600;
+      color: #374151;
+      font-size: 0.875rem;
+      min-width: 100px;
+    }
+
+    .value {
+      color: #64748b;
+      font-size: 0.875rem;
+      text-align: right;
+      flex: 1;
+      margin-left: 1rem;
+    }
+
+    .card-actions {
+      padding: 1rem;
+      background: #f8fafc;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+
+    .card-actions .action-btn {
+      font-size: 0.75rem;
+      padding: 0.5rem;
+      justify-content: center;
+    }
+
+    /* Media queries para responsividad */
+    @media (max-width: 1024px) {
+      .table-desktop {
+        display: none;
+      }
+      
+      .table-mobile {
+        display: block;
+      }
+    }
+
     @media (max-width: 768px) {
+      .consultas-page {
+        padding: 1rem;
+      }
+
+      .page-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+      }
+
+      .filters-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .consulta-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+
+      .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+
+      .value {
+        text-align: left;
+        margin-left: 0;
+      }
+
       .modal-content {
         margin: 1rem;
         max-width: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .consultas-page {
+        padding: 0.5rem;
+      }
+
+      .filters-section {
+        padding: 1rem;
+      }
+
+      .card-header,
+      .card-body,
+      .card-actions {
+        padding: 0.75rem;
+      }
+
+      .paciente-name {
+        font-size: 1rem;
+      }
+
+      .action-btn {
+        font-size: 0.7rem;
+        padding: 0.375rem 0.5rem;
       }
     }
   `]
@@ -1527,6 +1779,10 @@ export class ConsultasComponent implements OnInit {
   }
 
   canFinalizarConsulta(): boolean {
+    return this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'administrador';
+  }
+
+  canReagendarConsulta(): boolean {
     return this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'administrador';
   }
 

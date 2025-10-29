@@ -21,6 +21,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       <div class="dashboard-header">
         <p *ngIf="currentUser?.rol === 'administrador'">Panel de administración - Todos los pacientes</p>
         <p *ngIf="currentUser?.rol === 'medico'">Mis pacientes y consultas médicas</p>
+        <p *ngIf="currentUser?.rol === 'secretaria'">Gestión de consultas y pacientes - Secretaría</p>
         <p *ngIf="!currentUser">Gestion de pacientes y consultas médicas</p>
         <p class="doctor-info" *ngIf="currentUser">
           <span *ngIf="currentUser.rol === 'administrador'">
@@ -30,6 +31,9 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
           <span *ngIf="currentUser.rol === 'medico'">
             👨‍⚕️ {{ getDoctorFullName() }}
             <span *ngIf="currentUser.especialidad" class="specialty">- {{ currentUser.especialidad }}</span>
+          </span>
+          <span *ngIf="currentUser.rol === 'secretaria'">
+            📋 Secretaría
           </span>
         </p>
         <p class="info-note" *ngIf="currentUser?.rol === 'medico' && !currentUser?.medico_id">
@@ -144,8 +148,12 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
                       *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada') && canFinalizarConsulta()">
                 ✅ Finalizar
               </button>
+              <button class="btn btn-warning" (click)="reagendarConsulta(consulta)"
+                      *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada' || consulta.estado_consulta === 'por_agendar') && canReagendarConsulta()">
+                📅 Reagendar
+              </button>
               <button class="btn btn-danger" (click)="cancelarConsulta(consulta)"
-                      *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada'">
+                      *ngIf="consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada' || consulta.estado_consulta === 'por_agendar'">
                 ❌ Cancelar
               </button>
             </div>
@@ -377,6 +385,51 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
           <button class="btn btn-danger" (click)="confirmarCancelar()" 
                   [disabled]="!motivoCancelacion || (motivoCancelacion === 'otro' && !motivoCancelacionOtro.trim()) || isSubmitting">
             {{isSubmitting ? 'Cancelando...' : 'Confirmar Cancelación'}}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Reagendar Consulta -->
+    <div *ngIf="showReagendarModal" class="modal-overlay" (click)="closeReagendarModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Reagendar Consulta</h3>
+          <button class="close-btn" (click)="closeReagendarModal()">×</button>
+        </div>
+        <div class="modal-body" *ngIf="selectedConsulta">
+          <div class="consulta-info">
+            <strong>Paciente:</strong> {{ selectedConsulta.paciente_nombre }}<br>
+            <strong>Médico:</strong> {{ selectedConsulta.medico_nombre }}<br>
+            <strong>Fecha Actual:</strong> {{ selectedConsulta.fecha_pautada }} - {{ formatTime(selectedConsulta.hora_pautada) }}
+          </div>
+          
+          <div class="form-group">
+            <label for="nuevaFechaReagendar">Nueva Fecha *</label>
+            <input 
+              type="date" 
+              id="nuevaFechaReagendar"
+              [(ngModel)]="nuevaFechaReagendar" 
+              class="form-control"
+              [min]="getTodayDate()"
+              required>
+          </div>
+          
+          <div class="form-group">
+            <label for="nuevaHoraReagendar">Nueva Hora *</label>
+            <input 
+              type="time" 
+              id="nuevaHoraReagendar"
+              [(ngModel)]="nuevaHoraReagendar" 
+              class="form-control"
+              required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-clear" (click)="closeReagendarModal()">Cancelar</button>
+          <button class="btn btn-warning" (click)="confirmarReagendar()" 
+                  [disabled]="!nuevaFechaReagendar || !nuevaHoraReagendar || isSubmitting">
+            {{isSubmitting ? 'Reagendando...' : 'Confirmar Reagendamiento'}}
           </button>
         </div>
       </div>
@@ -1295,6 +1348,15 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       background: #dc2626;
     }
 
+    .btn-warning {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .btn-warning:hover:not(:disabled) {
+      background: #d97706;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .modal-content {
@@ -1518,6 +1580,7 @@ export class DashboardComponent implements OnInit {
   showVerModal = false;
   showFinalizarModal = false;
   showCancelarModal = false;
+  showReagendarModal = false;
   showFinalizarConServiciosModal = false;
   selectedConsulta: ConsultaWithDetails | null = null;
   diagnosticoPreliminar = '';
@@ -1525,6 +1588,9 @@ export class DashboardComponent implements OnInit {
   motivoCancelacion = '';
   motivoCancelacionOtro = '';
   detallesCancelacion = '';
+  // Propiedades para reagendamiento
+  nuevaFechaReagendar = '';
+  nuevaHoraReagendar = '';
   isSubmitting = false;
 
   constructor(
@@ -1545,9 +1611,9 @@ export class DashboardComponent implements OnInit {
     this.loading = true;
     
     // Cargar estadísticas de pacientes
-    // Para administradores: null (todos los pacientes)
+    // Para administradores y secretarias: null (todos los pacientes)
     // Para médicos: su medico_id específico
-    const medicoIdForStats = this.currentUser?.rol === 'administrador' ? null : (this.currentUser?.medico_id || null);
+    const medicoIdForStats = (this.currentUser?.rol === 'administrador' || this.currentUser?.rol === 'secretaria') ? null : (this.currentUser?.medico_id || null);
     this.patientService.getPatientsByMedicoForStats(medicoIdForStats)
       .subscribe({
         next: (patients) => {
@@ -1616,6 +1682,11 @@ export class DashboardComponent implements OnInit {
     return timeString.substring(0, 5); // HH:MM
   }
 
+  getTodayDate(): string {
+    const today = new Date();
+    return today.toISOString().split('T')[0]; // YYYY-MM-DD
+  }
+
   getEstadoText(estado: string): string {
     const estados: { [key: string]: string } = {
       'agendada': 'Agendada',
@@ -1656,7 +1727,8 @@ export class DashboardComponent implements OnInit {
 
   // Método para añadir historia médica
   addHistoria(consulta: ConsultaWithDetails): void {
-    this.router.navigate(['/patients', consulta.paciente_id, 'edit']);
+    // Navegar al formulario de historia médica del paciente
+    this.router.navigate(['/patients', consulta.paciente_id, 'historia-medica']);
   }
 
   // Método para finalizar consulta
@@ -1672,6 +1744,19 @@ export class DashboardComponent implements OnInit {
 
   canFinalizarConsulta(): boolean {
     return this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'administrador';
+  }
+
+  canReagendarConsulta(): boolean {
+    return this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'administrador';
+  }
+
+  reagendarConsulta(consulta: ConsultaWithDetails): void {
+    console.log('🔍 Dashboard - reagendarConsulta llamada');
+    console.log('📋 Consulta seleccionada:', consulta);
+    this.selectedConsulta = consulta;
+    this.nuevaFechaReagendar = consulta.fecha_pautada || '';
+    this.nuevaHoraReagendar = consulta.hora_pautada || '';
+    this.showReagendarModal = true;
   }
 
   // Método para cancelar consulta
@@ -1728,6 +1813,39 @@ export class DashboardComponent implements OnInit {
     this.motivoCancelacion = '';
     this.motivoCancelacionOtro = '';
     this.detallesCancelacion = '';
+  }
+
+  closeReagendarModal(): void {
+    this.showReagendarModal = false;
+    this.selectedConsulta = null;
+    this.nuevaFechaReagendar = '';
+    this.nuevaHoraReagendar = '';
+    this.isSubmitting = false;
+  }
+
+  confirmarReagendar(): void {
+    if (!this.selectedConsulta) return;
+
+    if (!this.nuevaFechaReagendar || !this.nuevaHoraReagendar) {
+      alert('⚠️ Fecha y hora requeridas\n\nPor favor, seleccione una nueva fecha y hora para la consulta.');
+      return;
+    }
+
+    this.isSubmitting = true;
+
+    this.consultaService.reagendarConsulta(this.selectedConsulta.id!, this.nuevaFechaReagendar, this.nuevaHoraReagendar).subscribe({
+      next: (response) => {
+        alert('📅 Consulta reagendada exitosamente\n\nLa consulta ha sido reagendada para la nueva fecha y hora.');
+        this.closeReagendarModal();
+        this.loadConsultasDelDia();
+        this.isSubmitting = false;
+      },
+      error: (error) => {
+        console.error('Error reagendando consulta:', error);
+        alert('❌ Error al reagendar la consulta\n\nPor favor, verifique su conexión e intente nuevamente.');
+        this.isSubmitting = false;
+      }
+    });
   }
 
   // Método para confirmar finalización

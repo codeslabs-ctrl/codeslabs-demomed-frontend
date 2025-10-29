@@ -106,19 +106,13 @@
             name="email"
             required
             email
-            pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-            placeholder="usuario@dominio.com"
+            placeholder="ejemplo@correo.com"
             (blur)="validateEmail()"
             #email="ngModel">
           <div class="error-message" *ngIf="email.invalid && email.touched">
             <span *ngIf="email.errors?.['required']">El email es requerido</span>
-            <span *ngIf="email.errors?.['email'] || email.errors?.['pattern']">Ingresa un email válido (ej: usuario&#64;dominio.com)</span>
-          </div>
-          <div class="error-message" *ngIf="emailExists && email.valid">
-            <span class="email-duplicate-error">⚠️ Este email ya está registrado en el sistema</span>
-          </div>
-          <div class="success-message" *ngIf="emailChecked && !emailExists && email.valid">
-            <span class="email-available">✅ Email disponible</span>
+            <span *ngIf="email.errors?.['email']">Formato de email inválido</span>
+            <span *ngIf="emailExists && emailChecked">Este email ya está registrado</span>
           </div>
         </div>
         <div class="form-group">
@@ -129,57 +123,14 @@
             [(ngModel)]="patient.telefono"
             name="telefono"
             required
-            pattern="^(\\+58|0)(4[0-9]{2}|2[0-9]{2})[0-9]{7}$"
-            placeholder="Ej: 04141234567 o +584141234567"
+            placeholder="Ej: 0412-1234567"
             #telefono="ngModel">
           <div class="error-message" *ngIf="telefono.invalid && telefono.touched">
-            <span *ngIf="telefono.errors?.['required']">El teléfono es requerido</span>
-            <span *ngIf="telefono.errors?.['pattern']">Formato inválido. Usa: 04141234567 o +584141234567 (celular venezolano)</span>
+            El teléfono es requerido
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Sección de Historias Clínicas Existentes (solo en modo edición) -->
-    <div class="form-section" *ngIf="isEdit && historicos.length > 0">
-      <h3>
-        Historias Clínicas Existentes
-        <span class="history-count" *ngIf="historicos.length > 1">
-          ({{ historicos.length }} historias)
-        </span>
-      </h3>
-      
-      <!-- Selector de Historias Clínicas -->
-      <div class="history-selector" *ngIf="historicos.length > 1">
-        <label for="historico-select">Seleccionar Historia Clínica para Contexto:</label>
-        <select 
-          id="historico-select" 
-          class="form-control" 
-          [value]="historico?.id" 
-          (change)="onHistoricoChange($event)">
-          <option *ngFor="let h of historicos" [value]="h.id">
-            {{ getHistoricoDisplayText(h) }}
-          </option>
-        </select>
-        <div class="history-note" *ngIf="shouldCreateNewHistory">
-          <span class="note-icon">ℹ️</span>
-          <span class="note-text">Mostrando historia anterior para contexto. Se creará una nueva historia para el médico actual.</span>
-        </div>
-      </div>
-
-      <!-- Información básica de la Historia Seleccionada -->
-      <div class="existing-medical-info" *ngIf="historico">
-        <div class="info-item">
-          <label>Fecha de Consulta:</label>
-          <span>{{ formatDate(historico.fecha_consulta) }}</span>
-        </div>
-        <div class="info-item" *ngIf="historico.nombre_medico">
-          <label>Médico Tratante:</label>
-          <span>{{ historico.nombre_medico }}</span>
-        </div>
-      </div>
-    </div>
-
 
     <div class="form-actions">
       <button 
@@ -191,89 +142,18 @@
       <button 
         type="submit" 
         class="btn btn-primary"
-        [disabled]="loading">
+        [disabled]="loading || emailExists">
         <span *ngIf="loading" class="spinner"></span>
         {{ isEdit ? 'Actualizar' : 'Crear' }} Paciente
       </button>
-      <button 
-        *ngIf="patient.id && !isEdit" 
-        type="button" 
-        class="btn btn-success"
-        (click)="onFinish()">
-        Finalizar y Volver
-      </button>
     </div>
   </form>
-
-  <!-- Botones de acción después de crear paciente exitosamente -->
-  <div class="success-actions" *ngIf="showSuccessActions && !isEdit">
-    <div class="success-message">
-      <h3>✅ Paciente creado exitosamente</h3>
-      <p>¿Qué deseas hacer ahora?</p>
-    </div>
-    <div class="action-buttons">
-      <button type="button" class="btn btn-secondary" (click)="goToPatients()">
-        ← Volver a Pacientes
-      </button>
-      <button type="button" class="btn btn-primary" (click)="createConsulta()">
-        📅 Nueva Consulta
-      </button>
-    </div>
-  </div>
 
   <div class="loading" *ngIf="loading && !isEdit">
     <div class="spinner"></div>
     <p>Cargando datos del paciente...</p>
   </div>
 
-  <!-- Sección de Archivos Anexos Existentes (solo en modo edición) -->
-  <div class="form-section" *ngIf="isEdit && archivos.length > 0">
-    <h3 class="archivos-title">Archivos Anexos Existentes</h3>
-    <div class="archivos-container">
-      <div class="archivo-item-enhanced" *ngFor="let archivo of archivos">
-        <div class="archivo-header">
-          <div class="archivo-icono">
-            <span [innerHTML]="getFileIcon(archivo.tipo_mime)"></span>
-          </div>
-          <div class="archivo-info">
-            <div class="archivo-nombre">{{ archivo.nombre_original }}</div>
-            <div class="archivo-descripcion" *ngIf="archivo.descripcion">
-              <i class="fas fa-file-alt"></i> {{ archivo.descripcion }}
-            </div>
-            <div class="archivo-meta">
-              <span class="archivo-tipo">{{ getFileType(archivo.tipo_mime) }}</span>
-              <span class="archivo-tamano">{{ formatFileSize(archivo.tamano_bytes) }}</span>
-              <span class="archivo-fecha">{{ formatDate(archivo.fecha_subida || '') }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="archivo-actions">
-          <button class="btn-download" (click)="downloadFile(archivo)" title="Descargar">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-            </svg>
-          </button>
-          <button class="btn-edit" (click)="editFileDescription(archivo)" title="Editar descripción">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-            </svg>
-          </button>
-          <button class="btn-delete" (click)="deleteArchivo(archivo.id!)" title="Eliminar">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Componente de archivos anexos -->
-  <!-- Sección de Archivos Anexos eliminada - solo se mantiene "Archivos Anexos Existentes" -->
-
-  <app-file-upload 
-    *ngIf="canUploadFiles()" 
-    [historiaId]="getHistoriaId()"
-    (filesUpdated)="onFilesUpdated($event)">
-  </app-file-upload>
+  <!-- Nota: Los archivos anexos y datos médicos se manejan en la sección "Historia Médica" -->
+  <!-- Este formulario solo maneja datos básicos del paciente -->
 </div>

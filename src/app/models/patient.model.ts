@@ -15,6 +15,7 @@ export interface Patient {
   fecha_creacion: string;
   fecha_actualizacion: string;
   historico_id?: number; // ID del historial médico asociado
+  activo: boolean; // Estado activo/inactivo del paciente
 }
 
 export interface ApiResponse<T> {

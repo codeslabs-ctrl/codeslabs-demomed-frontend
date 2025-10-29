@@ -5,6 +5,7 @@ import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { ConsultaService } from '../../../services/consulta.service';
 import { PatientService } from '../../../services/patient.service';
 import { MedicoService } from '../../../services/medico.service';
+import { EspecialidadService, Especialidad } from '../../../services/especialidad.service';
 import { AuthService } from '../../../services/auth.service';
 import { ConsultaFormData } from '../../../models/consulta.model';
 import { Patient } from '../../../models/patient.model';
@@ -62,19 +63,41 @@ import { Medico } from '../../../services/medico.service';
                 </select>
               </div>
               
-              <div class="form-group" *ngIf="currentUser?.rol === 'administrador'">
-                <label for="medico_id">Médico *</label>
-                <select 
-                  id="medico_id" 
-                  class="form-control" 
-                  [(ngModel)]="consultaForm.medico_id" 
-                  name="medico_id"
-                  required>
-                  <option value="0">Seleccionar médico</option>
-                  <option *ngFor="let medico of medicos" [value]="medico.id">
-                    Dr./Dra. {{medico.nombres}} {{medico.apellidos}} - {{medico.especialidad_nombre}}
-                  </option>
-                </select>
+              <!-- Selector de especialidad y médico para administradores y secretarias -->
+              <div *ngIf="currentUser?.rol === 'administrador' || currentUser?.rol === 'secretaria'">
+                <div class="form-group">
+                  <label for="especialidad_id">Especialidad *</label>
+                  <select 
+                    id="especialidad_id" 
+                    class="form-control" 
+                    [(ngModel)]="selectedEspecialidadId" 
+                    name="especialidad_id"
+                    (change)="onEspecialidadChange()"
+                    required>
+                    <option value="0">Seleccionar especialidad</option>
+                    <option *ngFor="let especialidad of especialidades" [value]="especialidad.id">
+                      {{especialidad.nombre_especialidad}}
+                    </option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label for="medico_id">Médico *</label>
+                  <select 
+                    id="medico_id" 
+                    class="form-control" 
+                    [(ngModel)]="consultaForm.medico_id" 
+                    name="medico_id"
+                    [disabled]="!selectedEspecialidadId || selectedEspecialidadId === 0"
+                    required>
+                    <option value="0">
+                      {{ selectedEspecialidadId && selectedEspecialidadId !== 0 ? 'Seleccionar médico' : 'Primero seleccione una especialidad' }}
+                    </option>
+                    <option *ngFor="let medico of medicosFiltrados" [value]="medico.id">
+                      Dr./Dra. {{medico.nombres}} {{medico.apellidos}}
+                    </option>
+                  </select>
+                </div>
               </div>
               
               <!-- Mostrar información del médico cuando es usuario médico -->
@@ -476,6 +499,9 @@ export class NuevaConsultaComponent implements OnInit {
   
   pacientes: Patient[] = [];
   medicos: Medico[] = [];
+  medicosFiltrados: Medico[] = [];
+  especialidades: Especialidad[] = [];
+  selectedEspecialidadId: number = 0;
   isSubmitting = false;
   currentUser: any = null;
 
@@ -483,6 +509,7 @@ export class NuevaConsultaComponent implements OnInit {
     private consultaService: ConsultaService,
     private patientService: PatientService,
     private medicoService: MedicoService,
+    private especialidadService: EspecialidadService,
     private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router
@@ -493,7 +520,7 @@ export class NuevaConsultaComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       if (params['paciente_id']) {
         this.consultaForm.paciente_id = parseInt(params['paciente_id']);
-        console.log('👤 Paciente preseleccionado:', this.consultaForm.paciente_id);
+        console.log('👤 Paciente preseleccionado:', this.consultaForm.paciente_id, 'tipo:', typeof this.consultaForm.paciente_id);
       }
     });
 
@@ -511,6 +538,7 @@ export class NuevaConsultaComponent implements OnInit {
     
     this.loadPacientes();
     this.loadMedicos();
+    this.loadEspecialidades();
   }
 
   loadPacientes(): void {
@@ -518,6 +546,13 @@ export class NuevaConsultaComponent implements OnInit {
       next: (pacientes: Patient[]) => {
         this.pacientes = pacientes || [];
         console.log('📋 Pacientes cargados:', this.pacientes.length);
+        console.log('🔍 IDs de pacientes cargados:', this.pacientes.map(p => ({ id: p.id, tipo: typeof p.id, nombre: `${p.nombres} ${p.apellidos}` })));
+        
+        // Verificar si hay un paciente preseleccionado después de cargar
+        if (this.consultaForm.paciente_id && this.consultaForm.paciente_id !== 0) {
+          console.log('🔍 Verificando paciente preseleccionado después de cargar pacientes...');
+          this.getPreselectedPatientName();
+        }
       },
       error: (error: any) => {
         console.error('Error loading pacientes:', error);
@@ -537,9 +572,68 @@ export class NuevaConsultaComponent implements OnInit {
     });
   }
 
+  loadEspecialidades(): void {
+    this.especialidadService.getAllEspecialidades().subscribe({
+      next: (response) => {
+        this.especialidades = response.data || [];
+        console.log('🏥 Especialidades cargadas:', this.especialidades.length);
+      },
+      error: (error) => {
+        console.error('Error loading especialidades:', error);
+      }
+    });
+  }
+
+  onEspecialidadChange(): void {
+    console.log('🔄 Especialidad seleccionada:', this.selectedEspecialidadId, 'tipo:', typeof this.selectedEspecialidadId);
+    console.log('👨‍⚕️ Médicos disponibles:', this.medicos.length);
+    console.log('🔍 Primeros 3 médicos:', this.medicos.slice(0, 3).map(m => ({ id: m.id, especialidad_id: m.especialidad_id, tipo: typeof m.especialidad_id })));
+    
+    // Limpiar selección de médico
+    this.consultaForm.medico_id = 0;
+    
+    if (this.selectedEspecialidadId && this.selectedEspecialidadId !== 0) {
+      // Convertir a number para la comparación
+      const especialidadId = Number(this.selectedEspecialidadId);
+      console.log('🔢 Especialidad ID convertido a number:', especialidadId);
+      
+      // Filtrar médicos por especialidad
+      this.medicosFiltrados = this.medicos.filter(medico => {
+        // Convertir ambos a number para la comparación
+        const medicoEspecialidadId = Number(medico.especialidad_id);
+        const especialidadIdNumber = Number(especialidadId);
+        const match = medicoEspecialidadId === especialidadIdNumber;
+        console.log(`🔍 Médico ${medico.nombres} ${medico.apellidos}: especialidad_id=${medico.especialidad_id} (${typeof medico.especialidad_id}) === ${especialidadId} (${typeof especialidadId}) = ${match}`);
+        return match;
+      });
+      console.log('👨‍⚕️ Médicos filtrados por especialidad:', this.medicosFiltrados.length);
+    } else {
+      this.medicosFiltrados = [];
+    }
+  }
+
   getPreselectedPatientName(): string {
-    const paciente = this.pacientes.find(p => p.id === this.consultaForm.paciente_id);
-    return paciente ? `${paciente.nombres} ${paciente.apellidos} - ${paciente.cedula}` : 'Paciente no encontrado';
+    console.log('🔍 Buscando paciente preseleccionado:');
+    console.log('  - ID buscado:', this.consultaForm.paciente_id, 'tipo:', typeof this.consultaForm.paciente_id);
+    console.log('  - Pacientes disponibles:', this.pacientes.length);
+    console.log('  - IDs de pacientes:', this.pacientes.map(p => ({ id: p.id, tipo: typeof p.id, nombre: `${p.nombres} ${p.apellidos}` })));
+    
+    const paciente = this.pacientes.find(p => {
+      // Convertir ambos a number para la comparación
+      const pacienteId = Number(p.id);
+      const consultaPacienteId = Number(this.consultaForm.paciente_id);
+      const match = pacienteId === consultaPacienteId;
+      console.log(`  - Comparando: ${p.id} (${typeof p.id}) === ${this.consultaForm.paciente_id} (${typeof this.consultaForm.paciente_id}) = ${match}`);
+      return match;
+    });
+    
+    if (paciente) {
+      console.log('✅ Paciente encontrado:', paciente);
+      return `${paciente.nombres} ${paciente.apellidos} - ${paciente.cedula}`;
+    } else {
+      console.log('❌ Paciente no encontrado');
+      return 'Paciente no encontrado';
+    }
   }
 
   createConsulta(): void {
@@ -550,10 +644,16 @@ export class NuevaConsultaComponent implements OnInit {
       alert('⚠️ Paciente requerido\n\nPor favor, seleccione un paciente de la lista antes de continuar.');
       return;
     }
-    // Solo validar selección de médico si es administrador
-    if (this.currentUser?.rol === 'administrador' && (!this.consultaForm.medico_id || this.consultaForm.medico_id === 0)) {
-      alert('⚠️ Médico requerido\n\nPor favor, seleccione un médico de la lista antes de continuar.');
-      return;
+    // Validar selección de especialidad y médico si es administrador o secretaria
+    if ((this.currentUser?.rol === 'administrador' || this.currentUser?.rol === 'secretaria')) {
+      if (!this.selectedEspecialidadId || this.selectedEspecialidadId === 0) {
+        alert('⚠️ Especialidad requerida\n\nPor favor, seleccione una especialidad antes de continuar.');
+        return;
+      }
+      if (!this.consultaForm.medico_id || this.consultaForm.medico_id === 0) {
+        alert('⚠️ Médico requerido\n\nPor favor, seleccione un médico de la lista antes de continuar.');
+        return;
+      }
     }
     if (!this.consultaForm.motivo_consulta.trim()) {
       alert('⚠️ Motivo de consulta requerido\n\nPor favor, ingrese el motivo de la consulta para continuar.');
@@ -620,6 +720,12 @@ export class NuevaConsultaComponent implements OnInit {
       duracion_estimada: 30,
       prioridad: 'normal'
     };
+    
+    // Resetear especialidad para administradores y secretarias
+    if (this.currentUser?.rol === 'administrador' || this.currentUser?.rol === 'secretaria') {
+      this.selectedEspecialidadId = 0;
+      this.medicosFiltrados = [];
+    }
     
     // Resetear estado de envío
     this.isSubmitting = false;

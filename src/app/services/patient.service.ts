@@ -67,6 +67,16 @@ export class PatientService {
     });
   }
 
+  // Verificar si un paciente tiene consultas asociadas
+  hasConsultations(patientId: number): Observable<ApiResponse<{ hasConsultations: boolean }>> {
+    return this.http.get<ApiResponse<{ hasConsultations: boolean }>>(`${this.baseUrl}/${patientId}/has-consultations`);
+  }
+
+  // Cambiar estado activo/inactivo del paciente
+  togglePatientStatus(patientId: number, activo: boolean): Observable<ApiResponse<Patient>> {
+    return this.http.patch<ApiResponse<Patient>>(`${this.baseUrl}/${patientId}/toggle-status`, { activo });
+  }
+
   getPatientStatistics(): Observable<ApiResponse<any>> {
     return this.http.get<ApiResponse<any>>(`${APP_CONFIG.API_BASE_URL}${APP_CONFIG.API_ENDPOINTS.PATIENT_STATISTICS}`);
   }
