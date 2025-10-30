@@ -1235,11 +1235,22 @@ export class MensajesComponent implements OnInit, OnDestroy {
   }
 
   sendMensaje(mensaje: MensajeDifusion) {
-    if (confirm(`¿Estás seguro de que quieres enviar el mensaje "${mensaje.titulo}"?`)) {
+    const destinatarios = mensaje.total_destinatarios || 0;
+    const tipoMensaje = this.getTipoLabel(mensaje.tipo_mensaje || 'general');
+    
+    const mensajeConfirmacion = `📤 Enviar Mensaje Inmediatamente\n\n` +
+      `Título: "${mensaje.titulo}"\n` +
+      `Tipo: ${tipoMensaje}\n` +
+      `Destinatarios: ${destinatarios} paciente${destinatarios !== 1 ? 's' : ''}\n\n` +
+      `⚠️ Este mensaje se enviará INMEDIATAMENTE a todos los destinatarios.\n\n` +
+      `¿Deseas continuar?`;
+    
+    if (confirm(mensajeConfirmacion)) {
       this.mensajeService.enviarMensaje(mensaje.id!).subscribe({
         next: (response) => {
           if (response.success) {
             this.loadMensajes();
+            alert(`✅ Mensaje enviado exitosamente\n\nEl mensaje "${mensaje.titulo}" ha sido enviado a ${destinatarios} destinatario${destinatarios !== 1 ? 's' : ''}.`);
           }
         },
         error: (error) => {
