@@ -21,7 +21,15 @@ export class DateService {
     if (!dateString) return '';
     
     try {
-      const date = new Date(dateString);
+      // Si es una fecha en formato YYYY-MM-DD (sin hora), tratarla como fecha local
+      let date: Date;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        // Crear fecha local para evitar problemas de timezone
+        const [year, month, day] = dateString.split('-').map(Number);
+        date = new Date(year, month - 1, day);
+      } else {
+        date = new Date(dateString);
+      }
       
       // Verificar si la fecha es válida
       if (isNaN(date.getTime())) {
@@ -54,7 +62,15 @@ export class DateService {
     if (!dateString) return '';
     
     try {
-      const date = new Date(dateString);
+      // Si es una fecha en formato YYYY-MM-DD (sin hora), tratarla como fecha local
+      let date: Date;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        // Crear fecha local para evitar problemas de timezone
+        const [year, month, day] = dateString.split('-').map(Number);
+        date = new Date(year, month - 1, day);
+      } else {
+        date = new Date(dateString);
+      }
       
       if (isNaN(date.getTime())) {
         console.warn('Fecha inválida:', dateString);
