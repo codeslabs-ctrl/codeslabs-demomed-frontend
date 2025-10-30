@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EspecialidadService, Especialidad } from '../../../services/especialidad.service';
+import { ErrorHandlerService } from '../../../services/error-handler.service';
 import { ConfirmModalComponent } from '../../../components/confirm-modal/confirm-modal.component';
 
 @Component({
@@ -29,7 +30,10 @@ export class EspecialidadesComponent implements OnInit {
     descripcion: ''
   };
 
-  constructor(private especialidadService: EspecialidadService) {}
+  constructor(
+    private especialidadService: EspecialidadService,
+    private errorHandler: ErrorHandlerService
+  ) {}
 
   ngOnInit() {
     this.loadEspecialidades();
@@ -46,7 +50,7 @@ export class EspecialidadesComponent implements OnInit {
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error loading especialidades:', error);
+        this.errorHandler.logError(error, 'cargar especialidades');
         this.loading = false;
       }
     });
@@ -111,7 +115,7 @@ export class EspecialidadesComponent implements OnInit {
         this.saving = false;
       },
       error: (error) => {
-        console.error('Error creating especialidad:', error);
+        this.errorHandler.logError(error, 'crear especialidad');
         this.saving = false;
       }
     });
@@ -128,7 +132,7 @@ export class EspecialidadesComponent implements OnInit {
         this.saving = false;
       },
       error: (error) => {
-        console.error('Error updating especialidad:', error);
+        this.errorHandler.logError(error, 'actualizar especialidad');
         this.saving = false;
       }
     });
@@ -149,7 +153,7 @@ export class EspecialidadesComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error('Error deleting especialidad:', error);
+          this.errorHandler.logError(error, 'eliminar especialidad');
         }
       });
     }

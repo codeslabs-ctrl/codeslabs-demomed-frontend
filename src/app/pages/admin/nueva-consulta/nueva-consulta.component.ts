@@ -7,6 +7,7 @@ import { PatientService } from '../../../services/patient.service';
 import { MedicoService } from '../../../services/medico.service';
 import { EspecialidadService, Especialidad } from '../../../services/especialidad.service';
 import { AuthService } from '../../../services/auth.service';
+import { ErrorHandlerService } from '../../../services/error-handler.service';
 import { ConsultaFormData } from '../../../models/consulta.model';
 import { Patient } from '../../../models/patient.model';
 import { Medico } from '../../../services/medico.service';
@@ -512,7 +513,8 @@ export class NuevaConsultaComponent implements OnInit {
     private especialidadService: EspecialidadService,
     private authService: AuthService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   ngOnInit(): void {
@@ -555,7 +557,7 @@ export class NuevaConsultaComponent implements OnInit {
         }
       },
       error: (error: any) => {
-        console.error('Error loading pacientes:', error);
+        this.errorHandler.logError(error, 'cargar pacientes');
       }
     });
   }
@@ -567,7 +569,7 @@ export class NuevaConsultaComponent implements OnInit {
         console.log('👨‍⚕️ Médicos cargados:', this.medicos.length);
       },
       error: (error) => {
-        console.error('Error loading medicos:', error);
+        this.errorHandler.logError(error, 'cargar médicos');
       }
     });
   }
@@ -579,7 +581,7 @@ export class NuevaConsultaComponent implements OnInit {
         console.log('🏥 Especialidades cargadas:', this.especialidades.length);
       },
       error: (error) => {
-        console.error('Error loading especialidades:', error);
+        this.errorHandler.logError(error, 'cargar especialidades');
       }
     });
   }
@@ -700,8 +702,9 @@ export class NuevaConsultaComponent implements OnInit {
         this.isSubmitting = false;
       },
       error: (error) => {
-        console.error('Error creating consulta:', error);
-        alert('❌ Error al crear la consulta\n\n' + (error.error?.message || 'Error de conexión') + '\n\nPor favor, verifique su conexión e intente nuevamente.');
+        this.errorHandler.logError(error, 'crear consulta');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'crear consulta');
+        alert(errorMessage);
         this.isSubmitting = false;
       }
     });

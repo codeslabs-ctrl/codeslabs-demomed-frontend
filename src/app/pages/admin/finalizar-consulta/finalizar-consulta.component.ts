@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ServiciosService, Servicio, FinalizarConsultaRequest } from '../../../services/servicios.service';
 import { ConsultaService } from '../../../services/consulta.service';
+import { ErrorHandlerService } from '../../../services/error-handler.service';
 
 export interface ServicioSeleccionado {
   servicio_id: number;
@@ -40,7 +41,8 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private serviciosService: ServiciosService,
-    private consultaService: ConsultaService
+    private consultaService: ConsultaService,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   ngOnInit(): void {
@@ -50,7 +52,7 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
     this.consultaId = this.route.snapshot.paramMap.get('id') || '';
     
     if (!this.consultaId) {
-      console.error('❌ No se encontró ID de consulta en la ruta');
+      this.errorHandler.logError('No se encontró ID de consulta en la ruta', 'verificar ruta');
       this.router.navigate(['/admin/dashboard']);
       return;
     }
@@ -85,11 +87,11 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
           console.log('🔍 Datos completos de la consulta:', JSON.stringify(this.consultaInfo, null, 2));
         }
       } else {
-        console.error('❌ Error cargando consulta:', consultaResponse);
+        this.errorHandler.logError(consultaResponse, 'cargar consulta');
         this.router.navigate(['/admin/dashboard']);
       }
     } catch (error) {
-      console.error('❌ Error cargando información de consulta:', error);
+      this.errorHandler.logError(error, 'cargar información de consulta');
       this.router.navigate(['/admin/dashboard']);
     } finally {
       this.isLoading = false;
@@ -110,7 +112,7 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
         this.serviciosDisponibles = [];
       }
     } catch (error) {
-      console.error('❌ Error cargando servicios:', error);
+      this.errorHandler.logError(error, 'cargar servicios');
       this.serviciosDisponibles = [];
     }
   }
@@ -240,20 +242,18 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
           queryParams: { success: 'consulta-finalizada' } 
         });
       } else {
-        console.error('❌ Error finalizando consulta:', response);
+        this.errorHandler.logError(response, 'finalizar consulta');
         alert('Error al finalizar la consulta. Por favor, intente nuevamente.');
       }
     } catch (error: any) {
-      console.error('❌ Error finalizando consulta:', error);
-      console.error('❌ Error details:', error.error);
-      console.error('❌ Error status:', error.status);
-      console.error('❌ Error message:', error.message);
+      this.errorHandler.logError(error, 'finalizar consulta');
       
       let errorMessage = 'Error al finalizar la consulta. Por favor, intente nuevamente.';
       if (error.error && error.error.error) {
         errorMessage = `Error: ${error.error.error}`;
       }
-      alert(errorMessage);
+      const safeErrorMessage = this.errorHandler.getSafeErrorMessage(error, 'finalizar consulta');
+      alert(safeErrorMessage);
     } finally {
       this.isSubmitting = false;
     }

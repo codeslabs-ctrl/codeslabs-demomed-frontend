@@ -10,6 +10,7 @@ import { HistoricoService } from '../../../services/historico.service';
 import { ArchivoService } from '../../../services/archivo.service';
 import { DateService } from '../../../services/date.service';
 import { AuthService } from '../../../services/auth.service';
+import { ErrorHandlerService } from '../../../services/error-handler.service';
 import { ConsultaWithDetails } from '../../../models/consulta.model';
 import { HistoricoWithDetails } from '../../../services/historico.service';
 import { ArchivoAnexo } from '../../../models/archivo.model';
@@ -835,7 +836,8 @@ export class HistoriaMedicaComponent implements OnInit {
     private dateService: DateService,
     private authService: AuthService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   ngOnInit(): void {
@@ -874,8 +876,8 @@ export class HistoriaMedicaComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('❌ Error cargando paciente:', error);
-        this.error = error.error?.message || 'Error al cargar el paciente';
+        this.errorHandler.logError(error, 'cargar paciente');
+        this.error = this.errorHandler.getSafeErrorMessage(error, 'cargar paciente');
         this.loading = false;
       }
     });
@@ -907,7 +909,7 @@ export class HistoriaMedicaComponent implements OnInit {
         this.loading = false;
       },
       error: (error) => {
-        console.error('❌ Error cargando médico:', error);
+        this.errorHandler.logError(error, 'cargar médico');
         // Fallback a datos básicos en caso de error
         this.configurarDatosBasicos(patientData);
         this.verificarHistoriaExistente();
@@ -930,7 +932,7 @@ export class HistoriaMedicaComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('❌ Error cargando especialidad:', error);
+        this.errorHandler.logError(error, 'cargar especialidad');
         this.configurarDatosMedico(medico, patientData);
       }
     });
@@ -1027,7 +1029,7 @@ export class HistoriaMedicaComponent implements OnInit {
         this.loading = false;
       },
       error: (error) => {
-        console.error('❌ Error cargando médicos con historia:', error);
+        this.errorHandler.logError(error, 'cargar médicos con historia');
         this.medicosConHistoria = [];
         this.configurarMedicoActual();
         this.loading = false;
@@ -1138,7 +1140,7 @@ export class HistoriaMedicaComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('❌ Error cargando mi historia:', error);
+        this.errorHandler.logError(error, 'cargar mi historia');
         this.mode = 'create';
         this.historiaData = null;
       }
@@ -1200,7 +1202,7 @@ export class HistoriaMedicaComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('❌ Error cargando historia del médico:', error);
+        this.errorHandler.logError(error, 'cargar historia del médico');
         this.mode = 'create';
         this.historiaData = null;
       }
@@ -1273,8 +1275,9 @@ export class HistoriaMedicaComponent implements OnInit {
         this.isSubmitting = false;
       },
       error: (error) => {
-        console.error('❌ Error creando historia:', error);
-        alert('❌ Error al crear la historia médica\n\n' + (error.error?.message || 'Error de conexión'));
+        this.errorHandler.logError(error, 'crear historia médica');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'crear historia médica');
+        alert(errorMessage);
         this.isSubmitting = false;
       }
     });
@@ -1301,8 +1304,9 @@ export class HistoriaMedicaComponent implements OnInit {
         this.isSubmitting = false;
       },
       error: (error) => {
-        console.error('❌ Error actualizando historia:', error);
-        alert('❌ Error al actualizar la historia médica\n\n' + (error.error?.message || 'Error de conexión'));
+        this.errorHandler.logError(error, 'actualizar historia médica');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar historia médica');
+        alert(errorMessage);
         this.isSubmitting = false;
       }
     });
@@ -1358,7 +1362,7 @@ export class HistoriaMedicaComponent implements OnInit {
         this.archivosCargando = false;
       },
       error: (error) => {
-        console.error('Error cargando archivos:', error);
+        this.errorHandler.logError(error, 'cargar archivos');
         this.archivosError = 'Error al cargar los archivos';
         this.archivosCargando = false;
       }
@@ -1382,7 +1386,7 @@ export class HistoriaMedicaComponent implements OnInit {
         window.URL.revokeObjectURL(url);
       },
       error: (error) => {
-        console.error('Error descargando archivo:', error);
+        this.errorHandler.logError(error, 'descargar archivo');
         alert('Error al descargar el archivo');
       }
     });
@@ -1399,7 +1403,7 @@ export class HistoriaMedicaComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error('Error eliminando archivo:', error);
+          this.errorHandler.logError(error, 'eliminar archivo');
           alert('Error al eliminar el archivo');
         }
       });
@@ -1433,7 +1437,7 @@ export class HistoriaMedicaComponent implements OnInit {
   // Métodos para manejar interconsultas
   abrirModalInterconsultas(): void {
     if (!this.consultaData?.paciente_id) {
-      console.error('❌ No hay datos del paciente disponibles');
+      this.errorHandler.logError('No hay datos del paciente disponibles', 'verificar datos del paciente');
       return;
     }
 

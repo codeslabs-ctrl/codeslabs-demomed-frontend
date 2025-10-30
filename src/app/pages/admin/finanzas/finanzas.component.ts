@@ -7,6 +7,7 @@ import { AuthService } from '../../../services/auth.service';
 import { MedicoService } from '../../../services/medico.service';
 import { EspecialidadService } from '../../../services/especialidad.service';
 import { DateService } from '../../../services/date.service';
+import { ErrorHandlerService } from '../../../services/error-handler.service';
 import { 
   ConsultaFinanciera, 
   ResumenFinanciero, 
@@ -65,7 +66,8 @@ export class FinanzasComponent implements OnInit {
     private authService: AuthService,
     private medicoService: MedicoService,
     private especialidadService: EspecialidadService,
-    private dateService: DateService
+    private dateService: DateService,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   ngOnInit(): void {
@@ -107,7 +109,7 @@ export class FinanzasComponent implements OnInit {
         this.medicos = response.data || [];
       },
       error: (error) => {
-        console.error('Error loading medicos:', error);
+        this.errorHandler.logError(error, 'cargar médicos');
       }
     });
   }
@@ -144,7 +146,7 @@ export class FinanzasComponent implements OnInit {
         verificarEstadoFinal();
       },
       error: (error) => {
-        console.error('❌ Error loading consultas:', error);
+        this.errorHandler.logError(error, 'cargar consultas financieras');
         consultasCargadas = true;
         verificarEstadoFinal();
       }
@@ -163,7 +165,7 @@ export class FinanzasComponent implements OnInit {
         verificarEstadoFinal();
       },
       error: (error) => {
-        console.error('❌ Error loading resumen:', error);
+        this.errorHandler.logError(error, 'cargar resumen financiero');
         resumenCargado = true;
         verificarEstadoFinal();
       }
@@ -205,8 +207,9 @@ export class FinanzasComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('Error marcando consulta como pagada:', error);
-        alert('❌ Error al marcar la consulta como pagada');
+        this.errorHandler.logError(error, 'marcar consulta como pagada');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'marcar consulta como pagada');
+        alert(errorMessage);
       }
     });
   }
@@ -252,8 +255,9 @@ export class FinanzasComponent implements OnInit {
         // Remover mensaje de carga
         document.body.removeChild(alertaCarga);
         
-        console.error('Error exporting report:', error);
-        alert('❌ Error al exportar el reporte');
+        this.errorHandler.logError(error, 'exportar reporte');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'exportar reporte');
+        alert(errorMessage);
       }
     });
   }
@@ -349,8 +353,9 @@ export class FinanzasComponent implements OnInit {
         // Remover mensaje de carga
         document.body.removeChild(alertaCarga);
         
-        console.error('Error exporting advanced report:', error);
-        alert('❌ Error al exportar el reporte avanzado');
+        this.errorHandler.logError(error, 'exportar reporte avanzado');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'exportar reporte avanzado');
+        alert(errorMessage);
       }
     });
   }
@@ -439,7 +444,7 @@ export class FinanzasComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('❌ Error cargando especialidades:', error);
+        this.errorHandler.logError(error, 'cargar especialidades');
       }
     });
   }

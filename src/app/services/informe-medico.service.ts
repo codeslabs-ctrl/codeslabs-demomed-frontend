@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { CrearInformeRequest } from '../models/informe-medico.model';
 
 export interface InformeMedico {
   id?: number;
@@ -112,7 +113,7 @@ export class InformeMedicoService {
   // INFORMES MÉDICOS
   // =====================================================
 
-  crearInforme(informe: Omit<InformeMedico, 'id' | 'fecha_creacion' | 'fecha_actualizacion' | 'numero_informe' | 'numero_secuencial'>): Observable<any> {
+  crearInforme(informe: CrearInformeRequest): Observable<any> {
     return this.http.post(`${this.apiUrl}`, informe);
   }
 

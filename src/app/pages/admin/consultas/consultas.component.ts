@@ -7,6 +7,7 @@ import { ConsultaService } from '../../../services/consulta.service';
 import { MedicoService } from '../../../services/medico.service';
 import { DateService } from '../../../services/date.service';
 import { AuthService } from '../../../services/auth.service';
+import { ErrorHandlerService } from '../../../services/error-handler.service';
 import { ServiciosService, FinalizarConsultaRequest } from '../../../services/servicios.service';
 import { ConsultaWithDetails, ConsultaFilters } from '../../../models/consulta.model';
 import { Medico } from '../../../services/medico.service';
@@ -1558,7 +1559,8 @@ export class ConsultasComponent implements OnInit {
     private serviciosService: ServiciosService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private http: HttpClient
+    private http: HttpClient,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   // Propiedades para modales
@@ -1623,10 +1625,10 @@ export class ConsultasComponent implements OnInit {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading consultas:', error);
+          this.errorHandler.logError(error, 'cargar consultas');
           this.loading = false;
-          const errorMessage = error?.error?.message || error?.message || 'Error cargando consultas';
-          alert(`❌ Error cargando consultas:\n\n${errorMessage}\n\nPor favor, recarga la página e intente nuevamente.`);
+          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'cargar consultas');
+          alert(errorMessage);
         }
       });
   }
@@ -1638,7 +1640,7 @@ export class ConsultasComponent implements OnInit {
         console.log('👨‍⚕️ Médicos cargados:', this.medicos.length);
       },
       error: (error) => {
-        console.error('Error loading medicos:', error);
+        this.errorHandler.logError(error, 'cargar médicos');
       }
     });
   }
@@ -1653,7 +1655,7 @@ export class ConsultasComponent implements OnInit {
           console.log('🏥 Especialidades cargadas:', this.especialidades.length);
         },
         error: (error) => {
-          console.error('Error loading especialidades:', error);
+          this.errorHandler.logError(error, 'cargar especialidades');
         }
       });
     });
@@ -1842,8 +1844,9 @@ export class ConsultasComponent implements OnInit {
         this.isSubmitting = false;
       },
       error: (error) => {
-        console.error('Error cancelando consulta:', error);
-        alert('❌ Error al cancelar la consulta\n\nPor favor, verifique su conexión e intente nuevamente. Si el problema persiste, contacte al administrador.');
+        this.errorHandler.logError(error, 'cancelar consulta');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'cancelar consulta');
+        alert(errorMessage);
         this.isSubmitting = false;
       }
     });
@@ -1872,8 +1875,9 @@ export class ConsultasComponent implements OnInit {
         alert('✅ Consulta reagendada exitosamente\n\nLa consulta ha sido reagendada y se ha enviado una notificación al paciente con la nueva fecha y hora.');
       },
       error: (error) => {
-        console.error('❌ Error reagendando consulta:', error);
-        alert('❌ Error al reagendar la consulta\n\nPor favor, verifique su conexión e intente nuevamente. Si el problema persiste, contacte al administrador.');
+        this.errorHandler.logError(error, 'reagendar consulta');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'reagendar consulta');
+        alert(errorMessage);
       }
     });
   }

@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { PatientService } from '../../services/patient.service';
 import { HistoricoService } from '../../services/historico.service';
 import { AuthService } from '../../services/auth.service';
+import { ErrorHandlerService } from '../../services/error-handler.service';
 import { User } from '../../models/user.model';
 import { Patient, PatientFilters } from '../../models/patient.model';
 import { APP_CONFIG } from '../../config/app.config';
@@ -777,7 +778,8 @@ export class PatientsComponent implements OnInit {
     private patientService: PatientService,
     private historicoService: HistoricoService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   ngOnInit() {
@@ -810,7 +812,7 @@ export class PatientsComponent implements OnInit {
             this.loading = false;
           },
           error: (error) => {
-            console.error('Error loading patients:', error);
+            this.errorHandler.logError(error, 'cargar pacientes');
             this.loading = false;
           }
         });
@@ -834,7 +836,7 @@ export class PatientsComponent implements OnInit {
             this.loading = false;
           },
           error: (error) => {
-            console.error('Error loading patients by medico:', error);
+            this.errorHandler.logError(error, 'cargar pacientes del médico');
             this.loading = false;
           }
         });
@@ -853,7 +855,7 @@ export class PatientsComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error('Error searching patients:', error);
+          this.errorHandler.logError(error, 'buscar pacientes');
         }
       });
     } else {
@@ -871,7 +873,7 @@ export class PatientsComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error('Error searching patients by cedula:', error);
+          this.errorHandler.logError(error, 'buscar pacientes por cédula');
         }
       });
     } else {
@@ -913,8 +915,9 @@ export class PatientsComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error('Error verificando consultas:', error);
-          alert('❌ Error verificando el estado del paciente. Por favor, intente nuevamente.');
+          this.errorHandler.logError(error, 'verificar estado del paciente');
+          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'verificar estado del paciente');
+          alert(errorMessage);
         }
       });
     }
@@ -929,15 +932,18 @@ export class PatientsComponent implements OnInit {
         next: (response) => {
           if (response.success) {
             patient.activo = newStatus;
+            this.errorHandler.logInfo(`Paciente ${action}do exitosamente`, response);
             alert(`✅ Paciente ${action}do exitosamente`);
             this.loadPatients(); // Recargar la lista
           } else {
-            alert(`❌ Error al ${action} paciente. Por favor, intente nuevamente.`);
+            const errorMessage = this.errorHandler.getSafeErrorMessage(response, `${action} paciente`);
+            alert(errorMessage);
           }
         },
         error: (error) => {
-          console.error(`Error al ${action} paciente:`, error);
-          alert(`❌ Error al ${action} paciente. Por favor, intente nuevamente.`);
+          this.errorHandler.logError(error, `${action} paciente`);
+          const errorMessage = this.errorHandler.getSafeErrorMessage(error, `${action} paciente`);
+          alert(errorMessage);
         }
       });
     }
@@ -948,18 +954,19 @@ export class PatientsComponent implements OnInit {
       this.patientService.deletePatient(this.patientToDelete.id!).subscribe({
         next: (response) => {
           if (response.success) {
+            this.errorHandler.logInfo('Paciente eliminado exitosamente', response);
             alert('✅ Paciente eliminado exitosamente');
             this.loadPatients();
             this.closeConfirmModal();
           } else {
-            const errorMessage = (response as any).error?.message || 'Error eliminando paciente';
-            alert(`❌ Error eliminando paciente:\n\n${errorMessage}\n\nPor favor, intente nuevamente.`);
+            const errorMessage = this.errorHandler.getSafeErrorMessage(response, 'eliminar paciente');
+            alert(errorMessage);
           }
         },
         error: (error) => {
-          console.error('Error deleting patient:', error);
-          const errorMessage = error?.error?.message || error?.message || 'Error de conexión eliminando paciente';
-          alert(`❌ Error eliminando paciente:\n\n${errorMessage}\n\nPor favor, verifique su conexión e intente nuevamente.`);
+          this.errorHandler.logError(error, 'eliminar paciente');
+          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'eliminar paciente');
+          alert(errorMessage);
         }
       });
     }
@@ -997,7 +1004,7 @@ export class PatientsComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.log('No se encontró historia médica para el paciente:', patient.id);
+          this.errorHandler.logInfo('No se encontró historia médica para el paciente', { pacienteId: patient.id });
         }
       });
     }

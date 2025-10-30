@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { MensajeService } from '../../../services/mensaje.service';
+import { ErrorHandlerService } from '../../../services/error-handler.service';
 import { MensajeDifusion, MensajeFormData, PacienteParaDifusion } from '../../../models/mensaje.model';
 import { ProgramarMensajeComponent } from './programar-mensaje/programar-mensaje.component';
 import { VerMensajeComponent } from './ver-mensaje/ver-mensaje.component';
@@ -1062,7 +1063,8 @@ export class MensajesComponent implements OnInit, OnDestroy {
 
   constructor(
     private mensajeService: MensajeService,
-    private router: Router
+    private router: Router,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   ngOnInit() {
@@ -1112,14 +1114,14 @@ export class MensajesComponent implements OnInit, OnDestroy {
                 }
               },
               error: (syncError: any) => {
-                console.error('Error sincronizando contadores:', syncError);
+                this.errorHandler.logError(syncError, 'sincronizar contadores');
               }
             });
           }
         }
       },
       error: (error) => {
-        console.error('Error loading mensajes:', error);
+        this.errorHandler.logError(error, 'cargar mensajes');
       }
     });
   }
@@ -1150,13 +1152,13 @@ export class MensajesComponent implements OnInit, OnDestroy {
           this.errorPacientes = '';
         } else {
           this.errorPacientes = 'Error al cargar los pacientes';
-          console.error('Error del servidor:', response);
+          this.errorHandler.logError(response, 'cargar pacientes');
         }
       },
       error: (error) => {
         this.loadingPacientes = false;
         this.errorPacientes = 'Error de conexión al cargar pacientes';
-        console.error('Error loading pacientes:', error);
+        this.errorHandler.logError(error, 'cargar pacientes');
       }
     });
   }
@@ -1184,7 +1186,7 @@ export class MensajesComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error updating mensaje:', error);
+          this.errorHandler.logError(error, 'actualizar mensaje');
         }
       });
     } else {
@@ -1196,7 +1198,7 @@ export class MensajesComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error creating mensaje:', error);
+          this.errorHandler.logError(error, 'crear mensaje');
         }
       });
     }
@@ -1217,7 +1219,7 @@ export class MensajesComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error deleting mensaje:', error);
+          this.errorHandler.logError(error, 'eliminar mensaje');
         }
       });
     }
@@ -1241,7 +1243,7 @@ export class MensajesComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error sending mensaje:', error);
+          this.errorHandler.logError(error, 'enviar mensaje');
         }
       });
     }
@@ -1262,7 +1264,7 @@ export class MensajesComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error scheduling mensaje:', error);
+          this.errorHandler.logError(error, 'programar mensaje');
         }
       });
     }
@@ -1285,7 +1287,7 @@ export class MensajesComponent implements OnInit, OnDestroy {
         }
       },
       error: (error) => {
-        console.error('Error duplicating mensaje:', error);
+        this.errorHandler.logError(error, 'duplicar mensaje');
       }
     });
   }
@@ -1398,12 +1400,12 @@ export class MensajesComponent implements OnInit, OnDestroy {
         if (response.success) {
           this.destinatariosActuales = response.data;
         } else {
-          console.error('Error loading destinatarios:', response);
+          this.errorHandler.logError(response, 'cargar destinatarios');
         }
       },
       error: (error) => {
         this.loadingDestinatarios = false;
-        console.error('Error loading destinatarios:', error);
+        this.errorHandler.logError(error, 'cargar destinatarios');
       }
     });
   }
@@ -1424,11 +1426,11 @@ export class MensajesComponent implements OnInit, OnDestroy {
           this.destinatariosActuales = this.destinatariosActuales.filter(d => d.id !== pacienteId);
           this.updateDestinatarios();
         } else {
-          console.error('Error removing destinatario:', response);
+          this.errorHandler.logError(response, 'eliminar destinatario');
         }
       },
       error: (error) => {
-        console.error('Error removing destinatario:', error);
+        this.errorHandler.logError(error, 'eliminar destinatario');
       }
     });
   }
@@ -1451,11 +1453,11 @@ export class MensajesComponent implements OnInit, OnDestroy {
           this.updateAllSelectedState();
           this.updateDestinatarios();
         } else {
-          console.error('Error adding destinatarios:', response);
+          this.errorHandler.logError(response, 'agregar destinatarios');
         }
       },
       error: (error) => {
-        console.error('Error adding destinatarios:', error);
+        this.errorHandler.logError(error, 'agregar destinatarios');
       }
     });
   }

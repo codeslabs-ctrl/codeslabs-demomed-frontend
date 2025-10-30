@@ -5,6 +5,7 @@ import { ServiciosService, Servicio } from '../../../services/servicios.service'
 import { EspecialidadService } from '../../../services/especialidad.service';
 import { AuthService } from '../../../services/auth.service';
 import { DateService } from '../../../services/date.service';
+import { ErrorHandlerService } from '../../../services/error-handler.service';
 
 @Component({
   selector: 'app-servicios',
@@ -51,7 +52,8 @@ export class ServiciosComponent implements OnInit {
     private serviciosService: ServiciosService,
     private especialidadService: EspecialidadService,
     private authService: AuthService,
-    private dateService: DateService
+    private dateService: DateService,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   ngOnInit(): void {
@@ -74,8 +76,9 @@ export class ServiciosComponent implements OnInit {
         console.log('🔍 Loading finalizado - loading:', this.loading);
       },
       error: (error: any) => {
-        console.error('❌ Error loading servicios:', error);
-        alert('❌ Error cargando servicios\n\nPor favor, intente nuevamente.');
+        this.errorHandler.logError(error, 'cargar servicios');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'cargar servicios');
+        alert(errorMessage);
         this.loading = false;
       }
     });
@@ -87,7 +90,7 @@ export class ServiciosComponent implements OnInit {
         this.especialidades = response.data || [];
       },
       error: (error) => {
-        console.error('❌ Error loading especialidades:', error);
+        this.errorHandler.logError(error, 'cargar especialidades');
       }
     });
   }
@@ -141,8 +144,9 @@ export class ServiciosComponent implements OnInit {
           this.loadServicios();
         },
         error: (error: any) => {
-          console.error('Error updating servicio:', error);
-          alert('❌ Error actualizando servicio\n\nPor favor, intente nuevamente.');
+          this.errorHandler.logError(error, 'actualizar servicio');
+          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar servicio');
+          alert(errorMessage);
         }
       });
     } else {
@@ -154,27 +158,8 @@ export class ServiciosComponent implements OnInit {
           this.loadServicios();
         },
         error: (error: any) => {
-          console.error('Error creating servicio:', error);
-          console.error('Error details:', error.error);
-          console.error('Error status:', error.status);
-          console.error('Error message:', error.message);
-          
-          let errorMessage = '❌ Error creando servicio\n\n';
-          if (error.error && error.error.error) {
-            if (error.error.error.includes('clinica_alias')) {
-              errorMessage += '⚠️ Error del servidor: La base de datos no está sincronizada.\n\n';
-              errorMessage += 'Por favor, contacte al administrador del sistema.';
-            } else {
-              errorMessage += `Detalles: ${error.error.error}`;
-            }
-          } else if (error.error && error.error.message) {
-            errorMessage += `Detalles: ${error.error.message}`;
-          } else if (error.error && typeof error.error === 'string') {
-            errorMessage += `Detalles: ${error.error}`;
-          } else {
-            errorMessage += 'Por favor, intente nuevamente.';
-          }
-          
+          this.errorHandler.logError(error, 'crear servicio');
+          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'crear servicio');
           alert(errorMessage);
         }
       });
@@ -196,8 +181,9 @@ export class ServiciosComponent implements OnInit {
         this.loadServicios();
       },
       error: (error: any) => {
-        console.error('Error deleting servicio:', error);
-        alert('❌ Error eliminando servicio\n\nPor favor, intente nuevamente.');
+        this.errorHandler.logError(error, 'eliminar servicio');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'eliminar servicio');
+        alert(errorMessage);
       }
     });
   }
@@ -210,8 +196,9 @@ export class ServiciosComponent implements OnInit {
         this.applyFilters();
       },
       error: (error: any) => {
-        console.error('Error toggling servicio status:', error);
-        alert('❌ Error cambiando estado del servicio');
+        this.errorHandler.logError(error, 'cambiar estado del servicio');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'cambiar estado del servicio');
+        alert(errorMessage);
       }
     });
   }

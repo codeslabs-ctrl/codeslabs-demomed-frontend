@@ -5,6 +5,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { MedicoService, Medico } from '../../../../services/medico.service';
 import { EspecialidadService, Especialidad } from '../../../../services/especialidad.service';
 import { FirmaService } from '../../../../services/firma.service';
+import { ErrorHandlerService } from '../../../../services/error-handler.service';
 
 @Component({
   selector: 'app-editar-medico',
@@ -51,7 +52,8 @@ export class EditarMedicoComponent implements OnInit {
     private especialidadService: EspecialidadService,
     private firmaService: FirmaService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   ngOnInit() {
@@ -70,7 +72,7 @@ export class EditarMedicoComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error('Error loading medico:', error);
+          this.errorHandler.logError(error, 'cargar datos del médico');
           this.showSnackbarMessage('Error cargando datos del médico', 'error');
           this.loading = false;
         }
@@ -86,7 +88,7 @@ export class EditarMedicoComponent implements OnInit {
         }
       },
       error: (error: any) => {
-        console.error('Error loading especialidades:', error);
+        this.errorHandler.logError(error, 'cargar especialidades');
         this.showSnackbarMessage('Error cargando especialidades', 'error');
       }
     });
@@ -141,8 +143,7 @@ export class EditarMedicoComponent implements OnInit {
           this.saving = false;
         },
         error: (error) => {
-          console.error('Error updating medico:', error);
-          console.error('Error details:', error.error);
+          this.errorHandler.logError(error, 'actualizar médico');
           
           let errorMessage = '❌ Error al actualizar el médico. Por favor, intente nuevamente.';
           
@@ -228,7 +229,7 @@ export class EditarMedicoComponent implements OnInit {
         this.uploadingFirma = false;
       },
       error: (error) => {
-        console.error('Error uploading firma:', error);
+        this.errorHandler.logError(error, 'subir firma digital');
         let errorMessage = '❌ Error al subir firma digital';
         if (error.error && error.error.error && error.error.error.message) {
           errorMessage = `❌ ${error.error.error.message}`;
@@ -276,7 +277,7 @@ export class EditarMedicoComponent implements OnInit {
         this.uploadingFirma = false;
       },
       error: (error) => {
-        console.error('Error uploading firma after update:', error);
+        this.errorHandler.logError(error, 'subir firma digital después de actualizar');
         this.showSnackbarMessage(
           `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente. Error al subir firma digital.`,
           'success'
@@ -326,7 +327,7 @@ export class EditarMedicoComponent implements OnInit {
             this.emailChecked = true;
           },
           error: (error) => {
-            console.error('Error validating email:', error);
+            this.errorHandler.logError(error, 'validar email');
             this.emailExists = false;
             this.emailChecked = true;
           }
@@ -364,7 +365,7 @@ export class EditarMedicoComponent implements OnInit {
             this.cedulaChecked = true;
           },
           error: (error) => {
-            console.error('Error validating cedula:', error);
+            this.errorHandler.logError(error, 'validar cédula');
             this.cedulaExists = false;
             this.cedulaChecked = true;
           }

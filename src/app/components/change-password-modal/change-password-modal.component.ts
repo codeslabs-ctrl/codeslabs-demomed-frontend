@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { ErrorHandlerService } from '../../services/error-handler.service';
 
 @Component({
   selector: 'app-change-password-modal',
@@ -399,7 +400,10 @@ export class ChangePasswordModalComponent {
   showConfirmPassword = false;
   isLoading = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private errorHandler: ErrorHandlerService
+  ) {}
 
   passwordsMatch(): boolean {
     return this.formData.newPassword === this.formData.confirmPassword;
@@ -465,17 +469,20 @@ export class ChangePasswordModalComponent {
     this.http.post(`${environment.apiUrl}/auth/change-password`, payload, { headers }).subscribe({
       next: (response: any) => {
         this.isLoading = false;
+        this.errorHandler.logInfo('Contraseña cambiada exitosamente', response);
         if (response.success) {
           this.passwordChanged.emit();
           this.closeModal();
         } else {
-          alert('❌ Error al cambiar la contraseña\n\n' + ((response as any).error?.message || 'Error desconocido') + '\n\nPor favor, verifique los datos e intente nuevamente.');
+          const errorMessage = this.errorHandler.getSafeErrorMessage(response, 'cambiar contraseña');
+          alert(errorMessage);
         }
       },
       error: (error) => {
         this.isLoading = false;
-        console.error('Error changing password:', error);
-        alert('❌ Error al cambiar la contraseña\n\n' + (error.error?.error?.message || 'Error de conexión') + '\n\nPor favor, verifique su internet e intente nuevamente.');
+        this.errorHandler.logError(error, 'cambiar contraseña');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'cambiar contraseña');
+        alert(errorMessage);
       }
     });
   }

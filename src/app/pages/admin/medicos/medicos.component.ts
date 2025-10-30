@@ -6,6 +6,7 @@ import { MedicoService } from '../../../services/medico.service';
 import { EspecialidadService, Especialidad as EspecialidadFromService } from '../../../services/especialidad.service';
 import { ConfirmModalComponent } from '../../../components/confirm-modal/confirm-modal.component';
 import { AuthService } from '../../../services/auth.service';
+import { ErrorHandlerService } from '../../../services/error-handler.service';
 
 export interface Medico {
   id?: number;
@@ -60,7 +61,8 @@ export class MedicosComponent implements OnInit {
     private medicoService: MedicoService,
     private especialidadService: EspecialidadService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   ngOnInit() {
@@ -79,7 +81,7 @@ export class MedicosComponent implements OnInit {
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error loading medicos:', error);
+        this.errorHandler.logError(error, 'cargar médicos');
         this.loading = false;
       }
     });
@@ -93,7 +95,7 @@ export class MedicosComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('Error loading especialidades:', error);
+        this.errorHandler.logError(error, 'cargar especialidades');
       }
     });
   }
@@ -254,19 +256,9 @@ export class MedicosComponent implements OnInit {
         this.saving = false;
       },
       error: (error) => {
-        console.error('Error creating medico:', error);
-        console.error('Error details:', error.error);
-        console.error('Error message:', error.error?.error?.message);
-        console.error('Status:', error.status);
-        console.error('Status text:', error.statusText);
-        
-        let errorMessage = '❌ Error al crear el médico. Por favor, intente nuevamente.';
-        
-        if (error.error && error.error.error && error.error.error.message) {
-          errorMessage = `❌ ${error.error.error.message}`;
-        }
-        
+        this.errorHandler.logError(error, 'crear médico');
         this.saving = false;
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'crear médico');
         this.showSnackbarMessage(errorMessage, 'error');
       }
     });
@@ -295,16 +287,9 @@ export class MedicosComponent implements OnInit {
         this.saving = false;
       },
       error: (error) => {
-        console.error('Error updating medico:', error);
-        console.error('Error details:', error.error);
-        
-        let errorMessage = '❌ Error al actualizar el médico. Por favor, intente nuevamente.';
-        
-        if (error.error && error.error.error && error.error.error.message) {
-          errorMessage = `❌ ${error.error.error.message}`;
-        }
-        
+        this.errorHandler.logError(error, 'actualizar médico');
         this.saving = false;
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar médico');
         this.showSnackbarMessage(errorMessage, 'error');
       }
     });
@@ -332,11 +317,9 @@ export class MedicosComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error('Error deleting medico:', error);
-          this.showSnackbarMessage(
-            'Error al eliminar el médico. Por favor, intente nuevamente.',
-            'error'
-          );
+          this.errorHandler.logError(error, 'eliminar médico');
+          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'eliminar médico');
+          this.showSnackbarMessage(errorMessage, 'error');
         }
       });
     }

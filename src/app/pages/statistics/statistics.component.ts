@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConsultaService } from '../../services/consulta.service';
+import { ErrorHandlerService } from '../../services/error-handler.service';
 import { SimpleChartComponent, ChartData, ChartConfig } from '../../components/charts/simple-chart.component';
 
 @Component({
@@ -420,7 +421,10 @@ export class StatisticsComponent implements OnInit {
   fechaFinMedicos: string = '';
   loadingMedicos: boolean = false;
 
-  constructor(private consultaService: ConsultaService) {}
+  constructor(
+    private consultaService: ConsultaService,
+    private errorHandler: ErrorHandlerService
+  ) {}
 
   ngOnInit() {
     this.loadChartData();
@@ -447,7 +451,7 @@ export class StatisticsComponent implements OnInit {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error cargando estadísticas:', error);
+          this.errorHandler.logError(error, 'cargar estadísticas');
           this.chartData = [];
           this.loading = false;
         }
@@ -514,7 +518,7 @@ export class StatisticsComponent implements OnInit {
           this.loadingEspecialidades = false;
         },
         error: (error) => {
-          console.error('Error cargando estadísticas de especialidades:', error);
+          this.errorHandler.logError(error, 'cargar estadísticas de especialidades');
           this.especialidadesData = [];
           this.loadingEspecialidades = false;
         }
@@ -540,7 +544,7 @@ export class StatisticsComponent implements OnInit {
           this.loadingMedicos = false;
         },
         error: (error) => {
-          console.error('Error cargando estadísticas de médicos:', error);
+          this.errorHandler.logError(error, 'cargar estadísticas de médicos');
           this.medicosData = [];
           this.loadingMedicos = false;
         }

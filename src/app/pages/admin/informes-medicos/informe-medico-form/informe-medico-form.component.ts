@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RichTextEditorComponent } from '../../../../components/rich-text-editor/rich-text-editor.component';
 import { InformeMedicoService } from '../../../../services/informe-medico.service';
@@ -9,6 +9,7 @@ import { MedicoService } from '../../../../services/medico.service';
 import { EspecialidadService } from '../../../../services/especialidad.service';
 import { ContextualDataService, DatosContextuales } from '../../../../services/contextual-data.service';
 import { AuthService } from '../../../../services/auth.service';
+import { ErrorHandlerService } from '../../../../services/error-handler.service';
 import { 
   InformeMedico, 
   TemplateInforme, 
@@ -20,7 +21,7 @@ import {
 @Component({
   selector: 'app-informe-medico-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RichTextEditorComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RichTextEditorComponent],
   templateUrl: './informe-medico-form.component.html',
   styleUrls: ['./informe-medico-form.component.css']
 })
@@ -43,6 +44,8 @@ export class InformeMedicoFormComponent implements OnInit {
   observacionesValue = '';
 
   // Filtros
+  especialidadSeleccionada: number | null = null;
+  medicosFiltrados: any[] = [];
 
   // Datos contextuales
   datosContextuales: DatosContextuales | null = null;
@@ -75,7 +78,8 @@ export class InformeMedicoFormComponent implements OnInit {
     private medicoService: MedicoService,
     private especialidadService: EspecialidadService,
     public contextualDataService: ContextualDataService,
-    private authService: AuthService
+    private authService: AuthService,
+    private errorHandler: ErrorHandlerService
   ) {
     this.informeForm = this.fb.group({
       titulo: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
@@ -100,10 +104,10 @@ export class InformeMedicoFormComponent implements OnInit {
       if (user && user.rol === 'medico' && user.medico_id) {
         this.esUsuarioMedico = true;
         this.medicoActual = user;
-        console.log('👨‍⚕️ Usuario médico detectado:', user);
+        this.errorHandler.logInfo('Usuario médico detectado');
       } else {
         this.esUsuarioMedico = false;
-        console.log('👤 Usuario no médico:', user?.rol);
+        this.errorHandler.logInfo('Usuario no médico detectado', { rol: user?.rol });
       }
     });
   }
@@ -115,10 +119,10 @@ export class InformeMedicoFormComponent implements OnInit {
     this.patientService.getPatientsByMedicoForStats(null).subscribe({
       next: (pacientes: any[]) => {
         this.pacientes = pacientes || [];
-        console.log('📋 Pacientes cargados:', this.pacientes.length);
+        this.errorHandler.logInfo('Pacientes cargados', { cantidad: this.pacientes.length });
       },
       error: (error: any) => {
-        console.error('Error cargando pacientes:', error);
+        this.errorHandler.logError(error, 'cargar pacientes');
       }
     });
 
@@ -126,20 +130,15 @@ export class InformeMedicoFormComponent implements OnInit {
     if (this.esUsuarioMedico) {
       // Si es médico, solo cargar su información
       this.medicos = [this.medicoActual];
+      this.medicosFiltrados = [this.medicoActual];
       // Pre-seleccionar el médico actual
       this.informeForm.patchValue({
         medico_id: this.medicoActual.medico_id
       });
     } else {
-      // Si es admin, cargar todos los médicos
-      this.medicoService.getAllMedicos().subscribe({
-        next: (response: any) => {
-          this.medicos = response.data || [];
-        },
-        error: (error: any) => {
-          console.error('Error cargando médicos:', error);
-        }
-      });
+      // Si es admin/secretaria, no cargar médicos hasta seleccionar especialidad
+      this.medicos = [];
+      this.medicosFiltrados = [];
     }
 
     // Cargar especialidades
@@ -216,8 +215,23 @@ export class InformeMedicoFormComponent implements OnInit {
 
 
   async guardarInforme(): Promise<void> {
+    console.log('🚀 Iniciando guardarInforme...');
+    
     if (this.informeForm.invalid) {
+      console.log('❌ Formulario inválido');
       this.marcarCamposComoTocados();
+      return;
+    }
+
+    // Validación adicional para admin/secretaria: debe seleccionar especialidad
+    if (!this.esUsuarioMedico && !this.especialidadSeleccionada) {
+      alert('❌ Error: Debe seleccionar una especialidad antes de crear el informe.');
+      return;
+    }
+
+    // Validación adicional: debe seleccionar médico
+    if (!this.informeForm.get('medico_id')?.value) {
+      alert('❌ Error: Debe seleccionar un médico antes de crear el informe.');
       return;
     }
 
@@ -225,9 +239,18 @@ export class InformeMedicoFormComponent implements OnInit {
     this.error = '';
 
     try {
+      console.log('🚀 Iniciando proceso de guardado...');
+      
       // Aplicar firma automáticamente al contenido antes de guardar
       const contenidoOriginal = this.informeForm.get('contenido')?.value;
       const medicoId = this.informeForm.get('medico_id')?.value;
+      
+      console.log('🔍 Datos del formulario:', {
+        contenidoOriginal: contenidoOriginal ? 'Presente' : 'Ausente',
+        medicoId: medicoId,
+        esEdicion: this.esEdicion,
+        informeId: this.informeId
+      });
       
       if (medicoId && contenidoOriginal) {
         console.log('🔏 Aplicando firma automáticamente al guardar...');
@@ -237,10 +260,13 @@ export class InformeMedicoFormComponent implements OnInit {
       }
 
       const datosFormulario = this.informeForm.value;
+      console.log('📋 Datos del formulario completos:', datosFormulario);
       
       if (this.esEdicion && this.informeId) {
+        console.log('📝 Modo edición - actualizando informe');
         this.actualizarInforme(datosFormulario);
       } else {
+        console.log('➕ Modo creación - creando informe');
         this.crearInforme(datosFormulario);
       }
     } catch (error) {
@@ -261,8 +287,8 @@ export class InformeMedicoFormComponent implements OnInit {
       titulo: datos.titulo,
       tipo_informe: datos.tipo_informe,
       contenido: datos.contenido,
-      paciente_id: datos.paciente_id,
-      medico_id: datos.medico_id,
+      paciente_id: parseInt(datos.paciente_id), // Convertir a número
+      medico_id: parseInt(datos.medico_id), // Asegurar que sea número
       template_id: undefined, // Valor por defecto
       estado: 'finalizado', // Valor por defecto
       fecha_emision: datos.fecha_emision,
@@ -271,15 +297,17 @@ export class InformeMedicoFormComponent implements OnInit {
 
     const informeCompleto = {
       ...informeRequest,
-      clinica_alias: 'femimed', // Valor por defecto
       estado: datos.estado || 'borrador', // Asegurar que el estado no sea undefined
-      fecha_emision: datos.fecha_emision || new Date().toISOString().split('T')[0] // Asegurar que la fecha no sea undefined
+      fecha_emision: datos.fecha_emision || new Date().toISOString().split('T')[0], // Asegurar que la fecha no sea undefined
+      creado_por: parseInt(datos.medico_id) // Agregar campo requerido por el backend
     };
+    
+    // Log temporal para debugging
+    console.log('🔍 Datos que se envían al backend:', JSON.stringify(informeCompleto, null, 2));
     
     this.informeMedicoService.crearInforme(informeCompleto).subscribe({
       next: (response) => {
-        console.log('✅ Informe creado exitosamente:', response);
-        console.log('🔍 Estructura de la respuesta:', JSON.stringify(response, null, 2));
+        this.errorHandler.logInfo('Informe creado exitosamente', response);
         this.guardando = false;
         
         // Verificar que el ID existe antes de navegar
@@ -296,13 +324,18 @@ export class InformeMedicoFormComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('Error creando informe:', error);
+        this.errorHandler.logError(error, 'crear informe médico');
         this.error = 'Error creando el informe médico';
         this.guardando = false;
         
-        // Mostrar alert con el error específico
-        const errorMessage = error?.error?.message || error?.message || 'Error desconocido al crear el informe';
-        alert(`❌ Error creando informe médico:\n\n${errorMessage}\n\nPor favor, intenta de nuevo.`);
+        // Log temporal para debugging del error
+        console.log('❌ Error completo del backend:', error);
+        console.log('❌ Error body:', error.error);
+        console.log('❌ Error message:', error.message);
+        
+        // Mostrar alert con mensaje seguro
+        const safeMessage = this.errorHandler.getSafeErrorMessage(error, 'crear informe médico');
+        alert(safeMessage);
       }
     });
   }
@@ -403,8 +436,7 @@ export class InformeMedicoFormComponent implements OnInit {
       try {
         console.log('📡 Llamando al servicio contextual...');
         this.datosContextuales = await this.contextualDataService.obtenerDatosContextualesSeguro(pacienteId, medicoId);
-        console.log('📊 Datos contextuales obtenidos:', this.datosContextuales);
-        console.log('🔍 Estructura completa de datos:', JSON.stringify(this.datosContextuales, null, 2));
+        this.errorHandler.logInfo('Datos contextuales obtenidos');
         
         if (this.datosContextuales) {
           this.sugerenciasDisponibles = this.contextualDataService.tieneSugerencias(this.datosContextuales);
@@ -694,6 +726,29 @@ export class InformeMedicoFormComponent implements OnInit {
    */
   onMedicoSeleccionado(): void {
     this.cargarDatosContextuales();
+  }
+
+  /**
+   * Maneja el cambio de especialidad (solo para admin/secretaria)
+   */
+  onEspecialidadSeleccionada(): void {
+    const especialidadId = this.especialidadSeleccionada;
+    if (especialidadId) {
+      this.medicoService.getMedicosByEspecialidad(especialidadId).subscribe({
+        next: (response: any) => {
+          this.medicosFiltrados = response.data || [];
+          // Limpiar selección de médico
+          this.informeForm.patchValue({ medico_id: '' });
+        },
+        error: (error: any) => {
+          console.error('Error cargando médicos por especialidad:', error);
+          this.medicosFiltrados = [];
+        }
+      });
+    } else {
+      this.medicosFiltrados = [];
+      this.informeForm.patchValue({ medico_id: '' });
+    }
   }
 
   /**

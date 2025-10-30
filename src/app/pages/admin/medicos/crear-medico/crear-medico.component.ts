@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { MedicoService, Medico } from '../../../../services/medico.service';
 import { EspecialidadService, Especialidad } from '../../../../services/especialidad.service';
 import { FirmaService } from '../../../../services/firma.service';
+import { ErrorHandlerService } from '../../../../services/error-handler.service';
 
 @Component({
   selector: 'app-crear-medico',
@@ -48,7 +49,8 @@ export class CrearMedicoComponent implements OnInit {
     private medicoService: MedicoService,
     private especialidadService: EspecialidadService,
     private firmaService: FirmaService,
-    private router: Router
+    private router: Router,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   ngOnInit() {
@@ -63,7 +65,7 @@ export class CrearMedicoComponent implements OnInit {
         }
       },
       error: (error: any) => {
-        console.error('Error loading especialidades:', error);
+        this.errorHandler.logError(error, 'cargar especialidades');
         this.showSnackbarMessage('Error cargando especialidades', 'error');
       }
     });
@@ -118,8 +120,7 @@ export class CrearMedicoComponent implements OnInit {
           this.saving = false;
         },
         error: (error) => {
-          console.error('Error creating medico:', error);
-          console.error('Error details:', error.error);
+          this.errorHandler.logError(error, 'crear médico');
           
           // Manejar errores específicos del backend
           let errorMessage = '❌ Error al crear el médico. Por favor, intente nuevamente.';
@@ -234,7 +235,7 @@ export class CrearMedicoComponent implements OnInit {
         this.uploadingFirma = false;
       },
       error: (error) => {
-        console.error('Error uploading firma after create:', error);
+        this.errorHandler.logError(error, 'subir firma digital después de crear');
         this.showSnackbarMessage(
           `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} creado exitosamente. Error al subir firma digital.`,
           'success'
@@ -281,7 +282,7 @@ export class CrearMedicoComponent implements OnInit {
             this.emailChecked = true;
           },
           error: (error) => {
-            console.error('Error validating email:', error);
+            this.errorHandler.logError(error, 'validar email');
             this.emailExists = false;
             this.emailChecked = true;
           }
@@ -316,7 +317,7 @@ export class CrearMedicoComponent implements OnInit {
             this.cedulaChecked = true;
           },
           error: (error) => {
-            console.error('Error validating cedula:', error);
+            this.errorHandler.logError(error, 'validar cédula');
             this.cedulaExists = false;
             this.cedulaChecked = true;
           }

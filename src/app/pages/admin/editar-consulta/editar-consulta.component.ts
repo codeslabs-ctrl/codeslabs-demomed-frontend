@@ -6,6 +6,7 @@ import { ConsultaService } from '../../../services/consulta.service';
 import { PatientService } from '../../../services/patient.service';
 import { MedicoService } from '../../../services/medico.service';
 import { AuthService } from '../../../services/auth.service';
+import { ErrorHandlerService } from '../../../services/error-handler.service';
 import { ConsultaFormData, ConsultaWithDetails } from '../../../models/consulta.model';
 import { Patient } from '../../../models/patient.model';
 import { Medico } from '../../../services/medico.service';
@@ -566,7 +567,8 @@ export class EditarConsultaComponent implements OnInit {
     private medicoService: MedicoService,
     private authService: AuthService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   ngOnInit(): void {
@@ -645,8 +647,8 @@ export class EditarConsultaComponent implements OnInit {
         this.loading = false;
       },
       error: (error) => {
-        console.error('❌ Error cargando consulta:', error);
-        this.error = error.error?.message || 'Error al cargar la consulta';
+        this.errorHandler.logError(error, 'cargar consulta');
+        this.error = this.errorHandler.getSafeErrorMessage(error, 'cargar consulta');
         this.loading = false;
       }
     });
@@ -659,7 +661,7 @@ export class EditarConsultaComponent implements OnInit {
         console.log('📋 Pacientes cargados:', this.pacientes.length);
       },
       error: (error: any) => {
-        console.error('Error loading pacientes:', error);
+        this.errorHandler.logError(error, 'cargar pacientes');
       }
     });
   }
@@ -671,7 +673,7 @@ export class EditarConsultaComponent implements OnInit {
         console.log('👨‍⚕️ Médicos cargados:', this.medicos.length);
       },
       error: (error) => {
-        console.error('Error loading medicos:', error);
+        this.errorHandler.logError(error, 'cargar médicos');
       }
     });
   }
@@ -714,13 +716,15 @@ export class EditarConsultaComponent implements OnInit {
           alert('✅ Consulta actualizada exitosamente\n\nLos cambios han sido guardados correctamente.');
           this.router.navigate(['/admin/consultas']);
         } else {
-          alert('❌ Error al actualizar la consulta\n\n' + ((response as any).error?.message || 'Error desconocido') + '\n\nPor favor, intente nuevamente o contacte al administrador.');
+          const errorMessage = this.errorHandler.getSafeErrorMessage(response, 'actualizar consulta');
+          alert(errorMessage);
         }
         this.isSubmitting = false;
       },
       error: (error) => {
-        console.error('Error updating consulta:', error);
-        alert('❌ Error al actualizar la consulta\n\n' + (error.error?.message || 'Error de conexión') + '\n\nPor favor, verifique su conexión e intente nuevamente.');
+        this.errorHandler.logError(error, 'actualizar consulta');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar consulta');
+        alert(errorMessage);
         this.isSubmitting = false;
       }
     });

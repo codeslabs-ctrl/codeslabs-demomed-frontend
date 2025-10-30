@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ArchivoService } from '../../services/archivo.service';
+import { ErrorHandlerService } from '../../services/error-handler.service';
 import { ArchivoAnexo, ArchivoFormData } from '../../models/archivo.model';
 
 @Component({
@@ -397,7 +398,10 @@ export class FileUploadComponent implements OnInit {
   isUploading: boolean = false;
   errorMessage: string = '';
 
-  constructor(private archivoService: ArchivoService) {}
+  constructor(
+    private archivoService: ArchivoService,
+    private errorHandler: ErrorHandlerService
+  ) {}
 
   ngOnInit() {
     // Solo cargar archivos si hay un historiaId válido
@@ -414,7 +418,7 @@ export class FileUploadComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('Error loading archivos:', error);
+        this.errorHandler.logError(error, 'cargar archivos');
         this.errorMessage = 'Error al cargar los archivos';
       }
     });
@@ -483,7 +487,7 @@ export class FileUploadComponent implements OnInit {
         this.isUploading = false;
       },
       error: (error) => {
-        console.error('Error uploading files:', error);
+        this.errorHandler.logError(error, 'subir archivos');
         this.errorMessage = 'Error al subir los archivos';
         this.isUploading = false;
       }
@@ -519,7 +523,7 @@ export class FileUploadComponent implements OnInit {
         document.body.removeChild(a);
       },
       error: (error) => {
-        console.error('Error downloading file:', error);
+        this.errorHandler.logError(error, 'descargar archivo');
         this.errorMessage = 'Error al descargar el archivo';
       }
     });
@@ -535,7 +539,7 @@ export class FileUploadComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error('Error deleting file:', error);
+          this.errorHandler.logError(error, 'eliminar archivo');
           this.errorMessage = 'Error al eliminar el archivo';
         }
       });

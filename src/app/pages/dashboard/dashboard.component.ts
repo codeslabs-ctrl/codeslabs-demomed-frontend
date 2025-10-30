@@ -6,6 +6,7 @@ import { PatientService } from '../../services/patient.service';
 import { RemisionService } from '../../services/remision.service';
 import { AuthService } from '../../services/auth.service';
 import { ConsultaService } from '../../services/consulta.service';
+import { ErrorHandlerService } from '../../services/error-handler.service';
 import { FinalizarConsultaModalComponent } from '../../components/finalizar-consulta-modal/finalizar-consulta-modal.component';
 import { ServiciosService, FinalizarConsultaRequest } from '../../services/servicios.service';
 import { Patient } from '../../models/patient.model';
@@ -1599,7 +1600,8 @@ export class DashboardComponent implements OnInit {
     private authService: AuthService,
     private consultaService: ConsultaService,
     private serviciosService: ServiciosService,
-    private router: Router
+    private router: Router,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   ngOnInit(): void {
@@ -1638,7 +1640,7 @@ export class DashboardComponent implements OnInit {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading dashboard data:', error);
+          this.errorHandler.logError(error, 'cargar datos del dashboard');
           this.loading = false;
         }
       });
@@ -1662,7 +1664,7 @@ export class DashboardComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('❌ Error loading consultas del día:', error);
+        this.errorHandler.logError(error, 'cargar consultas del día');
         this.loadingConsultas = false;
       }
     });
@@ -1801,7 +1803,7 @@ export class DashboardComponent implements OnInit {
       },
       error: (error: any) => {
         this.isSubmitting = false;
-        console.error('Error finalizando consulta:', error);
+        this.errorHandler.logError(error, 'finalizar consulta');
         alert('Error al finalizar la consulta');
       }
     });
@@ -1841,8 +1843,9 @@ export class DashboardComponent implements OnInit {
         this.isSubmitting = false;
       },
       error: (error) => {
-        console.error('Error reagendando consulta:', error);
-        alert('❌ Error al reagendar la consulta\n\nPor favor, verifique su conexión e intente nuevamente.');
+        this.errorHandler.logError(error, 'reagendar consulta');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'reagendar consulta');
+        alert(errorMessage);
         this.isSubmitting = false;
       }
     });
@@ -1864,8 +1867,9 @@ export class DashboardComponent implements OnInit {
         this.loadConsultasDelDia();
       },
       error: (error) => {
-        console.error('Error finalizando consulta:', error);
-        alert('❌ Error al finalizar la consulta\n\nPor favor, verifique su conexión e intente nuevamente. Si el problema persiste, contacte al administrador del sistema.');
+        this.errorHandler.logError(error, 'finalizar consulta');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'finalizar consulta');
+        alert(errorMessage);
       }
     });
   }
@@ -1889,8 +1893,9 @@ export class DashboardComponent implements OnInit {
         this.isSubmitting = false;
       },
       error: (error) => {
-        console.error('Error cancelando consulta:', error);
-        alert('❌ Error al cancelar la consulta\n\nPor favor, verifique su conexión e intente nuevamente. Si el problema persiste, contacte al administrador del sistema.');
+        this.errorHandler.logError(error, 'cancelar consulta');
+        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'cancelar consulta');
+        alert(errorMessage);
         this.isSubmitting = false;
       }
     });

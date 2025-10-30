@@ -4,6 +4,7 @@ import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { PatientService } from '../../services/patient.service';
 import { AuthService } from '../../services/auth.service';
+import { ErrorHandlerService } from '../../services/error-handler.service';
 import { Patient } from '../../models/patient.model';
 import { User } from '../../models/user.model';
 
@@ -48,7 +49,8 @@ export class PatientFormComponent implements OnInit {
     private patientService: PatientService,
     private authService: AuthService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private errorHandler: ErrorHandlerService
   ) {}
 
   ngOnInit() {
@@ -83,10 +85,10 @@ export class PatientFormComponent implements OnInit {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading patient:', error);
+          this.errorHandler.logError(error, 'cargar paciente');
           this.loading = false;
-          const errorMessage = error?.error?.message || error?.message || 'Error de conexión cargando paciente';
-          alert(`❌ Error cargando paciente:\n\n${errorMessage}\n\nPor favor, verifique su conexión e intente nuevamente.`);
+          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'cargar paciente');
+          alert(errorMessage);
         }
       });
     }
@@ -147,7 +149,7 @@ export class PatientFormComponent implements OnInit {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error creating patient:', error);
+          this.errorHandler.logError(error, 'crear paciente');
           this.loading = false;
           
           // Manejar errores específicos del backend
@@ -169,7 +171,8 @@ export class PatientFormComponent implements OnInit {
             this.cedulaChecked = true;
             alert('❌ Error: La cédula ya está registrada en el sistema.');
           } else {
-            alert(`❌ Error creando paciente:\n\n${errorMessage}\n\nPor favor, verifique su conexión e intente nuevamente.`);
+            const safeErrorMessage = this.errorHandler.getSafeErrorMessage(error, 'crear paciente');
+            alert(safeErrorMessage);
           }
         }
       });
@@ -204,10 +207,10 @@ export class PatientFormComponent implements OnInit {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error updating patient:', error);
+          this.errorHandler.logError(error, 'actualizar paciente');
           this.loading = false;
-          const errorMessage = error?.error?.message || error?.message || 'Error de conexión actualizando paciente';
-          alert(`❌ Error actualizando paciente:\n\n${errorMessage}\n\nPor favor, verifique su conexión e intente nuevamente.`);
+          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar paciente');
+          alert(errorMessage);
         }
       });
   }
@@ -245,7 +248,7 @@ export class PatientFormComponent implements OnInit {
             this.emailChecked = true;
           },
           error: (error) => {
-            console.error('Error validating email:', error);
+            this.errorHandler.logError(error, 'validar email');
             this.emailExists = false;
             this.emailChecked = true;
           }
@@ -285,7 +288,7 @@ export class PatientFormComponent implements OnInit {
             this.cedulaChecked = true;
           },
           error: (error) => {
-            console.error('Error validating cedula:', error);
+            this.errorHandler.logError(error, 'validar cédula');
             this.cedulaExists = false;
             this.cedulaChecked = true;
           }

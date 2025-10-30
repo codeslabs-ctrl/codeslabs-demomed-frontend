@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { ErrorHandlerService } from '../../services/error-handler.service';
 
 @Component({
   selector: 'app-login',
@@ -23,7 +24,8 @@ export class LoginComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private errorHandler: ErrorHandlerService
   ) {
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
@@ -56,8 +58,8 @@ export class LoginComponent implements OnInit, OnDestroy {
         },
         error: (error) => {
           this.isLoading = false;
-          this.errorMessage = this.getErrorMessage(error);
-          console.error('Error de login:', error);
+          this.errorHandler.logError(error, 'iniciar sesión');
+          this.errorMessage = this.getLoginErrorMessage(error);
         }
       });
     }
@@ -67,21 +69,20 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.showPassword = !this.showPassword;
   }
 
-  private getErrorMessage(error: any): string {
-    console.log('🔍 Error details:', error);
-    
-    // Error de red/conexión
-    if (error.status === 0) {
-      return '❌ Error de conexión. Verifica que el servidor esté funcionando.';
+  private getLoginErrorMessage(error: any): string {
+    // Error de rate limiting - manejo específico para login
+    if (error.status === 401 && error.error?.message && error.error.message.includes('Demasiados intentos')) {
+      this.startRateLimitCountdown();
+      return '🚫 Demasiados intentos de login. Debes esperar 15 minutos antes de intentar nuevamente.';
     }
     
-    // Error 401 - No autorizado
+    if (error.status === 429) {
+      this.startRateLimitCountdown();
+      return '🚫 Demasiados intentos de login. Debes esperar 15 minutos antes de intentar nuevamente.';
+    }
+    
+    // Error 401 - No autorizado (sin rate limiting)
     if (error.status === 401) {
-      // Verificar si es un error de rate limiting
-      if (error.error?.message && error.error.message.includes('Demasiados intentos')) {
-        this.startRateLimitCountdown();
-        return '🚫 Demasiados intentos de login. Debes esperar 15 minutos antes de intentar nuevamente.';
-      }
       return '❌ Usuario o contraseña incorrectos. Verifica tus credenciales.';
     }
     
@@ -90,55 +91,8 @@ export class LoginComponent implements OnInit, OnDestroy {
       return '❌ Acceso denegado. Tu cuenta puede estar deshabilitada.';
     }
     
-    // Error 429 - Too Many Requests (Rate Limiting)
-    if (error.status === 429) {
-      this.startRateLimitCountdown();
-      return '🚫 Demasiados intentos de login. Debes esperar 15 minutos antes de intentar nuevamente.';
-    }
-    
-    // Error 404 - No encontrado
-    if (error.status === 404) {
-      return '❌ Servicio no disponible. Contacta al administrador.';
-    }
-    
-    // Error 500 - Error del servidor
-    if (error.status === 500) {
-      return '❌ Error interno del servidor. Intenta nuevamente más tarde.';
-    }
-    
-    // Error 503 - Servicio no disponible
-    if (error.status === 503) {
-      return '❌ Servicio temporalmente no disponible. Intenta más tarde.';
-    }
-    
-    // Error de timeout
-    if (error.name === 'TimeoutError') {
-      return '❌ Tiempo de espera agotado. Verifica tu conexión a internet.';
-    }
-    
-    // Error de validación del backend
-    if (error.error?.message) {
-      return `❌ ${error.error.message}`;
-    }
-    
-    // Error de validación de campos
-    if (error.error?.errors) {
-      const firstError = error.error.errors[0];
-      return `❌ ${firstError.message || firstError.msg || 'Error de validación'}`;
-    }
-    
-    // Error genérico con status
-    if (error.status) {
-      return `❌ Error del servidor (${error.status}). Intenta nuevamente.`;
-    }
-    
-    // Error de conexión genérico
-    if (error.message) {
-      return `❌ ${error.message}`;
-    }
-    
-    // Error completamente desconocido
-    return '❌ Error inesperado. Verifica tu conexión e intenta nuevamente.';
+    // Para otros errores, usar el ErrorHandlerService
+    return this.errorHandler.getSafeErrorMessage(error, 'iniciar sesión');
   }
 
   private startRateLimitCountdown() {
