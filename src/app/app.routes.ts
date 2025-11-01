@@ -176,6 +176,11 @@ export const routes: Routes = [
     canActivate: [FinanzasGuard]
   },
   {
+    path: 'admin/importacion',
+    loadComponent: () => import('./pages/admin/importacion/importacion.component').then(m => m.ImportacionComponent),
+    canActivate: [adminMedicoGuard]
+  },
+  {
     path: 'statistics',
     loadComponent: () => import('./pages/statistics/statistics.component').then(m => m.StatisticsComponent),
     canActivate: [authGuard]

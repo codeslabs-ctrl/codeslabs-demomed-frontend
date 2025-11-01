@@ -22,7 +22,9 @@ export class EditarMedicoComponent implements OnInit {
     cedula: '',
     email: '',
     telefono: '',
-    especialidad_id: 0
+    especialidad_id: 0,
+    mpps: '',
+    cm: ''
   };
 
   especialidades: Especialidad[] = [];
@@ -119,7 +121,9 @@ export class EditarMedicoComponent implements OnInit {
         cedula: this.medicoData.cedula,
         email: this.medicoData.email!,
         telefono: this.medicoData.telefono!,
-        especialidad_id: Number(this.medicoData.especialidad_id)
+        especialidad_id: Number(this.medicoData.especialidad_id),
+        mpps: this.medicoData.mpps || undefined,
+        cm: this.medicoData.cm || undefined
       };
       
       this.medicoService.updateMedico(this.medicoData.id!, medicoDataToSend).subscribe({

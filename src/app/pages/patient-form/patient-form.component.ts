@@ -141,7 +141,15 @@ export class PatientFormComponent implements OnInit {
           if (response.success) {
             this.patientCreated = true;
             this.showSuccessActions = true;
-            this.askForConsulta();
+            // Obtener el ID del paciente recién creado
+            // La respuesta viene como: { success: true, data: { message: '...', id: 123, ... } }
+            const newPatientId = (response.data as any)?.id;
+            console.log('🔍 ID del paciente obtenido:', newPatientId);
+            // Guardar el ID para usarlo en la navegación
+            if (newPatientId) {
+              this.patientId = newPatientId;
+            }
+            this.askForConsulta(newPatientId);
           } else {
             const errorMessage = (response as any).error?.message || 'Error creando paciente';
             alert(`❌ Error creando paciente:\n\n${errorMessage}\n\nPor favor, intente nuevamente.`);
@@ -215,16 +223,50 @@ export class PatientFormComponent implements OnInit {
       });
   }
 
-  askForConsulta() {
-    const userWantsConsulta = confirm('¿Desea agendar una consulta médica para este paciente?');
+  askForConsulta(patientId?: number | null) {
+    const patientName = `${this.patient.nombres} ${this.patient.apellidos}`.trim();
+    const message = `✅ Paciente registrado exitosamente.\n\n` +
+                   `Paciente: ${patientName || 'Nuevo paciente'}\n\n` +
+                   `¿Desea agendar una consulta médica ahora?\n\n` +
+                   `• Aceptar: Será redirigido al formulario de nueva consulta\n` +
+                   `• Cancelar: Volverá a la lista de pacientes`;
+    
+    console.log('🔍 Llamando a askForConsulta con patientId:', patientId);
+    console.log('🔍 this.patientId:', this.patientId);
+    
+    const userWantsConsulta = confirm(message);
+    console.log('🔍 Usuario quiere consulta:', userWantsConsulta);
+    
     if (userWantsConsulta) {
       // Redirigir a nueva consulta con el paciente pre-seleccionado
-      this.router.navigate(['/admin/nueva-consulta'], { 
-        queryParams: { paciente_id: this.patientId } 
-      });
+      const idToUse = patientId || this.patientId;
+      console.log('🔍 ID a usar para nueva consulta:', idToUse);
+      
+      if (idToUse) {
+        console.log('📍 Redirigiendo a /admin/consultas/nueva con paciente_id:', idToUse);
+        this.router.navigate(['/admin/consultas/nueva'], { 
+          queryParams: { paciente_id: idToUse } 
+        }).then(() => {
+          console.log('✅ Navegación completada a nueva consulta');
+        }).catch((error) => {
+          console.error('❌ Error en navegación:', error);
+        });
+      } else {
+        console.log('⚠️ No hay ID, redirigiendo a nueva consulta sin pre-seleccionar');
+        this.router.navigate(['/admin/consultas/nueva']).then(() => {
+          console.log('✅ Navegación completada a nueva consulta (sin ID)');
+        }).catch((error) => {
+          console.error('❌ Error en navegación:', error);
+        });
+      }
     } else {
       // Redirigir a la lista de pacientes
-      this.router.navigate(['/patients']);
+      console.log('📍 Redirigiendo a /patients (lista de pacientes)');
+      this.router.navigate(['/patients']).then(() => {
+        console.log('✅ Navegación completada a lista de pacientes');
+      }).catch((error) => {
+        console.error('❌ Error en navegación:', error);
+      });
     }
   }
 
@@ -237,18 +279,38 @@ export class PatientFormComponent implements OnInit {
     if (this.patient.email && this.patient.email.length > 0) {
       clearTimeout(this.emailValidationTimeout);
       this.emailValidationTimeout = setTimeout(() => {
-        this.patientService.getPatientByEmail(this.patient.email!).subscribe({
+        this.patientService.checkEmailAvailability(this.patient.email!).subscribe({
           next: (response) => {
-            // Si es modo edición, verificar que no sea el paciente actual
-            if (this.isEdit && this.patientId) {
-              this.emailExists = response.success && response.data !== null && response.data.id !== this.patientId;
+            // response.exists = true significa que el email ya está registrado
+            // En modo edición, debemos verificar que no sea el paciente actual
+            if (this.isEdit && this.patientId && response.exists) {
+              // Si estamos editando, necesitamos verificar si el email pertenece al paciente actual
+              // Para esto, obtenemos el paciente por email para comparar IDs
+              this.patientService.getPatientByEmail(this.patient.email!).subscribe({
+                next: (patientResponse) => {
+                  if (patientResponse.success && patientResponse.data) {
+                    this.emailExists = patientResponse.data.id !== this.patientId;
+                  } else {
+                    this.emailExists = false;
+                  }
+                  this.emailChecked = true;
+                },
+                error: () => {
+                  // Si hay error, asumimos que el email está disponible
+                  this.emailExists = false;
+                  this.emailChecked = true;
+                }
+              });
             } else {
-              this.emailExists = response.success && response.data !== null;
+              // En modo creación, si exists es true, el email está duplicado
+              this.emailExists = response.exists;
+              this.emailChecked = true;
             }
-            this.emailChecked = true;
           },
           error: (error) => {
+            // Solo loguear errores reales (500, problemas de red, etc.)
             this.errorHandler.logError(error, 'validar email');
+            // En caso de error, asumimos que el email está disponible
             this.emailExists = false;
             this.emailChecked = true;
           }
@@ -288,7 +350,11 @@ export class PatientFormComponent implements OnInit {
             this.cedulaChecked = true;
           },
           error: (error) => {
-            this.errorHandler.logError(error, 'validar cédula');
+            // Solo loguear errores reales (no 404, que es esperado cuando no hay resultados)
+            if (error.status !== 404 && error.status !== 0) {
+              this.errorHandler.logError(error, 'validar cédula');
+            }
+            // Si hay error o no hay resultados, la cédula está disponible
             this.cedulaExists = false;
             this.cedulaChecked = true;
           }

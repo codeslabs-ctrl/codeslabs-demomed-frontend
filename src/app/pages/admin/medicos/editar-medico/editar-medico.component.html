@@ -83,6 +83,26 @@
             placeholder="Ingrese el teléfono">
         </div>
         <div class="form-group">
+          <label class="form-label">MPPS</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="medicoData.mpps"
+            name="mpps"
+            [disabled]="saving"
+            placeholder="Número MPPS">
+        </div>
+        <div class="form-group">
+          <label class="form-label">CM</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="medicoData.cm"
+            name="cm"
+            [disabled]="saving"
+            placeholder="Número CM (Colegio de Médicos)">
+        </div>
+        <div class="form-group">
           <label class="form-label">Especialidad *</label>
           <select 
             class="form-input" 

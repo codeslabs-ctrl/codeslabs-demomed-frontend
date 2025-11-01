@@ -13,6 +13,8 @@ export interface Medico {
   telefono: string;
   especialidad_id: number;
   especialidad_nombre?: string;
+  mpps?: string;
+  cm?: string;
   fecha_creacion?: string;
   fecha_actualizacion?: string;
   firma_digital?: string;

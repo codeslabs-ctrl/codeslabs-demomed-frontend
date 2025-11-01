@@ -15,8 +15,8 @@ export const adminMedicoGuard: CanActivateFn = (route, state) => {
   const currentUser = authService.getCurrentUser();
   console.log('🔐 AdminMedicoGuard: Usuario autenticado, rol:', currentUser?.rol, 'accediendo a:', state.url);
 
-  // Solo permitir acceso a administradores y médicos
-  if (currentUser?.rol !== 'administrador' && currentUser?.rol !== 'medico') {
+  // Permitir acceso a administradores, médicos y secretarias
+  if (currentUser?.rol !== 'administrador' && currentUser?.rol !== 'medico' && currentUser?.rol !== 'secretaria') {
     console.log('🔐 AdminMedicoGuard: Acceso denegado para rol:', currentUser?.rol);
     router.navigate(['/dashboard']);
     return false;

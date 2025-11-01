@@ -34,7 +34,15 @@ export class PatientService {
   }
 
   getPatientByEmail(email: string): Observable<ApiResponse<Patient>> {
-    return this.http.get<ApiResponse<Patient>>(`${APP_CONFIG.API_BASE_URL}${APP_CONFIG.API_ENDPOINTS.PATIENT_BY_EMAIL(email)}`);
+    // Codificar el email para la URL (especialmente el símbolo @)
+    const encodedEmail = encodeURIComponent(email);
+    return this.http.get<ApiResponse<Patient>>(`${APP_CONFIG.API_BASE_URL}${APP_CONFIG.API_ENDPOINTS.PATIENT_BY_EMAIL(encodedEmail)}`);
+  }
+
+  checkEmailAvailability(email: string): Observable<{ exists: boolean }> {
+    return this.http.get<{ exists: boolean }>(`${this.baseUrl}/check-email`, {
+      params: { email }
+    });
   }
 
   createPatient(patient: Omit<Patient, 'id' | 'fecha_creacion' | 'fecha_actualizacion'>): Observable<ApiResponse<Patient>> {
@@ -119,11 +127,5 @@ export class PatientService {
         })
       );
     }
-  }
-
-  checkEmailAvailability(email: string): Observable<{exists: boolean}> {
-    return this.http.get<{exists: boolean}>(`${this.baseUrl}/check-email`, {
-      params: { email }
-    });
   }
 }
