@@ -1,6 +1,9 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.femimed.com/api/v1',
+  // Usar ruta relativa para que Apache haga el proxy automáticamente
+  apiUrl: '/api/v1',
+  // O usar el dominio completo si prefieres:
+  // apiUrl: 'https://femimed.codes-labs.com/api/v1',
   appName: 'FemiMed Dashboard',
   version: '1.0.0',
   pagination: {
