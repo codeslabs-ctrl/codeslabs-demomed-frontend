@@ -5,12 +5,13 @@ import { tap, map, switchMap, catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { User, LoginResponse } from '../models/user.model';
 import { MedicoService } from './medico.service';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'http://localhost:3000/api/v1';
+  private readonly API_URL = `${environment.apiUrl}`;
   private readonly TOKEN_KEY = 'femimed_token';
   private readonly USER_KEY = 'femimed_user';
 

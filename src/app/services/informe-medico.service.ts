@@ -476,7 +476,7 @@ ${informe.observaciones}` : ''}
    * @returns Observable con el blob del PDF
    */
   generarPDFInforme(informeId: number): Observable<Blob> {
-    return this.http.get(`http://localhost:3000/api/v1/pdf/informe/${informeId}`, { 
+    return this.http.get(`${environment.apiUrl}/pdf/informe/${informeId}`, { 
       responseType: 'blob' 
     });
   }
