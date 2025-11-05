@@ -14,7 +14,7 @@ import { environment } from '../../../environments/environment';
       <div class="reset-password-card">
         <div class="reset-password-header">
           <div class="logo">
-            <img src="assets/LogoFemiMed.svg" alt="FemiMed Logo" class="logo-image">
+            <img src="assets/logos/femimed/logo.svg" alt="FemiMed Logo" class="logo-image">
             <h2>Restablecer Contraseña</h2>
             <p>Ingresa el código que enviamos a tu email y tu nueva contraseña</p>
           </div>

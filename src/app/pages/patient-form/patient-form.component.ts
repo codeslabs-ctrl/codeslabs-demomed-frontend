@@ -205,22 +205,126 @@ export class PatientFormComponent implements OnInit {
     this.patientService.updatePatient(this.patientId!, updateData)
       .subscribe({
         next: (response) => {
+          this.loading = false;
+          
           if (response.success) {
             alert('✅ Paciente actualizado exitosamente');
             this.router.navigate(['/patients']);
           } else {
+            // Error en la respuesta pero no es excepción HTTP
             const errorMessage = (response as any).error?.message || 'Error actualizando paciente';
-            alert(`❌ Error actualizando paciente:\n\n${errorMessage}\n\nPor favor, intente nuevamente.`);
+            alert(`❌ Error actualizando paciente:\n\n${errorMessage}\n\nPor favor, verifica los datos e intenta nuevamente.`);
+            // NO redirigir, mantener al usuario en la página para que corrija
           }
-          this.loading = false;
         },
         error: (error) => {
-          this.errorHandler.logError(error, 'actualizar paciente');
           this.loading = false;
-          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar paciente');
-          alert(errorMessage);
+          this.errorHandler.logError(error, 'actualizar paciente');
+          
+          // Verificar si es un error de autenticación real (solo si el interceptor no lo manejó)
+          const status = error?.status || error?.error?.status;
+          
+          if (status === 401 || status === 403) {
+            // Verificar si es realmente un error de autenticación o de validación
+            const errorMessage = error?.error?.message || error?.message || '';
+            const isValidationError = this.isValidationErrorMessage(errorMessage);
+            
+            if (isValidationError) {
+              // Es un error de validación que devolvió 401/403 incorrectamente
+              console.log('⚠️ Error parece ser de validación, no de autenticación');
+              const validationMessage = this.extractValidationMessage(errorMessage);
+              alert(`❌ Error de validación:\n\n${validationMessage}\n\nPor favor, corrige los datos e intenta nuevamente.`);
+              // NO redirigir, mantener al usuario en la página
+            } else {
+              // Es un error de autenticación real, el interceptor ya debería haberlo manejado
+              // Pero si llegamos aquí, mostrar mensaje y dejar que el interceptor maneje el logout
+              console.log('🔐 Error de autenticación detectado en componente');
+              alert('❌ Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+              // El interceptor se encargará de redirigir al login
+            }
+          } else if (status === 400 || status === 422) {
+            // Error de validación explícito
+            const validationMessage = this.extractValidationMessage(error?.error?.message || error?.message || '');
+            alert(`❌ Error de validación:\n\n${validationMessage}\n\nPor favor, corrige los datos e intenta nuevamente.`);
+            // NO redirigir, mantener al usuario en la página
+          } else if (status >= 500) {
+            // Error del servidor
+            alert('❌ Error del servidor. Por favor, intenta nuevamente en unos momentos.\n\nSi el problema persiste, contacta al administrador del sistema.');
+            // NO redirigir, mantener al usuario en la página
+          } else if (status === 0) {
+            // Error de red
+            alert('❌ Error de conexión. Por favor, verifica tu conexión a internet e intenta nuevamente.');
+            // NO redirigir, mantener al usuario en la página
+          } else {
+            // Otro tipo de error
+            const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar paciente');
+            alert(`❌ Error actualizando paciente:\n\n${errorMessage}\n\nPor favor, intenta nuevamente.`);
+            // NO redirigir, mantener al usuario en la página
+          }
         }
       });
+  }
+
+  /**
+   * Verifica si un mensaje de error indica un problema de validación
+   */
+  private isValidationErrorMessage(message: string): boolean {
+    if (!message) return false;
+    
+    const validationKeywords = [
+      'email',
+      'cedula',
+      'duplicate',
+      'ya existe',
+      'validation',
+      'validación',
+      'requerido',
+      'required',
+      'inválido',
+      'invalid',
+      'formato',
+      'format',
+      'vacío',
+      'empty',
+      'longitud',
+      'length'
+    ];
+    
+    const lowerMessage = message.toLowerCase();
+    return validationKeywords.some(keyword => lowerMessage.includes(keyword));
+  }
+
+  /**
+   * Extrae un mensaje de validación más claro del error
+   */
+  private extractValidationMessage(errorMessage: string): string {
+    if (!errorMessage) {
+      return 'Los datos proporcionados no son válidos.';
+    }
+    
+    // Mensajes comunes y sus traducciones más claras
+    const messageMap: Record<string, string> = {
+      'email': 'El email ya está registrado en el sistema.',
+      'cedula': 'La cédula ya está registrada en el sistema.',
+      'duplicate': 'Ya existe un registro con estos datos.',
+      'ya existe': 'Ya existe un registro con estos datos.',
+      'requerido': 'Por favor, completa todos los campos requeridos.',
+      'required': 'Por favor, completa todos los campos requeridos.',
+      'inválido': 'Los datos proporcionados no son válidos.',
+      'invalid': 'Los datos proporcionados no son válidos.'
+    };
+    
+    // Buscar coincidencias en el mensaje
+    for (const [key, value] of Object.entries(messageMap)) {
+      if (errorMessage.toLowerCase().includes(key)) {
+        return value;
+      }
+    }
+    
+    // Si no hay coincidencia, devolver el mensaje original (sanitizado)
+    return errorMessage.length > 200 
+      ? errorMessage.substring(0, 200) + '...' 
+      : errorMessage;
   }
 
   askForConsulta(patientId?: number | null) {
