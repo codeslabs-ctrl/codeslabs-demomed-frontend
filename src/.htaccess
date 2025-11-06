@@ -2,11 +2,12 @@
   RewriteEngine On
   
   # Si el archivo o directorio existe, servirlo directamente
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -f [OR]
+  RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -d
+  RewriteRule ^ - [L]
   
-  # Si no existe, redirigir a index.html (para Angular SPA)
-  RewriteRule ^ index.html [L]
+  # Si la ruta solicitada no es un archivo ni un directorio, redirigir a index.html
+  RewriteRule ^ /index.html
 </IfModule>
 
 # Habilitar compresión
