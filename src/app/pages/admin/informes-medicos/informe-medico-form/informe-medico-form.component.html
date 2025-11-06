@@ -29,7 +29,7 @@
   </div>
 
   <!-- Formulario -->
-  <div *ngIf="!cargando" class="form-container">
+  <div *ngIf="!cargando && informeForm" class="form-container">
     <form [formGroup]="informeForm" (ngSubmit)="guardarInforme()">
       <div class="form-section">
         <div class="section-header">
@@ -47,7 +47,7 @@
               </label>
               <input type="text" class="form-input" formControlName="titulo" 
                      placeholder="Ingrese el título del informe médico">
-              <div *ngIf="titulo?.invalid && titulo?.touched" class="error-message">
+              <div *ngIf="titulo && titulo.invalid && titulo.touched" class="error-message">
                 {{ obtenerErrorCampo('titulo') }}
               </div>
             </div>
@@ -63,7 +63,7 @@
                   {{ tipo.texto }}
                 </option>
               </select>
-              <div *ngIf="tipo_informe?.invalid && tipo_informe?.touched" class="error-message">
+              <div *ngIf="tipo_informe && tipo_informe.invalid && tipo_informe.touched" class="error-message">
                 {{ obtenerErrorCampo('tipo_informe') }}
               </div>
             </div>
@@ -81,7 +81,7 @@
                   {{ paciente.nombres }} {{ paciente.apellidos }} - {{ paciente.cedula }}
                 </option>
               </select>
-              <div *ngIf="paciente_id?.invalid && paciente_id?.touched" class="error-message">
+              <div *ngIf="paciente_id && paciente_id.invalid && paciente_id.touched" class="error-message">
                 {{ obtenerErrorCampo('paciente_id') }}
               </div>
             </div>
@@ -92,7 +92,9 @@
                 <i class="fas fa-stethoscope"></i> Especialidad *
               </label>
               <select class="form-input" [(ngModel)]="especialidadSeleccionada" 
-                      (change)="onEspecialidadSeleccionada()" name="especialidad">
+                      (change)="onEspecialidadSeleccionada()" 
+                      [ngModelOptions]="{standalone: true}"
+                      name="especialidad">
                 <option value="">Seleccionar especialidad</option>
                 <option *ngFor="let especialidad of especialidades" [value]="especialidad.id">
                   {{ especialidad.nombre_especialidad }}
@@ -106,14 +108,13 @@
                 <i class="fas fa-user-md"></i> Médico *
                 <span *ngIf="esUsuarioMedico" class="label-info">(Pre-seleccionado)</span>
               </label>
-              <select class="form-input" formControlName="medico_id" (change)="onMedicoSeleccionado()" 
-                      [disabled]="esUsuarioMedico">
+              <select class="form-input" formControlName="medico_id" (change)="onMedicoSeleccionado()">
                 <option value="">Seleccionar médico</option>
                 <option *ngFor="let medico of medicosFiltrados" [value]="medico.id">
                   {{ medico.nombres }} {{ medico.apellidos }}
                 </option>
               </select>
-              <div *ngIf="medico_id?.invalid && medico_id?.touched" class="error-message">
+              <div *ngIf="medico_id && medico_id.invalid && medico_id.touched" class="error-message">
                 {{ obtenerErrorCampo('medico_id') }}
               </div>
               <div *ngIf="esUsuarioMedico" class="form-help">
@@ -135,7 +136,7 @@
                 <i class="fas fa-calendar"></i> Fecha de Emisión *
               </label>
               <input type="date" class="form-input" formControlName="fecha_emision">
-              <div *ngIf="fecha_emision?.invalid && fecha_emision?.touched" class="error-message">
+              <div *ngIf="fecha_emision && fecha_emision.invalid && fecha_emision.touched" class="error-message">
                 {{ obtenerErrorCampo('fecha_emision') }}
               </div>
             </div>
@@ -163,7 +164,7 @@
                 (valueChange)="onContenidoChange($event)">
               </app-rich-text-editor>
               <div class="form-group-footer">
-                <div *ngIf="contenido?.invalid && contenido?.touched" class="error-message">
+                <div *ngIf="contenido && contenido.invalid && contenido.touched" class="error-message">
                   {{ obtenerErrorCampo('contenido') }}
                 </div>
               </div>
@@ -191,7 +192,7 @@
                 (valueChange)="onObservacionesChange($event)">
               </app-rich-text-editor>
               <div class="form-group-footer">
-                <div *ngIf="observaciones?.invalid && observaciones?.touched" class="error-message">
+                <div *ngIf="observaciones && observaciones.invalid && observaciones.touched" class="error-message">
                   {{ obtenerErrorCampo('observaciones') }}
                 </div>
               </div>

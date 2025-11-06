@@ -76,6 +76,14 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
+      // Errores de rate limiting (429) - No cerrar sesión, mostrar mensaje
+      if (status === 429) {
+        console.log('⚠️ ErrorInterceptor: Error 429 (Rate Limit), NO cerrando sesión');
+        const rateLimitMessage = error.error?.message || errorMessage || 'Demasiados intentos. Por favor, espera unos minutos.';
+        snackbarService.showError(rateLimitMessage, 8000);
+        return throwError(() => error);
+      }
+
       // Errores de autorización (403) - No cerrar sesión, solo propagar el error
       if (status === 403) {
         console.log('⚠️ ErrorInterceptor: Error 403 (Prohibido), NO cerrando sesión');

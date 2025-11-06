@@ -105,11 +105,31 @@ export class InformeMedicoFormComponent implements OnInit {
         this.esUsuarioMedico = true;
         this.medicoActual = user;
         this.errorHandler.logInfo('Usuario médico detectado');
+        // Deshabilitar el control de médico ya que está pre-seleccionado
+        this.informeForm.get('medico_id')?.disable();
       } else {
         this.esUsuarioMedico = false;
         this.errorHandler.logInfo('Usuario no médico detectado', { rol: user?.rol });
+        // Habilitar el control de médico (se deshabilitará si no hay médicos disponibles)
+        this.actualizarEstadoControlMedico();
       }
     });
+  }
+  
+  /**
+   * Actualiza el estado disabled del control médico según disponibilidad
+   */
+  private actualizarEstadoControlMedico(): void {
+    const medicoControl = this.informeForm.get('medico_id');
+    if (!medicoControl) return;
+    
+    const sinMedicosDisponibles = !this.medicosFiltrados || this.medicosFiltrados.length === 0;
+    
+    if (sinMedicosDisponibles && !this.esUsuarioMedico) {
+      medicoControl.disable();
+    } else if (!this.esUsuarioMedico) {
+      medicoControl.enable();
+    }
   }
 
   cargarDatosIniciales(): void {
@@ -135,10 +155,13 @@ export class InformeMedicoFormComponent implements OnInit {
       this.informeForm.patchValue({
         medico_id: this.medicoActual.medico_id
       });
+      // El control ya está deshabilitado en verificarUsuarioActual()
     } else {
       // Si es admin/secretaria, no cargar médicos hasta seleccionar especialidad
       this.medicos = [];
       this.medicosFiltrados = [];
+      // Deshabilitar el control hasta que haya médicos disponibles
+      this.actualizarEstadoControlMedico();
     }
 
     // Cargar especialidades
@@ -217,6 +240,11 @@ export class InformeMedicoFormComponent implements OnInit {
   async guardarInforme(): Promise<void> {
     console.log('🚀 Iniciando guardarInforme...');
     
+    if (!this.informeForm) {
+      console.error('❌ Formulario no inicializado');
+      return;
+    }
+    
     if (this.informeForm.invalid) {
       console.log('❌ Formulario inválido');
       this.marcarCamposComoTocados();
@@ -259,7 +287,8 @@ export class InformeMedicoFormComponent implements OnInit {
         console.log('✅ Firma aplicada automáticamente');
       }
 
-      const datosFormulario = this.informeForm.value;
+      // Usar getRawValue() para obtener valores incluso de controles deshabilitados
+      const datosFormulario = this.informeForm.getRawValue();
       console.log('📋 Datos del formulario completos:', datosFormulario);
       
       if (this.esEdicion && this.informeId) {
@@ -272,7 +301,8 @@ export class InformeMedicoFormComponent implements OnInit {
     } catch (error) {
       console.error('❌ Error aplicando firma automática:', error);
       // Continuar con el guardado aunque falle la firma
-      const datosFormulario = this.informeForm.value;
+      // Usar getRawValue() para obtener valores incluso de controles deshabilitados
+      const datosFormulario = this.informeForm.getRawValue();
       
       if (this.esEdicion && this.informeId) {
         this.actualizarInforme(datosFormulario);
@@ -372,14 +402,20 @@ export class InformeMedicoFormComponent implements OnInit {
 
 
   marcarCamposComoTocados(): void {
+    if (!this.informeForm) return;
     Object.keys(this.informeForm.controls).forEach(key => {
-      this.informeForm.get(key)?.markAsTouched();
+      const control = this.informeForm.get(key);
+      if (control) {
+        control.markAsTouched();
+      }
     });
   }
 
   obtenerErrorCampo(campo: string): string {
+    if (!this.informeForm) return '';
     const control = this.informeForm.get(campo);
-    if (control?.errors && control.touched) {
+    if (!control) return '';
+    if (control.errors && control.touched) {
       if (control.errors['required']) {
         return `${this.obtenerNombreCampo(campo)} es requerido`;
       }
@@ -739,15 +775,19 @@ export class InformeMedicoFormComponent implements OnInit {
           this.medicosFiltrados = response.data || [];
           // Limpiar selección de médico
           this.informeForm.patchValue({ medico_id: '' });
+          // Actualizar estado disabled del control
+          this.actualizarEstadoControlMedico();
         },
         error: (error: any) => {
           console.error('Error cargando médicos por especialidad:', error);
           this.medicosFiltrados = [];
+          this.actualizarEstadoControlMedico();
         }
       });
     } else {
       this.medicosFiltrados = [];
       this.informeForm.patchValue({ medico_id: '' });
+      this.actualizarEstadoControlMedico();
     }
   }
 
@@ -791,13 +831,13 @@ export class InformeMedicoFormComponent implements OnInit {
     return 0;
   }
 
-  // Getters para validación
-  get titulo() { return this.informeForm.get('titulo'); }
-  get tipo_informe() { return this.informeForm.get('tipo_informe'); }
-  get contenido() { return this.informeForm.get('contenido'); }
-  get paciente_id() { return this.informeForm.get('paciente_id'); }
-  get medico_id() { return this.informeForm.get('medico_id'); }
-  get estado() { return this.informeForm.get('estado'); }
-  get fecha_emision() { return this.informeForm.get('fecha_emision'); }
-  get observaciones() { return this.informeForm.get('observaciones'); }
+  // Getters para validación (con verificación null-safe)
+  get titulo() { return this.informeForm?.get('titulo'); }
+  get tipo_informe() { return this.informeForm?.get('tipo_informe'); }
+  get contenido() { return this.informeForm?.get('contenido'); }
+  get paciente_id() { return this.informeForm?.get('paciente_id'); }
+  get medico_id() { return this.informeForm?.get('medico_id'); }
+  get estado() { return this.informeForm?.get('estado'); }
+  get fecha_emision() { return this.informeForm?.get('fecha_emision'); }
+  get observaciones() { return this.informeForm?.get('observaciones'); }
 }

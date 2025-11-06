@@ -26,11 +26,11 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
         <p *ngIf="!currentUser">Gestion de pacientes y consultas médicas</p>
         <p class="doctor-info" *ngIf="currentUser">
           <span *ngIf="currentUser.rol === 'administrador'">
-            👑 {{ getDoctorFullName() }}
+            👑 {{ getDoctorFullName() || currentUser.username || 'Administrador' }}
             <span *ngIf="currentUser.especialidad" class="specialty">- {{ currentUser.especialidad }}</span>
           </span>
           <span *ngIf="currentUser.rol === 'medico'">
-            👨‍⚕️ {{ getDoctorFullName() }}
+            👨‍⚕️ {{ getDoctorFullName() || currentUser.username || 'Médico' }}
             <span *ngIf="currentUser.especialidad" class="specialty">- {{ currentUser.especialidad }}</span>
           </span>
           <span *ngIf="currentUser.rol === 'secretaria'">
@@ -1676,7 +1676,10 @@ export class DashboardComponent implements OnInit {
 
   getDoctorFullName(): string {
     if (!this.currentUser) return '';
-    return `${this.currentUser.nombres} ${this.currentUser.apellidos}`;
+    const nombres = this.currentUser.nombres || '';
+    const apellidos = this.currentUser.apellidos || '';
+    const fullName = `${nombres} ${apellidos}`.trim();
+    return fullName || ''; // Retorna string vacío si ambos son undefined/null
   }
 
   formatTime(timeString: string): string {
