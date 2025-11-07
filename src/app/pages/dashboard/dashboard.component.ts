@@ -736,6 +736,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
       border-radius: 1rem;
       padding: 1.5rem;
+      padding-bottom: 1.25rem;
       border: 1px solid #e5e7eb;
       box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -999,31 +1000,37 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
 
     .consulta-actions {
       display: flex;
-      gap: 0.75rem;
-      justify-content: flex-end;
+      gap: 0.4rem;
+      justify-content: flex-start;
+      flex-wrap: wrap;
       margin-top: auto;
       padding-top: 0.75rem;
+      padding-bottom: 0.25rem;
       border-top: 1px solid #f1f5f9;
+      overflow: visible;
+      width: 100%;
     }
 
     .consulta-actions .btn {
-      padding: 0.625rem 1rem;
-      font-size: 0.75rem;
-      font-weight: 700;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 600;
       border: none;
-      border-radius: 0.75rem;
+      border-radius: 0.5rem;
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.2s ease;
       font-family: 'Montserrat', sans-serif;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
       position: relative;
       overflow: hidden;
-      min-width: 90px;
+      min-width: 70px;
+      white-space: nowrap;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.25rem;
+      flex-shrink: 0;
     }
 
     .consulta-actions .btn::before {
@@ -1044,12 +1051,12 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     .consulta-actions .btn-view {
       background: linear-gradient(135deg, #3B82F6, #1D4ED8);
       color: white;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25);
     }
 
     .consulta-actions .btn-view:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(59, 130, 246, 0.4);
     }
 
     .consulta-actions .btn-edit {
@@ -1066,12 +1073,45 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     .consulta-actions .btn-history {
       background: linear-gradient(135deg, #10B981, #059669);
       color: white;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
     }
 
     .consulta-actions .btn-history:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(16, 185, 129, 0.4);
+    }
+
+    .consulta-actions .btn-success {
+      background: linear-gradient(135deg, #10B981, #059669);
+      color: white;
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+    }
+
+    .consulta-actions .btn-success:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(16, 185, 129, 0.4);
+    }
+
+    .consulta-actions .btn-warning {
+      background: linear-gradient(135deg, #F59E0B, #D97706);
+      color: white;
+      box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
+    }
+
+    .consulta-actions .btn-warning:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(245, 158, 11, 0.4);
+    }
+
+    .consulta-actions .btn-danger {
+      background: linear-gradient(135deg, #EF4444, #DC2626);
+      color: white;
+      box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
+    }
+
+    .consulta-actions .btn-danger:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(239, 68, 68, 0.4);
     }
 
     .empty-state {

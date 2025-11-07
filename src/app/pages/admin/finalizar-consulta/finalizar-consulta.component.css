@@ -275,6 +275,53 @@
 .no-servicios-description {
   color: #64748b;
   font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.no-servicios-description p {
+  margin: 0.5rem 0;
+}
+
+.no-servicios-warning {
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 1rem;
+  color: #92400e;
+  font-size: 0.875rem;
+}
+
+.no-servicios-warning strong {
+  color: #78350f;
+}
+
+/* Info message para servicio predeterminado */
+.no-servicios-info {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.info-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  border-radius: 0.5rem;
+  color: #1e40af;
+  font-size: 0.875rem;
+}
+
+.info-message i {
+  font-size: 1.25rem;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.info-message span {
+  line-height: 1.5;
 }
 
 /* Resumen Section */
@@ -410,6 +457,22 @@
   border-top: 2px solid currentColor;
   border-radius: 50%;
   animation: spin 1s linear infinite;
+}
+
+.warning-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 1rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 /* Responsive Design */

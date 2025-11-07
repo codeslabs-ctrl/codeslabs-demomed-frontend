@@ -90,21 +90,12 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      // Errores 404 - Verificar si es por sesión expirada o token inválido
+      // Errores 404 - No cerrar sesión automáticamente
+      // Un 404 puede ser un recurso no encontrado, no necesariamente sesión expirada
       if (status === 404) {
-        // Si el error es en una ruta protegida y tenemos token, probablemente la sesión expiró
-        const protectedRoutes = ['/api/', '/auth/'];
-        const isProtectedRoute = protectedRoutes.some(route => req.url.includes(route));
-        
-        if (isProtectedRoute && authService.getToken()) {
-          // Si es una ruta protegida y tenemos token, es muy probable que sea sesión expirada
-          console.log('🔐 ErrorInterceptor: Error 404 en ruta protegida con token, sesión probablemente expirada');
-          snackbarService.showWarning('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 5000);
-          authService.logout();
-          return throwError(() => error);
-        }
-        
-        console.log('⚠️ ErrorInterceptor: Error 404 (Not Found)');
+        console.log('⚠️ ErrorInterceptor: Error 404 (Not Found) - NO cerrando sesión');
+        // Solo mostrar mensaje si es un error de autenticación explícito
+        // Los 404 de recursos no encontrados se manejan en el componente
         return throwError(() => error);
       }
 

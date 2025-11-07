@@ -1,13 +1,31 @@
+# Habilitar rewrite engine
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  RewriteBase /
   
-  # Si el archivo o directorio existe, servirlo directamente
-  RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -f [OR]
-  RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -d
+  # Si el archivo solicitado existe, servirlo directamente
+  RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
   
-  # Si la ruta solicitada no es un archivo ni un directorio, redirigir a index.html
-  RewriteRule ^ /index.html
+  # Si el directorio solicitado existe, servirlo directamente
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  
+  # Excluir archivos estáticos del rewrite
+  RewriteCond %{REQUEST_URI} \.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json)$ [NC]
+  RewriteRule ^ - [L]
+  
+  # Excluir carpeta assets del rewrite
+  RewriteCond %{REQUEST_URI} ^/assets/ [NC]
+  RewriteRule ^ - [L]
+  
+  # Para todas las demás rutas, redirigir a index.html (Angular SPA)
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Fallback si mod_rewrite no está disponible (menos común)
+<IfModule !mod_rewrite.c>
+  ErrorDocument 404 /index.html
 </IfModule>
 
 # Habilitar compresión

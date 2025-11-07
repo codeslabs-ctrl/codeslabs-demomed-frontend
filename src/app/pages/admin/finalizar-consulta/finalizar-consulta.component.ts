@@ -111,9 +111,63 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
         console.warn('⚠️ No se encontraron servicios para la especialidad');
         this.serviciosDisponibles = [];
       }
+      
+      // Si no hay servicios disponibles, crear un servicio predeterminado "Consulta"
+      if (this.serviciosDisponibles.length === 0) {
+        console.log('📝 Creando servicio predeterminado "Consulta"');
+        const servicioPredeterminado: Servicio = {
+          id: -1, // ID especial que indica servicio predeterminado
+          nombre_servicio: 'Consulta',
+          especialidad_id: especialidadId,
+          monto_base: 80,
+          moneda: 'USD',
+          activo: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        this.serviciosDisponibles = [servicioPredeterminado];
+        console.log('✅ Servicio predeterminado creado:', servicioPredeterminado);
+        
+        // Pre-seleccionar automáticamente el servicio predeterminado
+        this.serviciosSeleccionados = [{
+          servicio_id: -1,
+          servicio_nombre: 'Consulta',
+          monto_base: 80,
+          monto_pagado: 80,
+          moneda: 'USD',
+          observaciones: ''
+        }];
+        console.log('✅ Servicio predeterminado pre-seleccionado');
+      }
     } catch (error) {
       this.errorHandler.logError(error, 'cargar servicios');
       this.serviciosDisponibles = [];
+      
+      // Si hay error, también crear servicio predeterminado
+      if (this.consultaInfo?.especialidad_id) {
+        console.log('📝 Creando servicio predeterminado "Consulta" debido a error');
+        const servicioPredeterminado: Servicio = {
+          id: -1,
+          nombre_servicio: 'Consulta',
+          especialidad_id: this.consultaInfo.especialidad_id,
+          monto_base: 80,
+          moneda: 'USD',
+          activo: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        this.serviciosDisponibles = [servicioPredeterminado];
+        this.serviciosSeleccionados = [{
+          servicio_id: -1,
+          servicio_nombre: 'Consulta',
+          monto_base: 80,
+          monto_pagado: 80,
+          moneda: 'USD',
+          observaciones: ''
+        }];
+      }
     }
   }
 
@@ -209,9 +263,26 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
   }
 
   canFinalizar(): boolean {
-    return this.diagnosticoPreliminar.trim().length > 0 && 
-           this.serviciosSeleccionados.length > 0 &&
-           this.validarMontos();
+    // Requerir diagnóstico siempre
+    if (this.diagnosticoPreliminar.trim().length === 0) {
+      return false;
+    }
+    
+    // Se debe seleccionar al menos un servicio
+    if (this.serviciosSeleccionados.length === 0) {
+      return false;
+    }
+    
+    // Validar montos de los servicios seleccionados
+    return this.validarMontos();
+  }
+  
+  tieneServiciosDisponibles(): boolean {
+    return this.serviciosDisponibles.length > 0;
+  }
+  
+  tieneServiciosSeleccionados(): boolean {
+    return this.serviciosSeleccionados.length > 0;
   }
 
   async finalizarConsulta(): Promise<void> {
@@ -221,12 +292,14 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
 
     try {
       const request: FinalizarConsultaRequest = {
-        servicios: this.serviciosSeleccionados.map(s => ({
-          servicio_id: s.servicio_id,
-          monto_pagado: s.monto_pagado,
-          moneda: s.moneda,
-          observaciones: s.observaciones
-        })),
+        servicios: this.serviciosSeleccionados.length > 0 
+          ? this.serviciosSeleccionados.map(s => ({
+              servicio_id: s.servicio_id,
+              monto_pagado: s.monto_pagado,
+              moneda: s.moneda,
+              observaciones: s.observaciones
+            }))
+          : [], // Array vacío si no hay servicios seleccionados
         diagnostico_preliminar: this.diagnosticoPreliminar,
         observaciones: this.observacionesGenerales || undefined
       };

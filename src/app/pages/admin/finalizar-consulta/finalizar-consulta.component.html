@@ -103,11 +103,10 @@
         </div>
       </div>
       
-      <div class="no-servicios" *ngIf="serviciosDisponibles.length === 0">
-        <div class="no-servicios-icon">🏥</div>
-        <div class="no-servicios-title">No hay servicios disponibles</div>
-        <div class="no-servicios-description">
-          No se encontraron servicios para la especialidad de esta consulta.
+      <div class="no-servicios-info" *ngIf="serviciosDisponibles.length === 1 && serviciosDisponibles[0].id === -1">
+        <div class="info-message">
+          <i class="fas fa-info-circle"></i>
+          <span>No se encontraron servicios configurados para esta especialidad. Se ha creado automáticamente un servicio predeterminado "Consulta".</span>
         </div>
       </div>
     </div>
@@ -188,9 +187,11 @@
       <button 
         class="btn btn-new" 
         (click)="finalizarConsulta()"
-        [disabled]="!canFinalizar() || isSubmitting">
+        [disabled]="!canFinalizar() || isSubmitting"
+        [title]="!tieneServiciosDisponibles() ? 'Finalizar sin servicios (solo con diagnóstico)' : ''">
         <span *ngIf="isSubmitting" class="spinner"></span>
         {{ isSubmitting ? 'Finalizando...' : 'Finalizar Consulta' }}
+        <span *ngIf="!tieneServiciosDisponibles() && !isSubmitting" class="warning-badge">⚠️</span>
       </button>
     </div>
   </div>
