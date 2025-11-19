@@ -24,7 +24,7 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
         <div class="modal-body">
           <div class="welcome-message" *ngIf="isFirstLogin">
             <div class="welcome-icon">🔐</div>
-            <h3>¡Bienvenido a FemiMed!</h3>
+            <h3>¡Bienvenido!</h3>
             <p>Por seguridad, debes cambiar tu contraseña temporal por una más segura y fácil de recordar.</p>
           </div>
           
@@ -215,9 +215,9 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
       text-align: center;
       margin-bottom: 32px;
       padding: 24px;
-      background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+      background: linear-gradient(135deg, #E8F0F8 0%, #D4E4F0 100%);
       border-radius: 12px;
-      border: 1px solid #fbcfe8;
+      border: 1px solid #B8D4E8;
     }
 
     .welcome-icon {
@@ -227,14 +227,14 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
 
     .welcome-message h3 {
       margin: 0 0 12px;
-      color: #be185d;
+      color: #5A7A9A;
       font-size: 1.25rem;
       font-weight: 600;
     }
 
     .welcome-message p {
       margin: 0;
-      color: #831843;
+      color: #4A6A8A;
       line-height: 1.5;
     }
 
@@ -272,8 +272,8 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
 
     .form-input:focus {
       outline: none;
-      border-color: #ec4899;
-      box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+      border-color: #7A9CC6;
+      box-shadow: 0 0 0 3px rgba(122, 156, 198, 0.1);
     }
 
     .form-input.error {
@@ -343,14 +343,14 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+      background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
       color: white;
     }
 
     .btn-primary:hover:not(:disabled) {
-      background: linear-gradient(135deg, #db2777 0%, #9d174d 100%);
+      background: linear-gradient(135deg, #8BA8D1 0%, #6A8AAA 100%);
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+      box-shadow: 0 4px 12px rgba(122, 156, 198, 0.3);
     }
 
     .loading-spinner {

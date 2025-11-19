@@ -593,7 +593,7 @@ export class StatisticsComponent implements OnInit {
       'Neurología': '#F59E0B',            // Amarillo
       'Cardiología': '#EF4444',           // Rojo
       'Ortopedia': '#6B7280',             // Gris
-      'Pediatría': '#EC4899',             // Rosa
+      'Pediatría': '#7A9CC6',             // Azul plateado
       'Ginecología': '#84CC16',           // Verde lima
       'Dermatología': '#F97316',          // Naranja
       'Psiquiatría': '#6366F1',           // Índigo
@@ -602,7 +602,7 @@ export class StatisticsComponent implements OnInit {
     
     // Si no encuentra la especialidad exacta, usar colores alternativos
     if (!colores[especialidad]) {
-      const coloresAlternativos = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#84CC16', '#F97316', '#6366F1'];
+      const coloresAlternativos = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#7A9CC6', '#84CC16', '#F97316', '#6366F1'];
       const hash = especialidad.split('').reduce((a, b) => {
         a = ((a << 5) - a) + b.charCodeAt(0);
         return a & a;
@@ -621,7 +621,7 @@ export class StatisticsComponent implements OnInit {
       '#8B5CF6',  // Púrpura
       '#F59E0B',  // Amarillo
       '#EF4444',  // Rojo
-      '#EC4899',  // Rosa
+      '#7A9CC6',  // Azul plateado
       '#84CC16',  // Verde lima
       '#F97316',  // Naranja
       '#6366F1',  // Índigo

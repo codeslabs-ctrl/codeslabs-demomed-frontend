@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { EspecialidadService, Especialidad } from '../../../services/especialidad.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
 import { ConfirmModalComponent } from '../../../components/confirm-modal/confirm-modal.component';
@@ -13,6 +13,8 @@ import { ConfirmModalComponent } from '../../../components/confirm-modal/confirm
   styleUrls: ['./especialidades.component.css']
 })
 export class EspecialidadesComponent implements OnInit {
+  @ViewChild('especialidadForm') especialidadForm!: NgForm;
+
   especialidades: Especialidad[] = [];
   filteredEspecialidades: Especialidad[] = [];
   loading = true;
@@ -20,6 +22,7 @@ export class EspecialidadesComponent implements OnInit {
   isEditing = false;
   saving = false;
   searchName = '';
+  errorMessage: string = '';
   
   // Modal de confirmación eliminar
   showConfirmModal: boolean = false;
@@ -75,6 +78,8 @@ export class EspecialidadesComponent implements OnInit {
 
   openAddModal() {
     this.isEditing = false;
+    this.saving = false;
+    this.errorMessage = '';
     this.especialidadData = {
       nombre_especialidad: '',
       descripcion: ''
@@ -84,12 +89,16 @@ export class EspecialidadesComponent implements OnInit {
 
   openEditModal(especialidad: Especialidad) {
     this.isEditing = true;
+    this.saving = false;
+    this.errorMessage = '';
     this.especialidadData = { ...especialidad };
     this.showModal = true;
   }
 
   closeModal() {
     this.showModal = false;
+    this.saving = false;
+    this.errorMessage = '';
     this.especialidadData = {
       nombre_especialidad: '',
       descripcion: ''
@@ -97,6 +106,32 @@ export class EspecialidadesComponent implements OnInit {
   }
 
   onSubmit() {
+    // Validar que los campos no estén vacíos
+    if (!this.especialidadData.nombre_especialidad?.trim() || !this.especialidadData.descripcion?.trim()) {
+      // Marcar campos como touched para mostrar errores
+      if (this.especialidadForm) {
+        Object.keys(this.especialidadForm.controls).forEach(key => {
+          this.especialidadForm.controls[key].markAsTouched();
+        });
+      }
+      return;
+    }
+
+    // Validar longitud mínima
+    if (this.especialidadData.nombre_especialidad.trim().length < 2) {
+      if (this.especialidadForm) {
+        this.especialidadForm.controls['nombre']?.markAsTouched();
+      }
+      return;
+    }
+
+    if (this.especialidadData.descripcion.trim().length < 5) {
+      if (this.especialidadForm) {
+        this.especialidadForm.controls['descripcion']?.markAsTouched();
+      }
+      return;
+    }
+
     if (this.isEditing) {
       this.updateEspecialidad();
     } else {
@@ -104,18 +139,79 @@ export class EspecialidadesComponent implements OnInit {
     }
   }
 
+  isFormValid(): boolean {
+    if (!this.especialidadData.nombre_especialidad?.trim() || !this.especialidadData.descripcion?.trim()) {
+      return false;
+    }
+    
+    if (this.especialidadData.nombre_especialidad.trim().length < 2) {
+      return false;
+    }
+
+    if (this.especialidadData.descripcion.trim().length < 5) {
+      return false;
+    }
+
+    return true;
+  }
+
+  isNombreInvalid(): boolean {
+    if (!this.especialidadForm) return false;
+    const control = this.especialidadForm.controls['nombre'];
+    return control ? (control.touched && control.invalid) : false;
+  }
+
+  isDescripcionInvalid(): boolean {
+    if (!this.especialidadForm) return false;
+    const control = this.especialidadForm.controls['descripcion'];
+    return control ? (control.touched && control.invalid) : false;
+  }
+
+  getNombreErrors(): string | null {
+    if (!this.especialidadForm) return null;
+    const control = this.especialidadForm.controls['nombre'];
+    if (!control || !control.touched || !control.invalid) return null;
+    
+    if (control.errors?.['required']) return 'El nombre es requerido';
+    if (control.errors?.['minlength']) return 'El nombre debe tener al menos 2 caracteres';
+    if (control.errors?.['maxlength']) return 'El nombre no puede exceder 100 caracteres';
+    return null;
+  }
+
+  getDescripcionErrors(): string | null {
+    if (!this.especialidadForm) return null;
+    const control = this.especialidadForm.controls['descripcion'];
+    if (!control || !control.touched || !control.invalid) return null;
+    
+    if (control.errors?.['required']) return 'La descripción es requerida';
+    if (control.errors?.['minlength']) return 'La descripción debe tener al menos 5 caracteres';
+    if (control.errors?.['maxlength']) return 'La descripción no puede exceder 500 caracteres';
+    return null;
+  }
+
   createEspecialidad() {
     this.saving = true;
+    this.errorMessage = '';
     this.especialidadService.createEspecialidad(this.especialidadData).subscribe({
       next: (response) => {
         if (response.success) {
           this.loadEspecialidades();
           this.closeModal();
+        } else {
+          this.errorMessage = response.error?.message || 'Error al crear la especialidad';
+          this.saving = false;
         }
-        this.saving = false;
       },
       error: (error) => {
         this.errorHandler.logError(error, 'crear especialidad');
+        // Extraer mensaje de error del response (ya viene genérico del backend)
+        if (error.error?.error?.message) {
+          this.errorMessage = error.error.error.message;
+        } else if (error.error?.message) {
+          this.errorMessage = error.error.message;
+        } else {
+          this.errorMessage = 'Error al crear la especialidad. Por favor, intente nuevamente.';
+        }
         this.saving = false;
       }
     });
@@ -123,16 +219,27 @@ export class EspecialidadesComponent implements OnInit {
 
   updateEspecialidad() {
     this.saving = true;
+    this.errorMessage = '';
     this.especialidadService.updateEspecialidad(this.especialidadData.id!, this.especialidadData).subscribe({
       next: (response) => {
         if (response.success) {
           this.loadEspecialidades();
           this.closeModal();
+        } else {
+          this.errorMessage = response.error?.message || 'Error al actualizar la especialidad';
+          this.saving = false;
         }
-        this.saving = false;
       },
       error: (error) => {
         this.errorHandler.logError(error, 'actualizar especialidad');
+        // Extraer mensaje de error del response (ya viene genérico del backend)
+        if (error.error?.error?.message) {
+          this.errorMessage = error.error.error.message;
+        } else if (error.error?.message) {
+          this.errorMessage = error.error.message;
+        } else {
+          this.errorMessage = 'Error al actualizar la especialidad. Por favor, intente nuevamente.';
+        }
         this.saving = false;
       }
     });

@@ -45,13 +45,13 @@
 }
 
 .tab-button:hover {
-  color: #E91E63;
+  color: #7A9CC6;
   background: rgba(233, 30, 99, 0.05);
 }
 
 .tab-button.active {
-  color: #E91E63;
-  border-bottom-color: #E91E63;
+  color: #7A9CC6;
+  border-bottom-color: #7A9CC6;
   background: rgba(233, 30, 99, 0.1);
 }
 
@@ -141,7 +141,7 @@
   font-weight: 700;
   margin: 0 0 1.5rem 0;
   text-align: center;
-  border-bottom: 2px solid #E91E63;
+  border-bottom: 2px solid #7A9CC6;
   padding-bottom: 0.5rem;
 }
 
@@ -166,7 +166,7 @@
 
 .action-card:hover {
   background: white;
-  border-color: #E91E63;
+  border-color: #7A9CC6;
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(44, 44, 44, 0.15);
 }
@@ -233,7 +233,7 @@
 
 .spinner {
   border: 3px solid #F5F5F5;
-  border-top: 3px solid #E91E63;
+  border-top: 3px solid #7A9CC6;
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -353,7 +353,7 @@
 }
 
 .btn-primary {
-  background: #E91E63;
+  background: #7A9CC6;
   color: white;
 }
 

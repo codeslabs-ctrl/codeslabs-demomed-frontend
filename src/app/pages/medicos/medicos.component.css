@@ -47,7 +47,7 @@
 
 .form-select, .form-input {
   padding: 0.75rem;
-  border: 1px solid #E91E63;
+  border: 1px solid #7A9CC6;
   border-radius: 8px;
   background: white;
   color: #2C2C2C;
@@ -72,7 +72,7 @@
 
 .spinner {
   border: 3px solid #F5F5F5;
-  border-top: 3px solid #E91E63;
+  border-top: 3px solid #7A9CC6;
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -166,7 +166,7 @@
   font-size: 1.8rem;
   font-weight: 700;
   margin: 0 0 2rem 0;
-  border-bottom: 2px solid #E91E63;
+  border-bottom: 2px solid #7A9CC6;
   padding-bottom: 0.5rem;
 }
 
@@ -282,7 +282,7 @@
 }
 
 .btn-primary {
-  background: #E91E63;
+  background: #7A9CC6;
   color: white;
 }
 
@@ -294,11 +294,11 @@
 .btn-secondary {
   background: #F5F5F5;
   color: #2C2C2C;
-  border: 1px solid #E91E63;
+  border: 1px solid #7A9CC6;
 }
 
 .btn-secondary:hover {
-  background: #E91E63;
+  background: #7A9CC6;
   color: white;
   transform: translateY(-1px);
 }

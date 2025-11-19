@@ -27,8 +27,6 @@ export class FinalizarConsultaModalComponent implements OnInit {
 
   serviciosDisponibles: Servicio[] = [];
   serviciosSeleccionados: ServicioSeleccionado[] = [];
-  diagnosticoPreliminar = '';
-  observacionesGenerales = '';
   isSubmitting = false;
   
   // Propiedades para cálculo de totales
@@ -201,8 +199,7 @@ export class FinalizarConsultaModalComponent implements OnInit {
   }
 
   canFinalizar(): boolean {
-    return this.diagnosticoPreliminar.trim().length > 0 && 
-           this.serviciosSeleccionados.length > 0 &&
+    return this.serviciosSeleccionados.length > 0 &&
            this.validarMontos();
   }
 
@@ -217,9 +214,7 @@ export class FinalizarConsultaModalComponent implements OnInit {
         monto_pagado: s.monto_pagado,
         moneda: s.moneda,
         observaciones: s.observaciones
-      })),
-      diagnostico_preliminar: this.diagnosticoPreliminar,
-      observaciones: this.observacionesGenerales || undefined
+      }))
     };
 
     this.finalizar.emit(request);

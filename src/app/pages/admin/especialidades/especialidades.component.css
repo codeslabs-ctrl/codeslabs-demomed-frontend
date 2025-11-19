@@ -8,6 +8,12 @@
 .form-label{font-weight:600;color:#374151;font-size:0.875rem}
 .form-input{padding:0.75rem;border:1px solid #d1d5db;border-radius:0.5rem;font-size:0.875rem}
 .form-input:focus{outline:none;border-color:#667eea}
+.form-input-invalid{border-color:#ef4444!important}
+.form-input-invalid:focus{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,0.1)}
+.form-error{color:#ef4444;font-size:0.75rem;margin-top:0.25rem;display:block}
+.error-message{background:#fef2f2;border:1px solid #fecaca;border-radius:0.5rem;padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem;color:#dc2626;font-size:0.875rem}
+.error-icon{width:20px;height:20px;flex-shrink:0}
+.error-message span{flex:1;line-height:1.5}
 .search-btn{background:#667eea;color:white;border:none;padding:0.75rem 1.5rem;border-radius:0.5rem;font-weight:600;cursor:pointer}
 .table-container{background:white;border-radius:0.75rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
 .table{width:100%;border-collapse:collapse}

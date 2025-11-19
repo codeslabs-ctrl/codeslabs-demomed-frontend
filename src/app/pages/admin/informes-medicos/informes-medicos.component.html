@@ -261,11 +261,18 @@
               </tbody>
             </table>
 
-            <!-- Sin datos -->
-            <div *ngIf="informes.length === 0" class="text-center py-4">
-              <i class="fas fa-file-medical fa-3x text-muted mb-3"></i>
-              <h5 class="text-muted">No se encontraron informes médicos</h5>
-              <p class="text-muted">Intenta ajustar los filtros de búsqueda</p>
+            <!-- Estado vacío -->
+            <div *ngIf="!cargando && !error && informes.length === 0" class="empty-state">
+              <div class="empty-state-content">
+                <div class="empty-state-icon">📋</div>
+                <div class="empty-state-title">No hay informes médicos</div>
+                <div class="empty-state-description">
+                  No se encontraron informes médicos con los filtros aplicados.
+                </div>
+                <button class="btn btn-new" routerLink="/admin/informes-medicos/nuevo">
+                  ➕ Crear Primer Informe
+                </button>
+              </div>
             </div>
           </div>
         </div>

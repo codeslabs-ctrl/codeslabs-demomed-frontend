@@ -132,7 +132,7 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
                     Editar
                   </a>
                   <button 
-                    *ngIf="currentUser?.rol === 'medico' || currentUser?.rol === 'administrador'"
+                    *ngIf="currentUser?.rol === 'medico'"
                     class="action-btn history-btn" 
                     [class.has-history]="tieneHistoriaMedica(patient)"
                     (click)="gestionarHistoriaMedica(patient)" 
@@ -219,7 +219,7 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
                 Editar
               </a>
               <button 
-                *ngIf="currentUser?.rol === 'medico' || currentUser?.rol === 'administrador'"
+                *ngIf="currentUser?.rol === 'medico'"
                 class="action-btn history-btn" 
                 [class.has-history]="tieneHistoriaMedica(patient)"
                 (click)="gestionarHistoriaMedica(patient)" 
@@ -245,8 +245,18 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
           </div>
         </div>
 
-        <div class="no-patients" *ngIf="patients.length === 0">
-          <p>No se encontraron pacientes con los filtros aplicados.</p>
+        <!-- Estado vacío -->
+        <div *ngIf="!loading && patients.length === 0" class="empty-state">
+          <div class="empty-state-content">
+            <div class="empty-state-icon">👥</div>
+            <div class="empty-state-title">No hay pacientes</div>
+            <div class="empty-state-description">
+              No se encontraron pacientes con los filtros aplicados.
+            </div>
+            <a routerLink="/patients/new" class="btn btn-new">
+              ➕ Crear Primer Paciente
+            </a>
+          </div>
         </div>
       </div>
 
@@ -383,8 +393,8 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
     }
 
     .sex-badge.female {
-      background-color: #fce7f3;
-      color: #be185d;
+      background-color: #E8F0F8;
+      color: #5A7A9A;
     }
 
     .cedula-badge {
@@ -495,10 +505,44 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
       font-weight: bold;
     }
 
-    .no-patients {
+    /* Estado vacío */
+    .empty-state {
       text-align: center;
-      padding: 2rem;
-      color: #64748b;
+      padding: 5rem 4rem;
+      color: #6b7280;
+    }
+
+    .empty-state-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      padding: 3rem;
+      background: #f8fafc;
+      border-radius: 1rem;
+      margin: 2rem;
+    }
+
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      opacity: 0.5;
+    }
+
+    .empty-state-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 1rem;
+    }
+
+    .empty-state-description {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-bottom: 2rem;
+      max-width: 400px;
+      line-height: 1.5;
     }
 
     .pagination {

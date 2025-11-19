@@ -373,7 +373,7 @@ import { Especialidad } from '../../services/especialidad.service';
 
     .form-control:focus {
       outline: none;
-      border-color: #E91E63;
+      border-color: #7A9CC6;
       box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
     }
 

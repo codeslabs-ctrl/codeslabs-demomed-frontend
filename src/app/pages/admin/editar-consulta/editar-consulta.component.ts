@@ -246,7 +246,7 @@ import { Medico } from '../../../services/medico.service';
     }
 
     .page-header h1 i {
-      color: var(--color-primary, #E91E63);
+      color: var(--color-primary, #7A9CC6);
     }
 
     .page-description {
@@ -276,7 +276,7 @@ import { Medico } from '../../../services/medico.service';
     .loading-spinner i {
       font-size: 2rem;
       margin-bottom: 1rem;
-      color: var(--color-primary, #E91E63);
+      color: var(--color-primary, #7A9CC6);
     }
 
     .error-container {
@@ -420,14 +420,14 @@ import { Medico } from '../../../services/medico.service';
     .btn-secondary {
       background: #F5F5F5;
       color: #2C2C2C;
-      border: 1px solid #E91E63;
+      border: 1px solid #7A9CC6;
       font-weight: 500;
     }
 
     .btn-secondary:hover {
-      background: #E91E63;
+      background: #7A9CC6;
       color: white;
-      border-color: #E91E63;
+      border-color: #7A9CC6;
       transform: translateY(-1px);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }

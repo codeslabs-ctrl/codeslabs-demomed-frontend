@@ -87,31 +87,6 @@
         </div>
       </div>
 
-      <div class="medica-section">
-        <h4>Información Médica</h4>
-        <div class="form-group">
-          <label for="diagnostico">Diagnóstico Preliminar *</label>
-          <textarea
-            id="diagnostico"
-            class="form-control textarea"
-            [(ngModel)]="diagnosticoPreliminar"
-            placeholder="Ingrese el diagnóstico preliminar..."
-            required
-            rows="3"
-          ></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="observaciones">Observaciones Generales</label>
-          <textarea
-            id="observaciones"
-            class="form-control textarea"
-            [(ngModel)]="observacionesGenerales"
-            placeholder="Observaciones adicionales (opcional)..."
-            rows="2"
-          ></textarea>
-        </div>
-      </div>
 
       <div class="resumen-section" *ngIf="serviciosSeleccionados.length > 0">
         <h4>Resumen de Servicios</h4>

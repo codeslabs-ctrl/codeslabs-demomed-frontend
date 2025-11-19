@@ -59,6 +59,20 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
 
       <!-- Lista de mensajes -->
       <div class="mensajes-list">
+        <!-- Estado vacío -->
+        <div *ngIf="!loading && mensajes.length === 0" class="empty-state">
+          <div class="empty-state-content">
+            <div class="empty-state-icon">📧</div>
+            <div class="empty-state-title">No hay mensajes</div>
+            <div class="empty-state-description">
+              No se encontraron mensajes con los filtros aplicados.
+            </div>
+            <button class="btn btn-new" (click)="openCreateModal()">
+              ➕ Crear Primer Mensaje
+            </button>
+          </div>
+        </div>
+
         <div class="mensaje-card" *ngFor="let mensaje of mensajes">
           <div class="mensaje-header">
             <h3>{{ mensaje.titulo }}</h3>
@@ -504,6 +518,46 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
       gap: 1.5rem;
     }
 
+    /* Estado vacío */
+    .empty-state {
+      text-align: center;
+      padding: 5rem 4rem;
+      color: #6b7280;
+    }
+
+    .empty-state-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      padding: 3rem;
+      background: #f8fafc;
+      border-radius: 1rem;
+      margin: 2rem;
+    }
+
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      opacity: 0.5;
+    }
+
+    .empty-state-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 1rem;
+    }
+
+    .empty-state-description {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin-bottom: 2rem;
+      max-width: 400px;
+      line-height: 1.5;
+    }
+
     .mensaje-card {
       background: white;
       border-radius: 8px;
@@ -766,6 +820,16 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
       color: white;
     }
 
+    .btn-new {
+      background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
+      color: white;
+    }
+
+    .btn-new:hover:not(:disabled) {
+      background: linear-gradient(135deg, #8BA8D1 0%, #6A8AAA 100%);
+      box-shadow: 0 4px 12px rgba(122, 156, 198, 0.3);
+    }
+
     .btn-sm {
       padding: 0.5rem 1rem;
       font-size: 0.9rem;
@@ -1021,6 +1085,7 @@ export class MensajesComponent implements OnInit, OnDestroy {
   mensajes: MensajeDifusion[] = [];
   pacientes: PacienteParaDifusion[] = [];
   pacientesFiltrados: PacienteParaDifusion[] = [];
+  loading = false;
   
   showModal = false;
   editingMensaje: MensajeDifusion | null = null;
@@ -1087,8 +1152,10 @@ export class MensajesComponent implements OnInit, OnDestroy {
   }
 
   loadMensajes() {
+    this.loading = true;
     this.mensajeService.getMensajes().subscribe({
       next: (response) => {
+        this.loading = false;
         if (response.success) {
           this.mensajes = response.data;
           
@@ -1121,6 +1188,7 @@ export class MensajesComponent implements OnInit, OnDestroy {
         }
       },
       error: (error) => {
+        this.loading = false;
         this.errorHandler.logError(error, 'cargar mensajes');
       }
     });

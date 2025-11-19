@@ -99,6 +99,7 @@ export class AuthService {
         console.error('🚨 Error status:', error.status);
         console.error('🚨 Error message:', error.message);
         console.error('🚨 Error body:', error.error);
+        console.error('🚨 Error body message:', error.error?.error?.message || error.error?.message || 'No message available');
         console.error('🚨 Full error object:', error);
         
         // Si el error viene del rate limiting, asegurar que el mensaje esté disponible

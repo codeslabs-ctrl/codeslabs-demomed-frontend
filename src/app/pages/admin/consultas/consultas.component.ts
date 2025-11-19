@@ -114,10 +114,15 @@ import { Medico } from '../../../services/medico.service';
               </tr>
               <tr *ngIf="!loading && consultas.length === 0">
                 <td colspan="8" class="empty-state">
-                  <div class="empty-state-icon">📅</div>
-                  <div class="empty-state-title">No hay consultas</div>
-                  <div class="empty-state-description">
-                    No se encontraron consultas con los filtros aplicados.
+                  <div class="empty-state-content">
+                    <div class="empty-state-icon">📅</div>
+                    <div class="empty-state-title">No hay consultas</div>
+                    <div class="empty-state-description">
+                      No se encontraron consultas con los filtros aplicados.
+                    </div>
+                    <button class="btn btn-new" (click)="navigateToNuevaConsulta()">
+                      ➕ Crear Primera Consulta
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -196,7 +201,7 @@ import { Medico } from '../../../services/medico.service';
                       <span class="btn-text">Cancelar</span>
                     </button>
                     <button 
-                      *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada') && canFinalizarConsulta()"
+                      *ngIf="consulta.estado_consulta === 'completada' && canFinalizarConsulta()"
                       class="action-btn btn-complete" 
                       (click)="finalizarConsulta(consulta)" 
                       title="Finalizar">
@@ -213,6 +218,19 @@ import { Medico } from '../../../services/medico.service';
 
         <!-- Vista de tarjetas para móvil -->
         <div class="table-mobile">
+          <!-- Estado vacío para móvil -->
+          <div *ngIf="!loading && consultas.length === 0" class="empty-state-mobile">
+            <div class="empty-state-content">
+              <div class="empty-state-icon">📅</div>
+              <div class="empty-state-title">No hay consultas</div>
+              <div class="empty-state-description">
+                No se encontraron consultas con los filtros aplicados.
+              </div>
+              <button class="btn btn-new" (click)="navigateToNuevaConsulta()">
+                ➕ Crear Primera Consulta
+              </button>
+            </div>
+          </div>
           <div class="consulta-card" *ngFor="let consulta of consultas">
             <div class="card-header">
               <div class="consulta-info">
@@ -281,7 +299,7 @@ import { Medico } from '../../../services/medico.service';
                 Cancelar
               </button>
               <button 
-                *ngIf="(consulta.estado_consulta === 'agendada' || consulta.estado_consulta === 'reagendada') && canFinalizarConsulta()"
+                *ngIf="consulta.estado_consulta === 'completada' && canFinalizarConsulta()"
                 class="action-btn success-btn" 
                 (click)="finalizarConsulta(consulta)" 
                 title="Finalizar consulta">
@@ -576,7 +594,7 @@ import { Medico } from '../../../services/medico.service';
     }
 
     .btn-primary {
-      background: #E91E63;
+      background: #7A9CC6;
       color: white;
       box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
       font-weight: 500;
@@ -591,14 +609,14 @@ import { Medico } from '../../../services/medico.service';
     .btn-secondary {
       background: #F5F5F5;
       color: #2C2C2C;
-      border: 1px solid #E91E63;
+      border: 1px solid #7A9CC6;
       font-weight: 500;
     }
 
     .btn-secondary:hover {
-      background: #E91E63;
+      background: #7A9CC6;
       color: white;
-      border-color: #E91E63;
+      border-color: #7A9CC6;
     }
 
     .btn-success {
@@ -1089,27 +1107,44 @@ import { Medico } from '../../../services/medico.service';
       border-color: #3b82f6;
     }
 
+    /* Estado vacío */
     .empty-state {
       text-align: center;
-      padding: 3rem;
+      padding: 5rem 4rem;
       color: #6b7280;
     }
 
+    .empty-state-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      padding: 3rem;
+      background: #f8fafc;
+      border-radius: 1rem;
+      margin: 2rem;
+    }
+
     .empty-state-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      opacity: 0.5;
     }
 
     .empty-state-title {
-      font-size: 1.25rem;
+      font-size: 1.5rem;
       font-weight: 600;
-      color: #374151;
-      margin-bottom: 0.5rem;
+      color: #1e293b;
+      margin-bottom: 1rem;
     }
 
     .empty-state-description {
       font-size: 0.875rem;
       color: #6b7280;
+      margin-bottom: 2rem;
+      max-width: 400px;
+      line-height: 1.5;
     }
 
     .loading {

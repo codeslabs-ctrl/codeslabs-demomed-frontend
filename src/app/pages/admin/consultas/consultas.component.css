@@ -487,25 +487,41 @@
 
 .empty-state {
   text-align: center;
-  padding: 3rem;
+  padding: 5rem 4rem;
   color: #6b7280;
 }
 
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 3rem;
+  background: #f8fafc;
+  border-radius: 1rem;
+  margin: 2rem;
+}
+
 .empty-state-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.5;
 }
 
 .empty-state-title {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.5rem;
+  color: #1e293b;
+  margin-bottom: 1rem;
 }
 
 .empty-state-description {
   font-size: 0.875rem;
   color: #6b7280;
+  margin-bottom: 2rem;
+  max-width: 400px;
+  line-height: 1.5;
 }
 
 .loading {
@@ -730,6 +746,46 @@
 
 .btn-success:hover {
   background: #047857;
+}
+
+/* Estilos para estado vacío en móvil */
+.empty-state-mobile {
+  text-align: center;
+  padding: 5rem 4rem;
+  color: #6b7280;
+}
+
+.empty-state-mobile .empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 3rem;
+  background: #f8fafc;
+  border-radius: 1rem;
+  margin: 2rem;
+}
+
+.empty-state-mobile .empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.5;
+}
+
+.empty-state-mobile .empty-state-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.empty-state-mobile .empty-state-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 2rem;
+  max-width: 400px;
+  line-height: 1.5;
 }
 
 @media (max-width: 768px) {

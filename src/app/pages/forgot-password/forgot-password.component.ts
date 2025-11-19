@@ -14,7 +14,7 @@ import { environment } from '../../../environments/environment';
       <div class="forgot-password-card">
         <div class="forgot-password-header">
           <div class="logo">
-            <img src="assets/logos/femimed/logo.svg" alt="FemiMed Logo" class="logo-image">
+            <img src="assets/logos/clinica/logo.png" alt="DemoMed Logo" class="logo-image">
             <h2>Recuperar Contraseña</h2>
             <p>Ingresa tu email para recibir un código de recuperación</p>
           </div>
@@ -69,7 +69,7 @@ import { environment } from '../../../environments/environment';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, rgba(240, 147, 251, 0.8) 0%, rgba(245, 87, 108, 0.8) 100%);
+      background: linear-gradient(135deg, rgba(122, 156, 198, 0.8) 0%, rgba(90, 122, 154, 0.8) 100%);
       padding: 2rem;
     }
 
@@ -91,6 +91,8 @@ import { environment } from '../../../environments/environment';
       width: 120px;
       height: auto;
       margin-bottom: 1rem;
+      background: transparent;
+      mix-blend-mode: multiply;
     }
 
     .forgot-password-header h2 {
@@ -134,7 +136,8 @@ import { environment } from '../../../environments/environment';
 
     .form-group input:focus {
       outline: none;
-      border-color: #667eea;
+      border-color: #7A9CC6;
+      box-shadow: 0 0 0 3px rgba(122, 156, 198, 0.1);
     }
 
     .form-group input.error {
@@ -158,7 +161,7 @@ import { environment } from '../../../environments/environment';
     }
 
     .submit-btn {
-      background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%);
+      background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
       color: white;
       border: none;
       padding: 0.75rem 1.5rem;
@@ -172,7 +175,7 @@ import { environment } from '../../../environments/environment';
 
     .submit-btn:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(233, 30, 99, 0.3);
+      box-shadow: 0 10px 20px rgba(122, 156, 198, 0.3);
     }
 
     .submit-btn:disabled {
@@ -192,7 +195,7 @@ import { environment } from '../../../environments/environment';
     }
 
     .back-to-login {
-      color: #E91E63;
+      color: #7A9CC6;
       text-decoration: none;
       font-size: 0.9rem;
       font-weight: 500;
@@ -200,7 +203,7 @@ import { environment } from '../../../environments/environment';
     }
 
     .back-to-login:hover {
-      color: #C2185B;
+      color: #5A7A9A;
       text-decoration: underline;
     }
 

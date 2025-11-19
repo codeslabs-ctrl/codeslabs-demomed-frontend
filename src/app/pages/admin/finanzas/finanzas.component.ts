@@ -73,13 +73,13 @@ export class FinanzasComponent implements OnInit {
   ngOnInit(): void {
     console.log('🚀 FinanzasComponent inicializado');
     
-    // Verificar que el usuario tenga rol de finanzas
+    // Verificar que el usuario tenga rol de finanzas o administrador
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
       console.log('👤 Usuario actual:', user);
-      if (user?.rol !== 'finanzas') {
+      if (user?.rol !== 'finanzas' && user?.rol !== 'administrador') {
         // Redirigir o mostrar error de acceso
-        console.error('Acceso denegado: Se requiere rol de finanzas');
+        console.error('Acceso denegado: Se requiere rol de finanzas o administrador');
         return;
       }
     });

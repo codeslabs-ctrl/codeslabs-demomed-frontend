@@ -93,25 +93,45 @@
     </div>
 
     <div class="modal-body">
+      <!-- Mensaje de error -->
+      <div *ngIf="errorMessage" class="error-message">
+        <svg class="error-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <span>{{ errorMessage }}</span>
+      </div>
+
       <form (ngSubmit)="onSubmit()" #especialidadForm="ngForm">
         <div class="form-group">
           <label class="form-label">Nombre *</label>
           <input 
             type="text" 
             class="form-input" 
+            [class.form-input-invalid]="isNombreInvalid()"
             [(ngModel)]="especialidadData.nombre_especialidad" 
             name="nombre"
-            required>
+            required
+            minlength="2"
+            maxlength="100">
+          <div *ngIf="isNombreInvalid()" class="form-error">
+            <span>{{ getNombreErrors() }}</span>
+          </div>
         </div>
 
         <div class="form-group">
           <label class="form-label">Descripción *</label>
           <textarea 
             class="form-input form-textarea" 
+            [class.form-input-invalid]="isDescripcionInvalid()"
             [(ngModel)]="especialidadData.descripcion" 
             name="descripcion"
             rows="4"
-            required></textarea>
+            required
+            minlength="5"
+            maxlength="500"></textarea>
+          <div *ngIf="isDescripcionInvalid()" class="form-error">
+            <span>{{ getDescripcionErrors() }}</span>
+          </div>
         </div>
       </form>
     </div>
@@ -124,8 +144,8 @@
         type="button" 
         class="btn btn-new" 
         (click)="onSubmit()"
-        [disabled]="saving">
-        {{ saving ? 'Guardando...' : (isEditing ? 'Actualizar' : 'Crear') }}
+        [disabled]="saving || !isFormValid()">
+        {{ saving ? 'Guardando...' : (isEditing ? 'Guardar' : 'Crear') }}
       </button>
     </div>
   </div>

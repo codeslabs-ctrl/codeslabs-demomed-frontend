@@ -5,21 +5,27 @@
   box-sizing: border-box;
 }
 
-/* CSS Variables for Button Colors */
+/* CSS Variables for Button Colors - Azul Plateado Theme */
 :root {
+  /* Paleta de colores azul plateado */
+  --color-primary: #7A9CC6;          /* Azul plateado principal */
+  --color-primary-dark: #5A7A9A;    /* Azul plateado oscuro */
+  --color-primary-light: #9DB4C4;   /* Azul plateado claro */
+  --color-primary-hover: #6B8EAF;   /* Hover azul plateado */
+  
   /* Colores estandarizados para botones */
-  --color-btn-clear: #6b7280;        /* Gris oscuro para "Limpiar Filtros" */
-  --color-btn-clear-hover: #4b5563;  /* Hover más oscuro */
-  --color-btn-new: #E91E63;          /* Rosa para "Nuevo..." */
-  --color-btn-new-hover: #C2185B;    /* Rosa más oscuro */
+  --color-btn-clear: #8FA8C4;        /* Azul plateado medio para "Limpiar Filtros" */
+  --color-btn-clear-hover: #6B8EAF;  /* Hover más oscuro */
+  --color-btn-new: #7A9CC6;          /* Azul plateado para "Nuevo..." */
+  --color-btn-new-hover: #5A7A9A;    /* Azul plateado más oscuro */
   
   /* Colores para botones de acción */
-  --color-action-view: #3b82f6;     /* Azul para Ver */
-  --color-action-view-hover: #2563eb;
-  --color-action-edit: #f59e0b;    /* Naranja para Editar */
-  --color-action-edit-hover: #d97706;
-  --color-action-delete: #ef4444;   /* Rojo para Eliminar */
-  --color-action-delete-hover: #dc2626;
+  --color-action-view: #7A9CC6;     /* Azul plateado para Ver */
+  --color-action-view-hover: #5A7A9A;
+  --color-action-edit: #9DB4C4;    /* Azul plateado claro para Editar */
+  --color-action-edit-hover: #7A9CC6;
+  --color-action-delete: #C85A5A;   /* Rojo suave para Eliminar */
+  --color-action-delete-hover: #B84A4A;
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
@@ -99,29 +105,29 @@ small { font-size: 0.75rem; line-height: 1.5; color: #666666; }
 }
 
 .btn-primary {
-  background: #E91E63;
+  background: var(--color-primary);
   color: white;
-  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+  box-shadow: 0 4px 12px rgba(122, 156, 198, 0.3);
   font-weight: 500;
 }
 
 .btn-primary:hover {
-  background: #C2185B;
+  background: var(--color-primary-dark);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(233, 30, 99, 0.4);
+  box-shadow: 0 6px 16px rgba(122, 156, 198, 0.4);
 }
 
 .btn-secondary {
   background: #F5F5F5;
   color: #2C2C2C;
-  border: 1px solid #E91E63;
+  border: 1px solid var(--color-primary);
   font-weight: 500;
 }
 
 .btn-secondary:hover {
-  background: #E91E63;
+  background: var(--color-primary);
   color: white;
-  border-color: #E91E63;
+  border-color: var(--color-primary);
 }
 
 .btn-success {
@@ -154,7 +160,7 @@ small { font-size: 0.75rem; line-height: 1.5; color: #666666; }
   background-color: var(--color-btn-clear-hover);
   border-color: var(--color-btn-clear-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+  box-shadow: 0 4px 8px rgba(107, 142, 175, 0.3);
 }
 
 .btn-new {
@@ -162,14 +168,14 @@ small { font-size: 0.75rem; line-height: 1.5; color: #666666; }
   color: white;
   border: 1px solid var(--color-btn-new);
   font-weight: 500;
-  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+  box-shadow: 0 4px 12px rgba(122, 156, 198, 0.3);
 }
 
 .btn-new:hover {
   background-color: var(--color-btn-new-hover);
   border-color: var(--color-btn-new-hover);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(233, 30, 99, 0.4);
+  box-shadow: 0 6px 16px rgba(122, 156, 198, 0.4);
 }
 
 /* Botones de acción estandarizados */
@@ -212,7 +218,7 @@ small { font-size: 0.75rem; line-height: 1.5; color: #666666; }
 .view-btn:hover {
   background-color: var(--color-action-view-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 8px rgba(122, 156, 198, 0.3);
 }
 
 .edit-btn {
@@ -223,7 +229,7 @@ small { font-size: 0.75rem; line-height: 1.5; color: #666666; }
 .edit-btn:hover {
   background-color: var(--color-action-edit-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 4px 8px rgba(157, 180, 196, 0.3);
 }
 
 .delete-btn {
@@ -234,7 +240,7 @@ small { font-size: 0.75rem; line-height: 1.5; color: #666666; }
 .delete-btn:hover {
   background-color: var(--color-action-delete-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 8px rgba(200, 90, 90, 0.3);
 }
 
 .card {
@@ -294,8 +300,8 @@ small { font-size: 0.75rem; line-height: 1.5; color: #666666; }
 
 .form-input:focus {
   outline: none;
-  border-color: #E91E63;
-  box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(122, 156, 198, 0.1);
 }
 
 .table {
@@ -332,7 +338,7 @@ small { font-size: 0.75rem; line-height: 1.5; color: #666666; }
   width: 20px;
   height: 20px;
   border: 3px solid #F5F5F5;
-  border-top: 3px solid #E91E63;
+  border-top: 3px solid var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -419,17 +425,17 @@ small { font-size: 0.75rem; line-height: 1.5; color: #666666; }
 }
 
 .ql-toolbar button:hover {
-  color: #e74c3c;
+  color: var(--color-primary);
 }
 
 .ql-toolbar button.ql-active {
-  color: #e74c3c;
+  color: var(--color-primary);
 }
 
 .ql-toolbar button.ql-active .ql-stroke {
-  stroke: #e74c3c;
+  stroke: var(--color-primary);
 }
 
 .ql-toolbar button.ql-active .ql-fill {
-  fill: #e74c3c;
+  fill: var(--color-primary);
 }

@@ -65,7 +65,7 @@
 }
 
 .btn-primary {
-  background: #E91E63;
+  background: #7A9CC6;
   color: white;
   box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
 }
@@ -79,13 +79,13 @@
 .btn-secondary {
   background: #F5F5F5;
   color: #2C2C2C;
-  border: 1px solid #E91E63;
+  border: 1px solid #7A9CC6;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #E91E63;
+  background: #7A9CC6;
   color: white;
-  border-color: #E91E63;
+  border-color: #7A9CC6;
   transform: translateY(-1px);
 }
 
@@ -515,13 +515,13 @@
 }
 
 .tab-button:hover {
-  border-color: #E91E63;
-  color: #E91E63;
+  border-color: #7A9CC6;
+  color: #7A9CC6;
 }
 
 .tab-button.active {
-  border-color: #E91E63;
-  background: #E91E63;
+  border-color: #7A9CC6;
+  background: #7A9CC6;
   color: white;
 }
 

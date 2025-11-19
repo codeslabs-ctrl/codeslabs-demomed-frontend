@@ -528,8 +528,8 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
     }
 
     .sex-badge.female {
-      background-color: #fce7f3;
-      color: #be185d;
+      background-color: #E8F0F8;
+      color: #5A7A9A;
     }
 
     .cedula-badge {
@@ -538,8 +538,8 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
       border-radius: 0.375rem;
       font-size: 0.875rem;
       font-weight: 500;
-      background-color: #fce7f3;
-      color: #be185d;
+      background-color: #E8F0F8;
+      color: #5A7A9A;
       font-family: 'Courier New', monospace;
     }
 
@@ -795,10 +795,10 @@ export class PatientDetailComponent implements OnInit {
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; }
           .header { text-align: center; margin-bottom: 30px; }
-          .logo { font-size: 24px; font-weight: bold; color: #E91E63; }
+          .logo { font-size: 24px; font-weight: bold; color: #7A9CC6; }
           .patient-info { margin-bottom: 20px; }
           .section { margin-bottom: 20px; }
-          .section h3 { color: #E91E63; border-bottom: 2px solid #E91E63; }
+          .section h3 { color: #7A9CC6; border-bottom: 2px solid #7A9CC6; }
           .info-row { display: flex; margin-bottom: 10px; }
           .info-label { font-weight: bold; width: 150px; }
           .footer { margin-top: 40px; text-align: center; font-size: 12px; }

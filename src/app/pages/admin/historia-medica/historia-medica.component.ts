@@ -253,7 +253,8 @@ import { Patient } from '../../../models/patient.model';
               type="button" 
               class="btn btn-info" 
               (click)="abrirModalInterconsultas()"
-              [disabled]="isSubmitting || !consultaData?.paciente_id">
+              [disabled]="isSubmitting || !consultaData?.paciente_id || !tieneHistoriaMedica()"
+              [title]="!tieneHistoriaMedica() ? 'El paciente debe tener una historia médica cargada con usted para crear interconsultas' : ''">
               <span class="btn-icon">🔄</span>
               <span class="btn-text">Interconsultas</span>
             </button>
@@ -322,7 +323,7 @@ import { Patient } from '../../../models/patient.model';
     }
 
     .page-header h1 i {
-      color: var(--color-primary, #E91E63);
+      color: var(--color-primary, #7A9CC6);
     }
 
     .page-description {
@@ -352,7 +353,7 @@ import { Patient } from '../../../models/patient.model';
     .loading-spinner i {
       font-size: 2rem;
       margin-bottom: 1rem;
-      color: var(--color-primary, #E91E63);
+      color: var(--color-primary, #7A9CC6);
     }
 
     .error-container {
@@ -690,7 +691,7 @@ import { Patient } from '../../../models/patient.model';
     }
 
     .btn-primary {
-      background: #E91E63;
+      background: #7A9CC6;
       color: white;
       box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
       font-weight: 500;
@@ -718,14 +719,14 @@ import { Patient } from '../../../models/patient.model';
     .btn-secondary {
       background: #F5F5F5;
       color: #2C2C2C;
-      border: 1px solid #E91E63;
+      border: 1px solid #7A9CC6;
       font-weight: 500;
     }
 
     .btn-secondary:hover {
-      background: #E91E63;
+      background: #7A9CC6;
       color: white;
-      border-color: #E91E63;
+      border-color: #7A9CC6;
       transform: translateY(-1px);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
@@ -1255,7 +1256,8 @@ export class HistoriaMedicaComponent implements OnInit {
       diagnostico: this.historiaForm.diagnostico,
       conclusiones: this.historiaForm.conclusiones,
       plan: this.historiaForm.plan,
-      fecha_consulta: this.consultaData.fecha_pautada
+      fecha_consulta: this.consultaData.fecha_pautada,
+      consulta_id: this.consultaData.id && this.consultaData.id > 0 ? this.consultaData.id : undefined
     };
 
     this.historicoService.createHistorico(historiaData).subscribe({
@@ -1435,9 +1437,34 @@ export class HistoriaMedicaComponent implements OnInit {
   }
 
   // Métodos para manejar interconsultas
+  tieneHistoriaMedica(): boolean {
+    // Verificar si hay historia médica cargada con el médico actual
+    if (!this.consultaData?.medico_id || !this.medicoActual) {
+      return false;
+    }
+
+    // Verificar si historiaData está cargada y pertenece al médico actual
+    if (this.historiaData && this.historiaData.medico_id === this.medicoActual.medico_id) {
+      return true;
+    }
+
+    // Verificar si el médico actual está en la lista de médicos con historia
+    const tieneHistoriaConMedicoActual = this.medicosConHistoria.some(
+      medico => medico.medico_id === this.medicoActual.medico_id
+    );
+
+    return tieneHistoriaConMedicoActual;
+  }
+
   abrirModalInterconsultas(): void {
     if (!this.consultaData?.paciente_id) {
       this.errorHandler.logError('No hay datos del paciente disponibles', 'verificar datos del paciente');
+      return;
+    }
+
+    // Verificar que el paciente tenga historia médica con el médico actual
+    if (!this.tieneHistoriaMedica()) {
+      alert('El paciente debe tener una historia médica cargada con usted para crear interconsultas. Por favor, cree primero la historia médica.');
       return;
     }
 
@@ -1474,14 +1501,30 @@ export class HistoriaMedicaComponent implements OnInit {
   onRemisionCreated(remision: any): void {
     console.log('✅ Interconsulta creada exitosamente:', remision);
     
-    // Mostrar mensaje de éxito con contexto clínico
-    const mensaje = `✅ Interconsulta creada exitosamente
+    // Usar datos de la remisión que vienen del backend
+    const pacienteNombre = remision?.paciente_nombre || this.pacienteData?.nombres || 'N/A';
+    const pacienteApellidos = remision?.paciente_apellidos || this.pacienteData?.apellidos || 'N/A';
+    const medicoRemitenteNombre = remision?.medico_remitente_nombre || this.medicoActual?.medico_nombre || 'N/A';
+    const medicoRemitenteApellidos = remision?.medico_remitente_apellidos || this.medicoActual?.medico_apellidos || 'N/A';
+    const medicoRemitidoNombre = remision?.medico_remitido_nombre || 'N/A';
+    const medicoRemitidoApellidos = remision?.medico_remitido_apellidos || 'N/A';
+    
+    // Obtener especialidad del médico remitido desde consultaData o remision
+    const especialidadNombre = this.consultaData?.especialidad_nombre || 'N/A';
+    
+    // Mostrar mensaje de éxito con datos básicos (sin motivo en HTML)
+    const mensaje = `✅ Paciente remitido exitosamente
 
-📋 Paciente: ${this.pacienteData?.nombres} ${this.pacienteData?.apellidos}
-🩺 Diagnóstico actual: ${this.historiaForm.diagnostico || 'No especificado'}
-📝 Motivo de consulta: ${this.historiaForm.motivo_consulta || 'No especificado'}
+📋 Paciente: ${pacienteNombre} ${pacienteApellidos}
+${this.pacienteData?.edad ? `👤 Edad: ${this.pacienteData.edad} años` : ''}
+${this.pacienteData?.sexo ? `⚧️ Sexo: ${this.pacienteData.sexo}` : ''}
 
-La remisión ha sido procesada y se ha enviado una notificación al médico de destino. El paciente será contactado para coordinar la cita.`;
+👨‍⚕️ Médico Remitente: Dr./Dra. ${medicoRemitenteNombre} ${medicoRemitenteApellidos}
+
+👨‍⚕️ Médico Remitido: Dr./Dra. ${medicoRemitidoNombre} ${medicoRemitidoApellidos}
+🏥 Especialidad: ${especialidadNombre}
+
+La remisión ha sido procesada y se ha enviado una notificación al médico de destino.`;
 
     alert(mensaje);
     

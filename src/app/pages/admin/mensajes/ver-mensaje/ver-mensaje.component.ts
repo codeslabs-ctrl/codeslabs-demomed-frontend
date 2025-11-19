@@ -116,7 +116,7 @@ import { CommonModule } from '@angular/common';
       align-items: center;
       padding: 20px 24px;
       border-bottom: 1px solid #e5e7eb;
-      background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+      background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
       color: white;
       border-radius: 12px 12px 0 0;
     }
