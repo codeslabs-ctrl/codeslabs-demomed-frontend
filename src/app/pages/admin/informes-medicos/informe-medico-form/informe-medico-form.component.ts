@@ -10,6 +10,7 @@ import { EspecialidadService } from '../../../../services/especialidad.service';
 import { ContextualDataService, DatosContextuales } from '../../../../services/contextual-data.service';
 import { AuthService } from '../../../../services/auth.service';
 import { ErrorHandlerService } from '../../../../services/error-handler.service';
+import { HistoricoService } from '../../../../services/historico.service';
 import { 
   InformeMedico, 
   TemplateInforme, 
@@ -46,6 +47,11 @@ export class InformeMedicoFormComponent implements OnInit {
   // Filtros
   especialidadSeleccionada: number | null = null;
   medicosFiltrados: any[] = [];
+  
+  // Validación de historia médica
+  tieneHistoriaMedica = false;
+  mensajeHistoriaMedica = '';
+  validandoHistoria = false;
 
   // Datos contextuales
   datosContextuales: DatosContextuales | null = null;
@@ -79,7 +85,8 @@ export class InformeMedicoFormComponent implements OnInit {
     private especialidadService: EspecialidadService,
     public contextualDataService: ContextualDataService,
     private authService: AuthService,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private historicoService: HistoricoService
   ) {
     this.informeForm = this.fb.group({
       titulo: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
@@ -255,6 +262,15 @@ export class InformeMedicoFormComponent implements OnInit {
     if (!this.esUsuarioMedico && !this.especialidadSeleccionada) {
       alert('❌ Error: Debe seleccionar una especialidad antes de crear el informe.');
       return;
+    }
+
+    // Validación adicional: verificar que el paciente tenga historia médica para la especialidad
+    if (!this.esUsuarioMedico && this.especialidadSeleccionada) {
+      const pacienteId = this.informeForm.get('paciente_id')?.value;
+      if (pacienteId && !this.tieneHistoriaMedica) {
+        alert('❌ Error: El paciente no tiene historia médica registrada para esta especialidad. Debe crear primero una historia médica antes de poder generar un informe.');
+        return;
+      }
     }
 
     // Validación adicional: debe seleccionar médico
@@ -754,6 +770,18 @@ export class InformeMedicoFormComponent implements OnInit {
    * Maneja el cambio de paciente
    */
   onPacienteSeleccionado(): void {
+    const pacienteId = this.informeForm.get('paciente_id')?.value;
+    const especialidadId = this.especialidadSeleccionada;
+    
+    // Si hay especialidad seleccionada, revalidar historia médica
+    if (pacienteId && especialidadId) {
+      this.validarHistoriaMedicaPorEspecialidad(pacienteId, especialidadId);
+    } else {
+      // Limpiar mensaje si no hay especialidad
+      this.tieneHistoriaMedica = false;
+      this.mensajeHistoriaMedica = '';
+    }
+    
     this.cargarDatosContextuales();
   }
 
@@ -769,26 +797,83 @@ export class InformeMedicoFormComponent implements OnInit {
    */
   onEspecialidadSeleccionada(): void {
     const especialidadId = this.especialidadSeleccionada;
-    if (especialidadId) {
-      this.medicoService.getMedicosByEspecialidad(especialidadId).subscribe({
-        next: (response: any) => {
-          this.medicosFiltrados = response.data || [];
-          // Limpiar selección de médico
-          this.informeForm.patchValue({ medico_id: '' });
-          // Actualizar estado disabled del control
-          this.actualizarEstadoControlMedico();
-        },
-        error: (error: any) => {
-          console.error('Error cargando médicos por especialidad:', error);
+    const pacienteId = this.informeForm.get('paciente_id')?.value;
+    
+    // Limpiar estado anterior
+    this.tieneHistoriaMedica = false;
+    this.mensajeHistoriaMedica = '';
+    this.medicosFiltrados = [];
+    this.informeForm.patchValue({ medico_id: '' });
+    
+    if (!especialidadId) {
+      this.actualizarEstadoControlMedico();
+      return;
+    }
+    
+    // Si no hay paciente seleccionado, solo cargar médicos
+    if (!pacienteId) {
+      this.cargarMedicosPorEspecialidad(especialidadId);
+      return;
+    }
+    
+    // Validar historia médica antes de cargar médicos
+    this.validarHistoriaMedicaPorEspecialidad(pacienteId, especialidadId);
+  }
+  
+  /**
+   * Valida si el paciente tiene historia médica para la especialidad seleccionada
+   */
+  validarHistoriaMedicaPorEspecialidad(pacienteId: number, especialidadId: number): void {
+    this.validandoHistoria = true;
+    this.tieneHistoriaMedica = false;
+    this.mensajeHistoriaMedica = '';
+    
+    this.historicoService.verificarHistoriaPorEspecialidad(pacienteId, especialidadId).subscribe({
+      next: (response: any) => {
+        this.validandoHistoria = false;
+        this.tieneHistoriaMedica = response.data?.tiene_historia || false;
+        
+        if (this.tieneHistoriaMedica) {
+          // Si tiene historia, cargar médicos de la especialidad
+          this.mensajeHistoriaMedica = '';
+          this.cargarMedicosPorEspecialidad(especialidadId);
+        } else {
+          // Si no tiene historia, mostrar mensaje y no permitir seleccionar médico
+          this.mensajeHistoriaMedica = '⚠️ El paciente no tiene historia médica registrada para esta especialidad. Debe crear primero una historia médica antes de poder generar un informe.';
           this.medicosFiltrados = [];
+          this.informeForm.patchValue({ medico_id: '' });
           this.actualizarEstadoControlMedico();
         }
-      });
-    } else {
-      this.medicosFiltrados = [];
-      this.informeForm.patchValue({ medico_id: '' });
-      this.actualizarEstadoControlMedico();
-    }
+      },
+      error: (error: any) => {
+        this.validandoHistoria = false;
+        console.error('Error verificando historia médica:', error);
+        this.errorHandler.logError(error, 'verificar historia médica por especialidad');
+        // En caso de error, permitir continuar pero mostrar advertencia
+        this.mensajeHistoriaMedica = '⚠️ No se pudo verificar la historia médica. Por favor, verifique manualmente.';
+        this.cargarMedicosPorEspecialidad(especialidadId);
+      }
+    });
+  }
+  
+  /**
+   * Carga los médicos de una especialidad
+   */
+  cargarMedicosPorEspecialidad(especialidadId: number): void {
+    this.medicoService.getMedicosByEspecialidad(especialidadId).subscribe({
+      next: (response: any) => {
+        this.medicosFiltrados = response.data || [];
+        // Limpiar selección de médico
+        this.informeForm.patchValue({ medico_id: '' });
+        // Actualizar estado disabled del control
+        this.actualizarEstadoControlMedico();
+      },
+      error: (error: any) => {
+        console.error('Error cargando médicos por especialidad:', error);
+        this.medicosFiltrados = [];
+        this.actualizarEstadoControlMedico();
+      }
+    });
   }
 
   /**

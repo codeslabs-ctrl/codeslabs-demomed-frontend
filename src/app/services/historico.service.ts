@@ -94,4 +94,12 @@ export class HistoricoService {
   updateHistorico(historicoId: number, updateData: Partial<HistoricoData>): Observable<ApiResponse<HistoricoWithDetails>> {
     return this.http.put<ApiResponse<HistoricoWithDetails>>(`${this.baseUrl}/${historicoId}`, updateData);
   }
+
+  // Verificar si un paciente tiene historia médica para una especialidad
+  verificarHistoriaPorEspecialidad(pacienteId: number, especialidadId: number): Observable<ApiResponse<{ tiene_historia: boolean; paciente_id: number; especialidad_id: number }>> {
+    return this.http.get<ApiResponse<{ tiene_historia: boolean; paciente_id: number; especialidad_id: number }>>(
+      `${this.baseUrl}/by-paciente/${pacienteId}/verificar-especialidad`,
+      { params: { especialidad_id: especialidadId.toString() } }
+    );
+  }
 }
