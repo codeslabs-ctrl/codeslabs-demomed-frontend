@@ -807,7 +807,7 @@ export class PatientDetailComponent implements OnInit {
       </head>
       <body>
         <div class="header">
-          <div class="logo">FemiMed</div>
+          <div class="logo">DemoMed</div>
           <h1>Informe Médico</h1>
         </div>
         
@@ -875,7 +875,7 @@ export class PatientDetailComponent implements OnInit {
         
         <div class="footer">
           <p>Fecha de emisión: ${new Date().toLocaleDateString('es-ES')}</p>
-          <p>FemiMed - Especialistas en Ginecología</p>
+          <p>DemoMed - Sistema de Gestión Médica</p>
         </div>
       </body>
       </html>

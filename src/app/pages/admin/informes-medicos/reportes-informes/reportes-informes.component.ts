@@ -320,7 +320,7 @@ export class ReportesInformesComponent implements OnInit {
         ` : ''}
         
         <div class="footer">
-          <p>FemiMed - Sistema de Gestión Médica</p>
+          <p>DemoMed - Sistema de Gestión Médica</p>
           <p>Reporte generado automáticamente</p>
         </div>
       </body>

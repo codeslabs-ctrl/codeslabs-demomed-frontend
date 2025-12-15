@@ -11,6 +11,7 @@ import { ArchivoService } from '../../../services/archivo.service';
 import { DateService } from '../../../services/date.service';
 import { AuthService } from '../../../services/auth.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
+import { PlantillaHistoriaService, PlantillaHistoria } from '../../../services/plantilla-historia.service';
 import { ConsultaWithDetails } from '../../../models/consulta.model';
 import { HistoricoWithDetails } from '../../../services/historico.service';
 import { ArchivoAnexo } from '../../../models/archivo.model';
@@ -114,6 +115,49 @@ import { Patient } from '../../../models/patient.model';
             <p *ngIf="medicoSeleccionado.ultima_consulta" class="medico-date">
               Última consulta: {{ formatDate(medicoSeleccionado.ultima_consulta) }}
             </p>
+          </div>
+        </div>
+
+        <!-- Selector de Plantillas -->
+        <div class="plantillas-section" *ngIf="esEditable">
+          <div class="plantillas-header">
+            <h3>
+              <i class="fas fa-file-alt"></i>
+              Plantillas de Historia Médica
+            </h3>
+          </div>
+          <div class="plantillas-controls">
+            <div class="plantilla-selector">
+              <label for="plantillaSelect">Aplicar plantilla:</label>
+              <select 
+                id="plantillaSelect" 
+                [(ngModel)]="plantillaSeleccionada"
+                class="form-control"
+                name="plantillaSelect"
+                [disabled]="cargandoPlantillas || plantillas.length === 0"
+                (change)="onPlantillaChange($event)">
+                <option [value]="null">-- Seleccione una plantilla --</option>
+                <option *ngFor="let plantilla of plantillas" [value]="plantilla.id">
+                  {{ plantilla.nombre }}
+                </option>
+              </select>
+              <button 
+                type="button" 
+                class="btn btn-sm btn-primary"
+                (click)="aplicarPlantilla()"
+                [disabled]="!plantillaSeleccionada || cargandoPlantillas || plantillas.length === 0">
+                <i class="fas fa-check"></i>
+                Aplicar
+              </button>
+            </div>
+            <button 
+              type="button" 
+              class="btn btn-sm btn-outline"
+              (click)="abrirModalGuardarPlantilla()"
+              [disabled]="!historiaForm.motivo_consulta && !historiaForm.diagnostico">
+              <i class="fas fa-save"></i>
+              Guardar como plantilla
+            </button>
           </div>
         </div>
 
@@ -296,6 +340,63 @@ import { Patient } from '../../../models/patient.model';
       (close)="cerrarModalInterconsultas()"
       (remisionCreated)="onRemisionCreated($event)">
     </app-remitir-paciente-modal>
+
+    <!-- Modal para Guardar Plantilla -->
+    <div *ngIf="mostrarModalPlantilla" class="modal-overlay" (click)="cerrarModalPlantilla()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>
+            <i class="fas fa-file-alt"></i>
+            Guardar como Plantilla
+          </h3>
+          <button type="button" class="modal-close" (click)="cerrarModalPlantilla()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="plantillaNombre">Nombre de la plantilla *</label>
+            <input 
+              type="text" 
+              id="plantillaNombre"
+              [(ngModel)]="plantillaForm.nombre"
+              class="form-control"
+              placeholder="Ej: Consulta general, Control post-operatorio, etc."
+              required>
+          </div>
+          <div class="form-group">
+            <label>Vista previa de la plantilla:</label>
+            <div class="plantilla-preview">
+              <div class="preview-item" *ngIf="plantillaForm.motivo_consulta_template">
+                <strong>Motivo de Consulta:</strong>
+                <div [innerHTML]="plantillaForm.motivo_consulta_template"></div>
+              </div>
+              <div class="preview-item" *ngIf="plantillaForm.diagnostico_template">
+                <strong>Diagnóstico:</strong>
+                <div [innerHTML]="plantillaForm.diagnostico_template"></div>
+              </div>
+              <div class="preview-item" *ngIf="plantillaForm.conclusiones_template">
+                <strong>Conclusiones:</strong>
+                <div [innerHTML]="plantillaForm.conclusiones_template"></div>
+              </div>
+              <div class="preview-item" *ngIf="plantillaForm.plan_template">
+                <strong>Plan:</strong>
+                <div [innerHTML]="plantillaForm.plan_template"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="cerrarModalPlantilla()">
+            Cancelar
+          </button>
+          <button type="button" class="btn btn-primary" (click)="guardarPlantilla()">
+            <i class="fas fa-save"></i>
+            Guardar Plantilla
+          </button>
+        </div>
+      </div>
+    </div>
   `,
   styles: [`
     .historia-medica-page {
@@ -656,6 +757,14 @@ import { Patient } from '../../../models/patient.model';
       min-height: 100px;
     }
 
+    /* Los selects no deben tener min-height */
+    .form-control select,
+    select.form-control {
+      min-height: auto;
+      resize: none;
+      height: auto;
+    }
+
     .form-control:focus {
       outline: none;
       border-color: #007bff;
@@ -790,6 +899,168 @@ import { Patient } from '../../../models/patient.model';
         grid-template-columns: 1fr;
       }
     }
+    /* Estilos para plantillas */
+    .plantillas-section {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .plantillas-header h3 {
+      margin: 0 0 1rem 0;
+      color: #1e293b;
+      font-size: 1.125rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .plantillas-header h3 i {
+      color: var(--color-primary, #7A9CC6);
+    }
+
+    .plantillas-controls {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .plantilla-selector {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .plantilla-selector label {
+      font-weight: 600;
+      color: #64748b;
+      font-size: 0.875rem;
+      white-space: nowrap;
+    }
+
+    .plantilla-selector select {
+      flex: 1;
+      height: 38px;
+      min-height: 38px !important;
+      max-height: 38px;
+      padding: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    /* Estilos para modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 2rem;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .modal-header h3 i {
+      color: var(--color-primary, #7A9CC6);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #64748b;
+      cursor: pointer;
+      padding: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      padding: 1.5rem;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .plantilla-preview {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 1rem;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .preview-item {
+      margin-bottom: 1rem;
+    }
+
+    .preview-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .preview-item strong {
+      display: block;
+      color: #1e293b;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .preview-item div {
+      color: #64748b;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
   `]
 })
 export class HistoriaMedicaComponent implements OnInit {
@@ -827,6 +1098,20 @@ export class HistoriaMedicaComponent implements OnInit {
   esEditable = true;
   mostrarSelectorMedico = false;
 
+  // Propiedades para plantillas
+  plantillas: PlantillaHistoria[] = [];
+  plantillaSeleccionada: number | null = null;
+  cargandoPlantillas = false;
+  mostrarModalPlantilla = false;
+  modoModalPlantilla: 'crear' | 'editar' = 'crear';
+  plantillaForm = {
+    nombre: '',
+    motivo_consulta_template: '',
+    diagnostico_template: '',
+    conclusiones_template: '',
+    plan_template: ''
+  };
+
   constructor(
     private consultaService: ConsultaService,
     private patientService: PatientService,
@@ -838,7 +1123,8 @@ export class HistoriaMedicaComponent implements OnInit {
     private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private plantillaService: PlantillaHistoriaService
   ) {}
 
   ngOnInit(): void {
@@ -846,6 +1132,7 @@ export class HistoriaMedicaComponent implements OnInit {
       this.consultaId = +params['id']; // Ahora es patientId
       if (this.consultaId) {
         this.cargarPaciente();
+        this.cargarPlantillas();
       } else {
         this.error = 'ID de paciente no válido';
         this.loading = false;
@@ -1530,5 +1817,133 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
     
     // Cerrar el modal
     this.cerrarModalInterconsultas();
+  }
+
+  // Métodos para manejar plantillas
+  onPlantillaChange(event: any): void {
+    const value = event.target.value;
+    this.plantillaSeleccionada = value === 'null' || value === '' ? null : parseInt(value);
+    console.log('🔄 Plantilla seleccionada cambiada:', this.plantillaSeleccionada);
+  }
+
+  cargarPlantillas(): void {
+    this.cargandoPlantillas = true;
+    this.plantillaService.obtenerPlantillas(true).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.plantillas = response.data;
+        }
+        this.cargandoPlantillas = false;
+      },
+      error: (error) => {
+        console.error('Error cargando plantillas:', error);
+        this.cargandoPlantillas = false;
+      }
+    });
+  }
+
+  aplicarPlantilla(): void {
+    console.log('🔄 Aplicar plantilla - plantillaSeleccionada:', this.plantillaSeleccionada);
+    console.log('🔄 Plantillas disponibles:', this.plantillas);
+    
+    if (!this.plantillaSeleccionada) {
+      console.warn('⚠️ No hay plantilla seleccionada');
+      alert('Por favor, seleccione una plantilla');
+      return;
+    }
+    
+    // Convertir a número si es string (puede venir del select como string)
+    const plantillaId = typeof this.plantillaSeleccionada === 'string' 
+      ? parseInt(this.plantillaSeleccionada) 
+      : this.plantillaSeleccionada;
+    
+    const plantilla = this.plantillas.find(p => p.id === plantillaId);
+    
+    if (!plantilla) {
+      console.error('❌ Plantilla no encontrada con ID:', plantillaId);
+      alert('Error: No se encontró la plantilla seleccionada');
+      return;
+    }
+
+    console.log('✅ Plantilla encontrada:', plantilla);
+    
+    const datosAplicados = this.plantillaService.aplicarPlantilla(plantilla);
+    console.log('✅ Datos a aplicar:', datosAplicados);
+    
+    this.historiaForm.motivo_consulta = datosAplicados.motivo_consulta;
+    this.historiaForm.diagnostico = datosAplicados.diagnostico;
+    this.historiaForm.conclusiones = datosAplicados.conclusiones;
+    this.historiaForm.plan = datosAplicados.plan;
+    
+    console.log('✅ Plantilla aplicada exitosamente');
+    
+    // Limpiar selección
+    this.plantillaSeleccionada = null;
+    
+    // Mostrar mensaje de confirmación
+    alert('✅ Plantilla aplicada exitosamente');
+  }
+
+  abrirModalGuardarPlantilla(): void {
+    // Llenar el formulario de plantilla con los datos actuales
+    this.plantillaForm = {
+      nombre: '',
+      motivo_consulta_template: this.historiaForm.motivo_consulta,
+      diagnostico_template: this.historiaForm.diagnostico,
+      conclusiones_template: this.historiaForm.conclusiones,
+      plan_template: this.historiaForm.plan
+    };
+    this.modoModalPlantilla = 'crear';
+    this.mostrarModalPlantilla = true;
+  }
+
+  cerrarModalPlantilla(): void {
+    this.mostrarModalPlantilla = false;
+    this.plantillaForm = {
+      nombre: '',
+      motivo_consulta_template: '',
+      diagnostico_template: '',
+      conclusiones_template: '',
+      plan_template: ''
+    };
+  }
+
+  guardarPlantilla(): void {
+    if (!this.plantillaForm.nombre.trim()) {
+      alert('Por favor, ingrese un nombre para la plantilla');
+      return;
+    }
+
+    const currentUser = this.authService.getCurrentUser();
+    const medicoId = currentUser?.medico_id;
+    
+    if (!medicoId) {
+      alert('No se pudo identificar al médico');
+      return;
+    }
+
+    const plantillaData: Omit<PlantillaHistoria, 'id' | 'fecha_creacion' | 'fecha_actualizacion'> = {
+      medico_id: medicoId,
+      nombre: this.plantillaForm.nombre.trim(),
+      motivo_consulta_template: this.plantillaForm.motivo_consulta_template,
+      diagnostico_template: this.plantillaForm.diagnostico_template,
+      conclusiones_template: this.plantillaForm.conclusiones_template,
+      plan_template: this.plantillaForm.plan_template,
+      activo: true
+    };
+
+    this.plantillaService.crearPlantilla(plantillaData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          alert('Plantilla guardada exitosamente');
+          this.cargarPlantillas();
+          this.cerrarModalPlantilla();
+        }
+      },
+      error: (error) => {
+        console.error('Error guardando plantilla:', error);
+        alert('Error al guardar la plantilla');
+      }
+    });
   }
 }

@@ -309,7 +309,7 @@ export class InformeMedicoDetailComponent implements OnInit {
         
         <div class="footer">
           <p>Generado el: ${new Date().toLocaleString('es-ES')}</p>
-          <p>FemiMed - Sistema de Gestión Médica</p>
+          <p>DemoMed - Sistema de Gestión Médica</p>
         </div>
       </body>
       </html>

@@ -460,7 +460,7 @@ export class ChangePasswordModalComponent {
     };
 
     // Obtener token del localStorage
-    const token = localStorage.getItem('femimed_token');
+    const token = localStorage.getItem('demomed_token');
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
