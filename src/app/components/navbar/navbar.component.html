@@ -124,6 +124,12 @@
         <!-- Opciones de Usuario -->
         <div class="settings-section">
           <div class="settings-section-title">Usuario</div>
+          <a routerLink="/settings/home" class="settings-item" (click)="closeSettingsMenu()">
+            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 17h-2v-2h2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26A1.99 1.99 0 0 0 15 9a2 2 0 0 0-4 0H9a4 4 0 0 1 8 0c0 .88-.36 1.68-.93 2.25z"/>
+            </svg>
+            <span>Preferencias</span>
+          </a>
           <button class="settings-item danger" (click)="logout()">
             <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
