@@ -98,7 +98,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
           </h3>
           <button class="btn-refresh" (click)="refreshConsultas()" [disabled]="loadingConsultas">
             <span [class.spinner]="loadingConsultas"></span>
-            {{ loadingConsultas ? 'Cargando...' : '🔄 Actualizar' }}
+            {{ loadingConsultas ? 'Cargando...' : '↻ Actualizar' }}
           </button>
         </div>
 
@@ -164,6 +164,75 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
         <div *ngIf="loadingConsultas" class="loading-consultas">
           <div class="spinner"></div>
           <p>Cargando consultas del día...</p>
+        </div>
+      </div>
+
+      <!-- Sección de Consultas Pendientes -->
+      <div class="consultas-section" *ngIf="currentUser?.rol === 'medico' || currentUser?.rol === 'administrador'">
+        <div class="section-header">
+          <h3 class="section-title">
+            ⏰ Consultas Pendientes
+            <span class="count-badge" *ngIf="consultasPendientes.length > 0">{{ consultasPendientes.length }}</span>
+          </h3>
+          <button class="btn-refresh" (click)="refreshConsultasPendientes()" [disabled]="loadingConsultasPendientes">
+            <span [class.spinner]="loadingConsultasPendientes"></span>
+            {{ loadingConsultasPendientes ? 'Cargando...' : '↻ Actualizar' }}
+          </button>
+        </div>
+
+        <div class="consultas-grid" *ngIf="!loadingConsultasPendientes">
+          <div *ngIf="consultasPendientes.length === 0" class="empty-state">
+            <div class="empty-state-icon">✅</div>
+            <div class="empty-state-title">No hay consultas pendientes</div>
+            <div class="empty-state-description">Todas las consultas pasadas tienen historia médica registrada.</div>
+          </div>
+
+          <div *ngFor="let consulta of consultasPendientes" class="consulta-card consulta-pendiente" [class]="getConsultaCardClass(consulta)">
+            <div class="consulta-header">
+              <div class="hora">{{ formatTime(consulta.hora_pautada) }}</div>
+              <div class="estado estado-pendiente">
+                Pendiente
+              </div>
+            </div>
+            
+            <div class="consulta-body">
+              <div class="fecha-pasada">
+                📅 {{ formatDate(consulta.fecha_pautada) }}
+              </div>
+              <div class="paciente-info">
+                <div class="paciente-nombre">{{ consulta.paciente_nombre }} {{ consulta.paciente_apellidos }}</div>
+                <div class="paciente-cedula" *ngIf="consulta.paciente_cedula">Cédula: {{ consulta.paciente_cedula }}</div>
+              </div>
+              
+              <div class="medico-info">
+                <div class="medico-nombre">{{ consulta.medico_nombre }} {{ consulta.medico_apellidos }}</div>
+                <div class="medico-especialidad" *ngIf="consulta.especialidad_nombre">{{ consulta.especialidad_nombre }}</div>
+              </div>
+              
+              <div class="motivo" *ngIf="consulta.motivo_consulta">
+                {{ consulta.motivo_consulta }}
+              </div>
+              
+              <div class="tipo-consulta" *ngIf="consulta.tipo_consulta">
+                <span class="tipo-badge">{{ getTipoConsultaText(consulta.tipo_consulta) }}</span>
+              </div>
+            </div>
+            
+            <div class="consulta-actions">
+              <button class="btn btn-view" (click)="verConsulta(consulta)">
+                👁️ Ver
+              </button>
+              <button class="btn btn-history" (click)="addHistoria(consulta)"
+                      *ngIf="currentUser?.rol === 'medico'">
+                📝 Registrar Historia
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="loadingConsultasPendientes" class="loading-consultas">
+          <div class="spinner"></div>
+          <p>Cargando consultas pendientes...</p>
         </div>
       </div>
 
@@ -684,24 +753,6 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       font-family: 'Montserrat', sans-serif;
     }
 
-    .refresh-btn {
-      background: #F5F5F5;
-      border: 1px solid #7A9CC6;
-      color: #7A9CC6;
-      padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-family: 'Montserrat', sans-serif;
-    }
-
-    .refresh-btn:hover {
-      background: #7A9CC6;
-      color: white;
-      transform: translateY(-1px);
-    }
 
     .consultas-grid {
       display: grid;
@@ -830,6 +881,26 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
     .estado-reagendada {
       background: #e0e7ff;
       color: #3730a3;
+    }
+
+    .estado-pendiente {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .consulta-pendiente {
+      border-left: 4px solid #f59e0b;
+    }
+
+    .fecha-pasada {
+      font-size: 0.75rem;
+      color: #92400e;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      padding: 0.25rem 0.5rem;
+      background: #fef3c7;
+      border-radius: 0.375rem;
+      display: inline-block;
     }
 
     .estado-no_asistio {
@@ -1602,6 +1673,63 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
         font-size: 1.25rem;
       }
     }
+
+    .consultas-section .section-header .btn-refresh,
+    .section-header button.btn-refresh {
+      background: #ffffff !important;
+      color: #7A9CC6 !important;
+      border: 2px solid #7A9CC6 !important;
+      padding: 0.375rem 0.75rem !important;
+      border-radius: 0.5rem !important;
+      font-size: 0.75rem !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 0.375rem !important;
+      font-family: 'Montserrat', sans-serif !important;
+      margin: 0 !important;
+      box-sizing: border-box !important;
+    }
+
+    .consultas-section .section-header .btn-refresh:hover:not([disabled]),
+    .section-header button.btn-refresh:hover:not([disabled]) {
+      background: #7A9CC6 !important;
+      color: white !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 2px 8px rgba(122, 156, 198, 0.3) !important;
+    }
+
+    .consultas-section .section-header .btn-refresh:active:not([disabled]),
+    .section-header button.btn-refresh:active:not([disabled]) {
+      transform: translateY(0) !important;
+      box-shadow: 0 1px 4px rgba(122, 156, 198, 0.2) !important;
+    }
+
+    .consultas-section .section-header .btn-refresh[disabled],
+    .section-header button.btn-refresh[disabled] {
+      background: #f3f4f6 !important;
+      color: #9ca3af !important;
+      border-color: #e5e7eb !important;
+      cursor: not-allowed !important;
+      opacity: 0.6 !important;
+    }
+
+    .consultas-section .section-header .btn-refresh .spinner,
+    .section-header button.btn-refresh .spinner {
+      display: inline-block !important;
+      width: 12px !important;
+      height: 12px !important;
+      border: 2px solid currentColor !important;
+      border-top-color: transparent !important;
+      border-radius: 50% !important;
+      animation: spin 0.8s linear infinite !important;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   `]
 })
 export class DashboardComponent implements OnInit {
@@ -1616,6 +1744,10 @@ export class DashboardComponent implements OnInit {
   // Propiedades para consultas del día
   consultasDelDia: ConsultaWithDetails[] = [];
   loadingConsultas = false;
+  
+  // Propiedades para consultas pendientes
+  consultasPendientes: ConsultaWithDetails[] = [];
+  loadingConsultasPendientes = false;
   
   // Propiedades para modales
   showVerModal = false;
@@ -1687,6 +1819,11 @@ export class DashboardComponent implements OnInit {
 
     // Cargar consultas del día
     this.loadConsultasDelDia();
+    
+    // Cargar consultas pendientes (solo para médicos y administradores)
+    if (this.currentUser?.rol === 'medico' || this.currentUser?.rol === 'administrador') {
+      this.loadConsultasPendientes();
+    }
   }
 
   loadConsultasDelDia(): void {
@@ -1712,6 +1849,37 @@ export class DashboardComponent implements OnInit {
 
   refreshConsultas(): void {
     this.loadConsultasDelDia();
+  }
+
+  loadConsultasPendientes(): void {
+    console.log('🔍 Dashboard - loadConsultasPendientes iniciando...');
+    this.loadingConsultasPendientes = true;
+    this.consultaService.getConsultasPendientes().subscribe({
+      next: (response) => {
+        console.log('✅ Dashboard - Consultas pendientes cargadas:', response);
+        this.consultasPendientes = response.data || [];
+        this.loadingConsultasPendientes = false;
+      },
+      error: (error) => {
+        this.errorHandler.logError(error, 'cargar consultas pendientes');
+        this.loadingConsultasPendientes = false;
+        this.consultasPendientes = [];
+      }
+    });
+  }
+
+  refreshConsultasPendientes(): void {
+    this.loadConsultasPendientes();
+  }
+
+  formatDate(dateString: string): string {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
+    });
   }
 
   getDoctorFullName(): string {
@@ -1842,6 +2010,7 @@ export class DashboardComponent implements OnInit {
         this.showFinalizarConServiciosModal = false;
         this.selectedConsulta = null;
         this.loadConsultasDelDia();
+        this.loadConsultasPendientes();
         alert('Consulta finalizada exitosamente');
       },
       error: (error: any) => {
@@ -1883,6 +2052,7 @@ export class DashboardComponent implements OnInit {
         alert('📅 Consulta reagendada exitosamente\n\nLa consulta ha sido reagendada para la nueva fecha y hora.');
         this.closeReagendarModal();
         this.loadConsultasDelDia();
+        this.loadConsultasPendientes();
         this.isSubmitting = false;
       },
       error: (error) => {
@@ -1908,6 +2078,7 @@ export class DashboardComponent implements OnInit {
         alert('✅ Consulta finalizada exitosamente\n\nLa consulta ha sido marcada como completada y se ha registrado en el historial del paciente.');
         this.closeFinalizarModal();
         this.loadConsultasDelDia();
+        this.loadConsultasPendientes();
       },
       error: (error) => {
         this.errorHandler.logError(error, 'finalizar consulta');
@@ -1933,6 +2104,7 @@ export class DashboardComponent implements OnInit {
         alert('⚠️ Consulta cancelada exitosamente\n\nLa consulta ha sido cancelada y el paciente será notificado. Puede reagendar la cita si es necesario.');
         this.closeCancelarModal();
         this.loadConsultasDelDia();
+        this.loadConsultasPendientes();
         this.isSubmitting = false;
       },
       error: (error) => {
