@@ -62,6 +62,42 @@ import { MensajeDifusion, PacienteParaDifusion } from '../../../../models/mensaj
                 <option value="recordatorio">Recordatorio</option>
               </select>
             </div>
+
+            <div class="form-group">
+              <label>Canales de Envío *</label>
+              <div class="canales-container">
+                <label class="canal-checkbox">
+                  <input 
+                    type="checkbox" 
+                    [checked]="isCanalSelected('email')"
+                    (change)="toggleCanal('email')"
+                    name="canal-email">
+                  <span>📧 Email</span>
+                </label>
+                <label class="canal-checkbox">
+                  <input 
+                    type="checkbox" 
+                    [checked]="isCanalSelected('whatsapp')"
+                    (change)="toggleCanal('whatsapp')"
+                    name="canal-whatsapp">
+                  <span>💬 WhatsApp</span>
+                </label>
+                <label class="canal-checkbox">
+                  <input 
+                    type="checkbox" 
+                    [checked]="isCanalSelected('sms')"
+                    (change)="toggleCanal('sms')"
+                    name="canal-sms">
+                  <span>📱 SMS</span>
+                </label>
+              </div>
+              <small class="form-hint" *ngIf="hasCanalTelefono()">
+                ⚠️ Solo se mostrarán pacientes con número de teléfono (WhatsApp/SMS seleccionados)
+              </small>
+              <small class="form-error" *ngIf="mensajeData.canal.length === 0">
+                ⚠️ Debe seleccionar al menos un canal de envío
+              </small>
+            </div>
           </div>
 
           <!-- Sección para seleccionar destinatarios en modo creación -->
@@ -254,6 +290,7 @@ import { MensajeDifusion, PacienteParaDifusion } from '../../../../models/mensaj
                         </th>
                         <th>Nombre</th>
                         <th>Email</th>
+                        <th>Teléfono</th>
                         <th>Cédula</th>
                         <th>Edad</th>
                         <th>Sexo</th>
@@ -272,6 +309,7 @@ import { MensajeDifusion, PacienteParaDifusion } from '../../../../models/mensaj
                           <strong>{{ paciente.nombres }} {{ paciente.apellidos }}</strong>
                         </td>
                         <td>{{ paciente.email }}</td>
+                        <td>{{ paciente.telefono || '-' }}</td>
                         <td>{{ paciente.cedula || '-' }}</td>
                         <td>{{ paciente.edad || '-' }}</td>
                         <td>{{ paciente.sexo || '-' }}</td>
@@ -295,8 +333,10 @@ import { MensajeDifusion, PacienteParaDifusion } from '../../../../models/mensaj
             <button 
               type="submit" 
               class="btn btn-primary" 
-              [disabled]="!mensajeForm.valid">
-              {{ mensajeId > 0 ? 'Guardar Cambios' : 'Crear Mensaje' }}
+              [disabled]="!mensajeForm.valid || mensajeData.canal.length === 0 || saving">
+              <span *ngIf="saving" class="btn-spinner"></span>
+              <span *ngIf="!saving">{{ mensajeId > 0 ? 'Guardar Cambios' : 'Crear Mensaje' }}</span>
+              <span *ngIf="saving">{{ mensajeId > 0 ? 'Guardando...' : 'Creando...' }}</span>
             </button>
           </div>
         </form>
@@ -401,6 +441,55 @@ import { MensajeDifusion, PacienteParaDifusion } from '../../../../models/mensaj
       outline: none;
       border-color: #3b82f6;
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-hint {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: #f39c12;
+      font-weight: 500;
+    }
+
+    .form-error {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: #dc2626;
+      font-weight: 500;
+    }
+
+    .canales-container {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+
+    .canal-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      transition: background-color 0.2s;
+    }
+
+    .canal-checkbox:hover {
+      background-color: #f3f4f6;
+    }
+
+    .canal-checkbox input[type="checkbox"] {
+      width: 1.25rem;
+      height: 1.25rem;
+      cursor: pointer;
+      accent-color: #3b82f6;
+    }
+
+    .canal-checkbox span {
+      font-size: 0.875rem;
+      user-select: none;
     }
 
     .form-textarea {
@@ -648,6 +737,18 @@ import { MensajeDifusion, PacienteParaDifusion } from '../../../../models/mensaj
         transform: rotate(360deg);
       }
     }
+
+    .btn-spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
   `]
 })
 export class EditarMensajeComponent implements OnInit {
@@ -655,7 +756,8 @@ export class EditarMensajeComponent implements OnInit {
   mensajeData = {
     titulo: '',
     contenido: '',
-    tipo_mensaje: 'general'
+    tipo_mensaje: 'general',
+    canal: ['email'] as string[]
   };
 
   // Propiedades para destinatarios
@@ -670,6 +772,9 @@ export class EditarMensajeComponent implements OnInit {
   searchTimeout: any = null;
   allSelected = false;
   busquedaPacientes = '';
+  
+  // Estado de guardado
+  saving = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -696,11 +801,31 @@ export class EditarMensajeComponent implements OnInit {
     this.mensajeService.getMensajeById(this.mensajeId).subscribe({
       next: (response: any) => {
         if (response.success) {
+          // Convertir canal a array si viene como string o JSON
+          let canal = response.data.canal || 'email';
+          try {
+            // Intentar parsear si es JSON string
+            if (typeof canal === 'string' && canal.startsWith('[')) {
+              canal = JSON.parse(canal);
+            } else if (typeof canal === 'string') {
+              canal = [canal];
+            } else if (!Array.isArray(canal)) {
+              canal = ['email'];
+            }
+          } catch {
+            // Si falla el parse, usar como string y convertir a array
+            canal = typeof canal === 'string' ? [canal] : ['email'];
+          }
+          
           this.mensajeData = {
             titulo: response.data.titulo,
             contenido: response.data.contenido,
-            tipo_mensaje: response.data.tipo_mensaje || 'general'
+            tipo_mensaje: response.data.tipo_mensaje || 'general',
+            canal: canal
           };
+          
+          // Aplicar filtro de pacientes según canales
+          this.onCanalChange();
         }
       },
       error: (error: any) => {
@@ -809,6 +934,63 @@ export class EditarMensajeComponent implements OnInit {
     this.updateAllSelectedState();
   }
 
+  isCanalSelected(canal: string): boolean {
+    return Array.isArray(this.mensajeData.canal) && this.mensajeData.canal.includes(canal);
+  }
+
+  toggleCanal(canal: string) {
+    // Asegurar que canal sea un array
+    if (!Array.isArray(this.mensajeData.canal)) {
+      // Si es string, convertirlo a array
+      this.mensajeData.canal = typeof this.mensajeData.canal === 'string' ? [this.mensajeData.canal] : ['email'];
+    }
+    
+    // Crear una nueva referencia del array para asegurar el cambio de detección
+    const canalesActuales = [...this.mensajeData.canal];
+    const index = canalesActuales.indexOf(canal);
+    
+    if (index > -1) {
+      // Remover canal
+      canalesActuales.splice(index, 1);
+    } else {
+      // Agregar canal
+      canalesActuales.push(canal);
+    }
+    
+    // Actualizar con nueva referencia
+    this.mensajeData.canal = canalesActuales;
+    
+    console.log('Canales después de toggle:', this.mensajeData.canal);
+    
+    // NO forzar email - permitir que el usuario seleccione solo whatsapp o sms
+    // La validación se hará al guardar
+    
+    this.onCanalChange();
+  }
+
+  hasCanalTelefono(): boolean {
+    return Array.isArray(this.mensajeData.canal) && 
+           (this.mensajeData.canal.includes('whatsapp') || this.mensajeData.canal.includes('sms'));
+  }
+
+  onCanalChange() {
+    // Filtrar pacientes según los canales seleccionados
+    if (this.hasCanalTelefono()) {
+      // Si hay WhatsApp o SMS seleccionado, solo mostrar pacientes con teléfono
+      this.pacientesFiltrados = this.pacientes.filter(p => p.telefono && p.telefono.trim() !== '');
+      // Limpiar selecciones de pacientes sin teléfono
+      this.pacientesFiltrados.forEach(p => {
+        if (!p.telefono || p.telefono.trim() === '') {
+          p.seleccionado = false;
+        }
+      });
+    } else {
+      // Si solo hay email, mostrar todos los pacientes
+      this.pacientesFiltrados = [...this.pacientes];
+    }
+    this.updateAllSelectedState();
+  }
+
   removeDestinatario(pacienteId: number) {
     this.mensajeService.eliminarDestinatario(this.mensajeId, pacienteId).subscribe({
       next: (response: any) => {
@@ -850,38 +1032,86 @@ export class EditarMensajeComponent implements OnInit {
   }
 
   saveMensaje() {
+    // Validar que haya al menos un canal seleccionado
+    if (!Array.isArray(this.mensajeData.canal) || this.mensajeData.canal.length === 0) {
+      alert('⚠️ Debe seleccionar al menos un canal de envío');
+      return;
+    }
+
+    // Validar que haya destinatarios seleccionados (solo en modo creación)
+    if (this.mensajeId === 0) {
+      const destinatariosIds = this.pacientesFiltrados.filter(p => p.seleccionado).map(p => p.id);
+      if (destinatariosIds.length === 0) {
+        alert('⚠️ Debe seleccionar al menos un destinatario');
+        return;
+      }
+    }
+
+    this.saving = true;
+
     if (this.mensajeId > 0) {
       // Modo edición
-      this.mensajeService.actualizarMensaje(this.mensajeId, this.mensajeData).subscribe({
+      // Asegurar que canal sea array
+      const mensajeDataToSend = {
+        ...this.mensajeData,
+        canal: Array.isArray(this.mensajeData.canal) ? this.mensajeData.canal : [this.mensajeData.canal]
+      };
+      
+      this.mensajeService.actualizarMensaje(this.mensajeId, mensajeDataToSend).subscribe({
         next: (response: any) => {
+          this.saving = false;
           if (response.success) {
             this.goBack();
           } else {
             console.error('Error updating mensaje:', response);
+            alert('Error al actualizar el mensaje. Por favor, intente nuevamente.');
           }
         },
         error: (error: any) => {
+          this.saving = false;
           console.error('Error updating mensaje:', error);
+          alert('Error al actualizar el mensaje. Por favor, intente nuevamente.');
         }
       });
     } else {
       // Modo creación
       const destinatariosIds = this.pacientesFiltrados.filter(p => p.seleccionado).map(p => p.id);
+      
+      // Asegurar que canal sea array y crear una copia nueva
+      let canalesArray: string[];
+      if (Array.isArray(this.mensajeData.canal)) {
+        canalesArray = [...this.mensajeData.canal];
+      } else if (typeof this.mensajeData.canal === 'string') {
+        canalesArray = [this.mensajeData.canal];
+      } else {
+        canalesArray = ['email'];
+      }
+      
       const mensajeDataWithDestinatarios = {
         ...this.mensajeData,
+        canal: canalesArray,
         destinatarios: destinatariosIds
       };
       
+      console.log('=== DATOS A ENVIAR AL BACKEND ===');
+      console.log('Canales seleccionados:', canalesArray);
+      console.log('Tipo de canales:', typeof canalesArray, Array.isArray(canalesArray));
+      console.log('Mensaje completo:', JSON.stringify(mensajeDataWithDestinatarios, null, 2));
+      
       this.mensajeService.crearMensaje(mensajeDataWithDestinatarios).subscribe({
         next: (response: any) => {
+          this.saving = false;
           if (response.success) {
             this.goBack();
           } else {
             console.error('Error creating mensaje:', response);
+            alert('Error al crear el mensaje. Por favor, intente nuevamente.');
           }
         },
         error: (error: any) => {
+          this.saving = false;
           console.error('Error creating mensaje:', error);
+          alert('Error al crear el mensaje. Por favor, intente nuevamente.');
         }
       });
     }

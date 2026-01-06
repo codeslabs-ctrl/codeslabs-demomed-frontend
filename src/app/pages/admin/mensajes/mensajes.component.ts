@@ -104,6 +104,10 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
               </span>
             </div>
             <div class="meta-item">
+              <span class="label">Canal:</span>
+              <span>{{ getCanalLabel(mensaje.canal) }}</span>
+            </div>
+            <div class="meta-item">
               <span class="label">Tipo:</span>
               <span>{{ getTipoLabel(mensaje.tipo_mensaje || 'general') }}</span>
             </div>
@@ -160,6 +164,23 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
                   rows="6"
                   class="form-textarea"
                   placeholder="Escribe el contenido del mensaje aquí..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="canal">Canal de Envío *</label>
+                <select 
+                  id="canal"
+                  [(ngModel)]="mensajeData.canal"
+                  name="canal"
+                  class="form-select"
+                  (change)="onCanalChange()">
+                  <option value="email">📧 Email</option>
+                  <option value="whatsapp">💬 WhatsApp</option>
+                  <option value="sms">📱 SMS</option>
+                </select>
+                <small class="form-hint" *ngIf="mensajeData.canal === 'whatsapp' || mensajeData.canal === 'sms'">
+                  ⚠️ Solo se mostrarán pacientes con número de teléfono
+                </small>
               </div>
 
               <div class="form-group">
@@ -280,6 +301,7 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
                               </th>
                               <th>Nombre</th>
                               <th>Email</th>
+                              <th>Teléfono</th>
                               <th>Cédula</th>
                               <th>Edad</th>
                               <th>Sexo</th>
@@ -297,7 +319,8 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
                               <td>
                           <strong>{{ paciente.nombres }} {{ paciente.apellidos }}</strong>
                               </td>
-                              <td>{{ paciente.email }}</td>
+                              <td>{{ paciente.email || '-' }}</td>
+                              <td>{{ paciente.telefono || '-' }}</td>
                               <td>{{ paciente.cedula || '-' }}</td>
                               <td>{{ paciente.edad || '-' }}</td>
                               <td>{{ paciente.sexo || '-' }}</td>
@@ -380,6 +403,7 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
                               </th>
                               <th>Nombre</th>
                               <th>Email</th>
+                              <th>Teléfono</th>
                               <th>Cédula</th>
                               <th>Edad</th>
                               <th>Sexo</th>
@@ -397,7 +421,8 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
                               <td>
                                 <strong>{{ paciente.nombres }} {{ paciente.apellidos }}</strong>
                               </td>
-                              <td>{{ paciente.email }}</td>
+                              <td>{{ paciente.email || '-' }}</td>
+                              <td>{{ paciente.telefono || '-' }}</td>
                               <td>{{ paciente.cedula || '-' }}</td>
                               <td>{{ paciente.edad || '-' }}</td>
                               <td>{{ paciente.sexo || '-' }}</td>
@@ -698,6 +723,14 @@ import { ConfirmarEliminarComponent } from './confirmar-eliminar/confirmar-elimi
       border: 1px solid #ddd;
       border-radius: 4px;
       font-size: 1rem;
+    }
+
+    .form-hint {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: #f39c12;
+      font-weight: 500;
     }
 
     .form-textarea {
@@ -1094,6 +1127,7 @@ export class MensajesComponent implements OnInit, OnDestroy {
     titulo: '',
     contenido: '',
     tipo_mensaje: 'general',
+    canal: 'email',
     destinatarios: []
   };
 
@@ -1468,6 +1502,52 @@ export class MensajesComponent implements OnInit, OnDestroy {
       'recordatorio': 'Recordatorio'
     };
     return tipos[tipo] || tipo;
+  }
+
+  getCanalLabel(canal: string | string[] | undefined): string {
+    if (!canal) {
+      return '📧 Email';
+    }
+    
+    // Si es un array, mostrar todos los canales
+    if (Array.isArray(canal)) {
+      if (canal.length === 0) {
+        return '📧 Email';
+      }
+      const canales: { [key: string]: string } = {
+        'email': '📧 Email',
+        'whatsapp': '💬 WhatsApp',
+        'sms': '📱 SMS'
+      };
+      return canal.map(c => canales[c] || c).join(', ');
+    }
+    
+    // Si es un string, mostrar el canal individual
+    const canales: { [key: string]: string } = {
+      'email': '📧 Email',
+      'whatsapp': '💬 WhatsApp',
+      'sms': '📱 SMS'
+    };
+    return canales[canal] || canal;
+  }
+
+  onCanalChange() {
+    // Filtrar pacientes según el canal seleccionado
+    if (this.mensajeData.canal === 'whatsapp' || this.mensajeData.canal === 'sms') {
+      // Solo mostrar pacientes con teléfono
+      this.pacientesFiltrados = this.pacientes.filter(p => p.telefono && p.telefono.trim() !== '');
+      // Limpiar selecciones de pacientes sin teléfono
+      this.pacientesFiltrados.forEach(p => {
+        if (!p.telefono || p.telefono.trim() === '') {
+          p.seleccionado = false;
+        }
+      });
+    } else {
+      // Para email, mostrar todos los pacientes
+      this.pacientesFiltrados = [...this.pacientes];
+    }
+    this.updateAllSelectedState();
+    this.updateDestinatarios();
   }
 
   // Métodos para gestión de destinatarios
