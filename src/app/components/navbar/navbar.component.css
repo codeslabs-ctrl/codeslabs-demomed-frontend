@@ -39,9 +39,16 @@
 .brand-text {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #7A9CC6;
   margin-left: 0.75rem;
   letter-spacing: 0.05em;
+}
+
+.brand-text-demo {
+  color: #374151;
+}
+
+.brand-text-med {
+  color: #7A9CC6;
 }
 
 
