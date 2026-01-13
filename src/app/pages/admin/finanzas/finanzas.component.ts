@@ -405,7 +405,17 @@ export class FinanzasComponent implements OnInit {
     return this.dateService.formatTime(timeString);
   }
 
-  formatCurrency(amount: number, currency: string = 'COP'): string {
+  formatCurrency(amount: number | null | undefined, currency: string | null | undefined = 'VES'): string {
+    // Validar y convertir amount
+    if (amount === null || amount === undefined || isNaN(amount)) {
+      amount = 0;
+    }
+    
+    // Validar currency
+    if (!currency) {
+      currency = 'VES';
+    }
+    
     const currencyMap: { [key: string]: string } = {
       'VES': 'VES',
       'USD': 'USD', 
@@ -413,12 +423,17 @@ export class FinanzasComponent implements OnInit {
       'EUR': 'EUR'
     };
     
-    const currencyCode = currencyMap[currency] || 'COP';
+    const currencyCode = currencyMap[currency] || 'VES';
     
-    return new Intl.NumberFormat('es-VE', {
-      style: 'currency',
-      currency: currencyCode
-    }).format(amount);
+    try {
+      return new Intl.NumberFormat('es-VE', {
+        style: 'currency',
+        currency: currencyCode
+      }).format(amount);
+    } catch (error) {
+      // Fallback si hay error con el formato
+      return `${currencyCode} ${amount.toFixed(2)}`;
+    }
   }
 
   getEstadoText(estado: string): string {
