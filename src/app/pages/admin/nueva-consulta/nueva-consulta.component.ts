@@ -505,6 +505,7 @@ export class NuevaConsultaComponent implements OnInit {
   selectedEspecialidadId: number = 0;
   isSubmitting = false;
   currentUser: any = null;
+  pendingMedicoId: number | null = null; // Para médico preseleccionado desde queryParams
 
   constructor(
     private consultaService: ConsultaService,
@@ -524,6 +525,14 @@ export class NuevaConsultaComponent implements OnInit {
         this.consultaForm.paciente_id = parseInt(params['paciente_id']);
         console.log('👤 Paciente preseleccionado:', this.consultaForm.paciente_id, 'tipo:', typeof this.consultaForm.paciente_id);
       }
+      
+      // Si hay medico_id en queryParams (para admin/secretaria), guardarlo para después de cargar médicos
+      if (params['medico_id']) {
+        const medicoIdParam = parseInt(params['medico_id']);
+        console.log('👨‍⚕️ Médico preseleccionado desde queryParams:', medicoIdParam);
+        // Guardar temporalmente para aplicar después de cargar médicos
+        this.pendingMedicoId = medicoIdParam;
+      }
     });
 
     // Cargar usuario actual
@@ -535,6 +544,10 @@ export class NuevaConsultaComponent implements OnInit {
       if (this.currentUser?.rol === 'medico') {
         this.consultaForm.medico_id = this.currentUser.medico_id;
         console.log('👨‍⚕️ Médico asignado automáticamente:', this.consultaForm.medico_id);
+      } else if (this.pendingMedicoId) {
+        // Si no es médico pero hay medico_id en queryParams, aplicarlo después de cargar médicos
+        this.consultaForm.medico_id = this.pendingMedicoId;
+        console.log('👨‍⚕️ Médico preseleccionado aplicado:', this.pendingMedicoId);
       }
     });
     
@@ -567,6 +580,20 @@ export class NuevaConsultaComponent implements OnInit {
       next: (response) => {
         this.medicos = response.data || [];
         console.log('👨‍⚕️ Médicos cargados:', this.medicos.length);
+        
+        // Si hay un médico preseleccionado, encontrar su especialidad y aplicarlo
+        if (this.pendingMedicoId) {
+          const medicoPreseleccionado = this.medicos.find(m => m.id === this.pendingMedicoId);
+          if (medicoPreseleccionado && medicoPreseleccionado.especialidad_id) {
+            this.selectedEspecialidadId = medicoPreseleccionado.especialidad_id;
+            this.onEspecialidadChange();
+            this.consultaForm.medico_id = this.pendingMedicoId;
+            console.log('👨‍⚕️ Médico y especialidad preseleccionados:', {
+              medico_id: this.pendingMedicoId,
+              especialidad_id: this.selectedEspecialidadId
+            });
+          }
+        }
       },
       error: (error) => {
         this.errorHandler.logError(error, 'cargar médicos');
