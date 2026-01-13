@@ -1378,12 +1378,10 @@ export class HistoriaMedicaComponent implements OnInit {
               this.modoVisualizacion = this.esEditable ? 'edicion' : 'lectura';
               this.historiaForm = {
                 motivo_consulta: this.historiaData.motivo_consulta || '',
+                examenes_medico: this.historiaData.examenes_medico || '',
                 diagnostico: this.historiaData.diagnostico || '',
                 conclusiones: this.historiaData.conclusiones || '',
                 plan: this.historiaData.plan || '',
-                antecedentes_personales: this.historiaData.antecedentes_personales || '',
-                antecedentes_familiares: this.historiaData.antecedentes_familiares || '',
-                antecedentes_quirurgicos: this.historiaData.antecedentes_quirurgicos || '',
                 antecedentes_otros: this.historiaData.antecedentes_otros || ''
               };
               this.historiaOriginal = { ...this.historiaForm };
@@ -1529,12 +1527,10 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaData = null;
           this.historiaForm = {
             motivo_consulta: '',
+            examenes_medico: '',
             diagnostico: '',
             conclusiones: '',
             plan: '',
-            antecedentes_personales: '',
-            antecedentes_familiares: '',
-            antecedentes_quirurgicos: '',
             antecedentes_otros: ''
           };
           console.log('ℹ️ No existe mi historia, modo creación');
@@ -1597,12 +1593,10 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaData = null;
           this.historiaForm = {
             motivo_consulta: '',
+            examenes_medico: '',
             diagnostico: '',
             conclusiones: '',
             plan: '',
-            antecedentes_personales: '',
-            antecedentes_familiares: '',
-            antecedentes_quirurgicos: '',
             antecedentes_otros: ''
           };
           console.log('ℹ️ No existe historia para el médico seleccionado');
