@@ -1384,6 +1384,7 @@ export class HistoriaMedicaComponent implements OnInit {
               this.historiaForm = {
                 motivo_consulta: this.historiaData.motivo_consulta || '',
                 examenes_medico: this.historiaData.examenes_medico || '',
+                examenes_paraclinicos: (this.historiaData as any).examenes_paraclinicos || '',
                 diagnostico: this.historiaData.diagnostico || '',
                 plan: this.historiaData.plan || '',
                 antecedentes_otros: this.historiaData.antecedentes_otros || ''
