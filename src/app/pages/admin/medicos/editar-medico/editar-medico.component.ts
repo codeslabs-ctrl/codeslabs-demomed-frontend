@@ -6,6 +6,7 @@ import { MedicoService, Medico } from '../../../../services/medico.service';
 import { EspecialidadService, Especialidad } from '../../../../services/especialidad.service';
 import { FirmaService } from '../../../../services/firma.service';
 import { ErrorHandlerService } from '../../../../services/error-handler.service';
+import { APP_CONFIG } from '../../../../config/app.config';
 
 @Component({
   selector: 'app-editar-medico',
@@ -38,6 +39,7 @@ export class EditarMedicoComponent implements OnInit {
   firmaFile: File | null = null;
   firmaPreview: string | null = null;
   uploadingFirma = false;
+  firmaActualUrl: string | null = null;
   
   // Variables para validación de email
   emailExists = false;
@@ -70,6 +72,12 @@ export class EditarMedicoComponent implements OnInit {
         next: (response) => {
           if (response.success) {
             this.medicoData = response.data;
+            // Construir URL completa de la firma si existe
+            if (this.medicoData.firma_digital) {
+              this.firmaActualUrl = this.getFirmaUrl(this.medicoData.firma_digital);
+            } else {
+              this.firmaActualUrl = null;
+            }
             this.loading = false;
           }
         },
@@ -79,6 +87,64 @@ export class EditarMedicoComponent implements OnInit {
           this.loading = false;
         }
       });
+    }
+  }
+
+  /**
+   * Construye la URL completa de la firma digital
+   * @param firmaPath Ruta relativa de la firma (ej: "assets/firmas/medico_1_firma.png")
+   * @returns URL completa de la firma
+   */
+  getFirmaUrl(firmaPath: string | null | undefined): string | null {
+    if (!firmaPath) {
+      return null;
+    }
+    
+    // Si ya es una URL completa (http:// o https://), retornarla tal cual
+    if (firmaPath.startsWith('http://') || firmaPath.startsWith('https://')) {
+      console.log('🔍 [EditarMedico] URL ya es completa:', firmaPath);
+      return firmaPath;
+    }
+    
+    // Si tenemos el ID del médico, usar el endpoint del API
+    if (this.medicoData.id) {
+      const apiBaseUrl = APP_CONFIG.API_BASE_URL;
+      const firmaUrl = `${apiBaseUrl}/firmas/${this.medicoData.id}/imagen`;
+      console.log('🔍 [EditarMedico] Construyendo URL de firma (endpoint API):', {
+        firmaPath,
+        medicoId: this.medicoData.id,
+        apiBaseUrl,
+        firmaUrl
+      });
+      return firmaUrl;
+    }
+    
+    // Fallback: construir URL directa (para compatibilidad)
+    const apiBaseUrl = APP_CONFIG.API_BASE_URL;
+    const url = new URL(apiBaseUrl);
+    const baseUrl = `${url.protocol}//${url.host}`;
+    const normalizedPath = firmaPath.startsWith('/') ? firmaPath : `/${firmaPath}`;
+    const fullUrl = `${baseUrl}${normalizedPath}`;
+    
+    console.log('🔍 [EditarMedico] Construyendo URL de firma (fallback):', {
+      firmaPath,
+      apiBaseUrl,
+      baseUrl,
+      normalizedPath,
+      fullUrl
+    });
+    
+    try {
+      // Validar que la URL sea absoluta
+      if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+        console.error('❌ [EditarMedico] URL construida no es absoluta:', fullUrl);
+        return null;
+      }
+      
+      return fullUrl;
+    } catch (error) {
+      console.error('❌ [EditarMedico] Error construyendo URL:', error);
+      return null;
     }
   }
 
@@ -224,6 +290,8 @@ export class EditarMedicoComponent implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           this.medicoData.firma_digital = response.data.firma_digital;
+          // Actualizar URL de la firma actual
+          this.firmaActualUrl = this.getFirmaUrl(response.data.firma_digital);
           this.showSnackbarMessage('✅ Firma digital subida exitosamente', 'success');
           this.firmaFile = null;
           this.firmaPreview = null;
@@ -260,6 +328,8 @@ export class EditarMedicoComponent implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           this.medicoData.firma_digital = response.data.firma_digital;
+          // Actualizar URL de la firma actual
+          this.firmaActualUrl = this.getFirmaUrl(response.data.firma_digital);
           this.showSnackbarMessage(
             `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} actualizado exitosamente con firma digital.`,
             'success'

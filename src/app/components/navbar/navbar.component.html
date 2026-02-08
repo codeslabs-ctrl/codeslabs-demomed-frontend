@@ -24,8 +24,19 @@
       </div>
       
       <div class="settings-dropdown" *ngIf="showSettingsMenu">
+        <!-- Indicador de carga del menú -->
+        <div class="menu-loading-indicator" *ngIf="loadingMenu">
+          <div class="spinner"></div>
+          <span>Cargando menú...</span>
+        </div>
+        
+        <!-- Mensaje de error -->
+        <div class="menu-error-message" *ngIf="menuError && !loadingMenu">
+          <span>⚠️ Error al cargar el menú. Por favor, recarga la página.</span>
+        </div>
+        
         <!-- Menú dinámico para roles no-admin (médico, secretaria, finanzas) -->
-        <div *ngIf="currentUser && currentUser.rol !== 'administrador'">
+        <div *ngIf="currentUser && currentUser.rol !== 'administrador' && !loadingMenu && !menuError">
           <div class="settings-section" *ngIf="getDirectMenuItems().length > 0">
             <div class="settings-section-title">{{ currentUser.rol === 'medico' ? 'Médico' : currentUser.rol === 'secretaria' ? 'Secretaría' : currentUser.rol === 'finanzas' ? 'Finanzas' : '' }}</div>
             <a *ngFor="let item of getDirectMenuItems()" 
@@ -44,7 +55,7 @@
         <div class="settings-divider" *ngIf="currentUser && currentUser.rol !== 'administrador' && getDirectMenuItems().length > 0"></div>
         
         <!-- Opciones de Administración con grupos expandibles (solo para administradores) -->
-        <div *ngIf="currentUser && currentUser.rol === 'administrador'">
+        <div *ngIf="currentUser && currentUser.rol === 'administrador' && !loadingMenu && !menuError">
           <!-- Menú dinámico -->
           <div class="menu-group" *ngFor="let group of getMenuGroups()">
             <div class="menu-group-header" (click)="toggleGroup(group.title, $event)">
