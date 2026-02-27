@@ -34,6 +34,7 @@ export interface ConsultaWithDetails extends Consulta {
   paciente_email?: string;
   medico_nombre?: string;
   medico_apellidos?: string;
+  medico_sexo?: string | null;
   medico_especialidad_id?: number;
   especialidad_nombre?: string;
   medico_remitente_nombre?: string;

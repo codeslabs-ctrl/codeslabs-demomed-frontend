@@ -13,6 +13,8 @@ export interface Medico {
   telefono: string;
   especialidad_id: number;
   especialidad_nombre?: string;
+  /** Masculino | Femenino — para título Dr. / Dra. */
+  sexo?: string | null;
   mpps?: string;
   cm?: string;
   fecha_creacion?: string;

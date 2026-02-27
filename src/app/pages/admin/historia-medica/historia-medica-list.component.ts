@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { PatientService } from '../../../services/patient.service';
 import { HistoricoService, HistoricoWithDetails } from '../../../services/historico.service';
+import { MedicoService } from '../../../services/medico.service';
 import { AuthService } from '../../../services/auth.service';
 import { DateService } from '../../../services/date.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
@@ -84,9 +85,9 @@ import { ErrorHandlerService } from '../../../services/error-handler.service';
               </thead>
               <tbody>
                 <tr *ngFor="let h of historicos">
-                  <td>{{ h.id }}</td>
+                  <td>{{ getNumeroControl(h) }}</td>
                   <td>{{ formatDate(h.fecha_consulta) }}</td>
-                  <td>Dr./Dra. {{ h.medico_nombre }} {{ h.medico_apellidos }}</td>
+                  <td>{{ getMedicoTitulo(h) }} {{ h.medico_nombre }} {{ h.medico_apellidos }}</td>
                   <td>{{ h.especialidad_nombre || '-' }}</td>
                   <td>
                     <button type="button" class="btn btn-sm"
@@ -114,6 +115,9 @@ export class HistoriaMedicaListComponent implements OnInit {
   patientName = '';
   patientCedula = '';
 
+  /** Cache sexo por medico_id cuando el historico no lo trae (fallback Dr./Dra.) */
+  medicoIdToSexo: Record<number, string | null> = {};
+
   currentUser: any = null;
   get isMedico(): boolean {
     return this.currentUser?.rol === 'medico';
@@ -124,6 +128,7 @@ export class HistoriaMedicaListComponent implements OnInit {
     private router: Router,
     private patientService: PatientService,
     private historicoService: HistoricoService,
+    private medicoService: MedicoService,
     private authService: AuthService,
     private dateService: DateService,
     private errorHandler: ErrorHandlerService
@@ -156,6 +161,7 @@ export class HistoriaMedicaListComponent implements OnInit {
         this.historicoService.getHistoricoByPaciente(this.patientId).subscribe({
           next: (hresp) => {
             this.historicos = (hresp.success && hresp.data) ? hresp.data : [];
+            this.asegurarMedicoSexoEnLista();
             this.loading = false;
           },
           error: (err) => {
@@ -194,6 +200,43 @@ export class HistoriaMedicaListComponent implements OnInit {
 
   formatDate(dateString: string | undefined): string {
     return this.dateService.formatDate(dateString, { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  /** Título Dr./Dra. según medico_sexo del historico o cache cargado por fallback. */
+  getMedicoTitulo(h: HistoricoWithDetails): string {
+    const sexo = this.medicoIdToSexo[h.medico_id] ?? h.medico_sexo;
+    return sexo === 'Femenino' ? 'Dra.' : 'Dr.';
+  }
+
+  /**
+   * Si algún historico tiene medico_id pero no medico_sexo, carga el médico y guarda en medicoIdToSexo.
+   */
+  private asegurarMedicoSexoEnLista(): void {
+    const idsToLoad = [...new Set(
+      this.historicos
+        .filter(h => h.medico_id && (h.medico_sexo === null || h.medico_sexo === undefined))
+        .map(h => h.medico_id)
+    )];
+    idsToLoad.forEach(medicoId => {
+      this.medicoService.getMedicoById(medicoId).subscribe({
+        next: (resp) => {
+          if (resp.success && resp.data && (resp.data as any).sexo != null) {
+            this.medicoIdToSexo[medicoId] = (resp.data as any).sexo;
+          }
+        }
+      });
+    });
+  }
+
+  /**
+   * Número de control: YYYYMMDD-id (ej. 20251202-1)
+   */
+  getNumeroControl(h: HistoricoWithDetails): string {
+    const d = h.fecha_consulta ? new Date(h.fecha_consulta) : new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}${m}${day}-${h.id}`;
   }
 }
 

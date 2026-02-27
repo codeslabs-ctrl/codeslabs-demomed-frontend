@@ -28,6 +28,7 @@ export interface HistoricoWithDetails extends HistoricoData {
   paciente_apellidos?: string;
   medico_nombre?: string;
   medico_apellidos?: string;
+  medico_sexo?: string | null;
   nombre_medico?: string; // Field that actually comes from the backend
   especialidad_nombre?: string;
 }

@@ -14,7 +14,7 @@ import { environment } from '../../../environments/environment';
       <div class="forgot-password-card">
         <div class="forgot-password-header">
           <div class="logo">
-            <img src="assets/logos/clinica/logo.svg" alt="DemoMed Logo" class="logo-image">
+            <img src="assets/logos/clinica/logo-codes-labs.png" alt="Codes-Labs Logo" class="logo-image">
             <h2>Recuperar Contraseña</h2>
             <p>Ingresa tu email para recibir un código de recuperación</p>
           </div>

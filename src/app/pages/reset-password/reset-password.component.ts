@@ -14,7 +14,7 @@ import { environment } from '../../../environments/environment';
       <div class="reset-password-card">
         <div class="reset-password-header">
           <div class="logo">
-            <img src="assets/logos/clinica/logo.svg" alt="DemoMed Logo" class="logo-image">
+            <img src="assets/logos/clinica/logo-codes-labs.png" alt="Codes-Labs Logo" class="logo-image">
             <h2>Restablecer Contraseña</h2>
             <p>Ingresa el código que enviamos a tu email y tu nueva contraseña</p>
           </div>

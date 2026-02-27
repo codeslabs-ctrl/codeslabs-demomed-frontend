@@ -21,6 +21,9 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
             <a routerLink="/patients" class="btn btn-secondary">
               ← Volver a Pacientes
             </a>
+            <a [routerLink]="['/patients', patient?.id, 'antecedentes']" class="btn btn-outline">
+              📋 Antecedentes
+            </a>
             <a [routerLink]="['/patients', patient?.id, 'edit']" class="btn btn-primary">
               ✏️ Editar Paciente
             </a>

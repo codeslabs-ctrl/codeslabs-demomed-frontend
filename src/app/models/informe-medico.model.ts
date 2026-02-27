@@ -28,6 +28,7 @@ export interface InformeMedico {
     nombres: string;
     apellidos: string;
     cedula: string;
+    sexo?: string | null;
     especialidad_id?: number;
     especialidades?: {
       id: number;

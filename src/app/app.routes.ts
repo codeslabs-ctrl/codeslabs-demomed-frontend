@@ -49,6 +49,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'patients/:id/antecedentes',
+    loadComponent: () => import('./pages/patient-antecedentes/patient-antecedentes.component').then(m => m.PatientAntecedentesComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'patients/:id/edit',
     loadComponent: () => import('./pages/patient-form/patient-form.component').then(m => m.PatientFormComponent),
     canActivate: [authGuard]
@@ -71,6 +76,11 @@ export const routes: Routes = [
   {
     path: 'admin/especialidades',
     loadComponent: () => import('./pages/admin/especialidades/especialidades.component').then(m => m.EspecialidadesComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin/antecedentes',
+    loadComponent: () => import('./pages/admin/antecedentes/antecedentes.component').then(m => m.AntecedentesComponent),
     canActivate: [authGuard]
   },
   {

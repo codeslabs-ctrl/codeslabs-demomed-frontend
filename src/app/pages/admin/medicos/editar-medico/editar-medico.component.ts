@@ -24,6 +24,7 @@ export class EditarMedicoComponent implements OnInit {
     email: '',
     telefono: '',
     especialidad_id: 0,
+    sexo: null,
     mpps: '',
     cm: ''
   };

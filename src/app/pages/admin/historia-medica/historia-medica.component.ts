@@ -12,9 +12,13 @@ import { DateService } from '../../../services/date.service';
 import { AuthService } from '../../../services/auth.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
 import { PlantillaHistoriaService, PlantillaHistoria } from '../../../services/plantilla-historia.service';
+import { AntecedenteTipoService } from '../../../services/antecedente-tipo.service';
+import { HistoricoAntecedenteService } from '../../../services/historico-antecedente.service';
 import { ConsultaWithDetails } from '../../../models/consulta.model';
 import { HistoricoWithDetails } from '../../../services/historico.service';
 import { ArchivoAnexo } from '../../../models/archivo.model';
+import { AntecedenteMedicoTipo } from '../../../models/antecedente-tipo.model';
+import { HistoricoAntecedente, AntecedentesResponse } from '../../../models/historico-antecedente.model';
 import { FileUploadComponent } from '../../../components/file-upload/file-upload.component';
 import { RemitirPacienteModalComponent } from '../../../components/remitir-paciente-modal/remitir-paciente-modal.component';
 import { RichTextEditorComponent } from '../../../components/rich-text-editor/rich-text-editor.component';
@@ -82,9 +86,57 @@ import { Patient } from '../../../models/patient.model';
             <div class="info-item">
               <label>Médico:</label>
               <div class="medico-info">
-                <div class="medico-nombre">Dr./Dra. {{ displayMedicoNombre }}</div>
+                <div class="medico-nombre">{{ displayMedicoTitulo }} {{ displayMedicoNombre }}</div>
                 <div class="medico-especialidad">{{ displayEspecialidadNombre }}</div>
               </div>
+            </div>
+          </div>
+          <!-- Antecedentes del paciente (solo lectura, colapsable) -->
+          <div class="antecedentes-paciente-block" *ngIf="consultaData?.paciente_id">
+            <button type="button" class="antecedentes-paciente-toggle" (click)="antecedentesPacienteExpanded = !antecedentesPacienteExpanded">
+              {{ antecedentesPacienteExpanded ? '▲ Ocultar antecedentes' : '▼ Ver antecedentes del paciente' }}
+            </button>
+            <div class="antecedentes-paciente-content" *ngIf="antecedentesPacienteExpanded">
+              <div *ngIf="antecedentesPacienteLoading" class="antecedentes-paciente-loading">
+                <i class="fas fa-spinner fa-spin"></i> Cargando antecedentes...
+              </div>
+              <ng-container *ngIf="!antecedentesPacienteLoading && antecedentesPacienteData">
+                <div *ngIf="!tieneAntecedentesPacienteParaMostrar()" class="antecedentes-paciente-empty">
+                  Sin antecedentes registrados.
+                  <a [routerLink]="['/patients', consultaData!.paciente_id, 'antecedentes']" target="_blank">Editar antecedentes</a>
+                </div>
+                <ng-container *ngIf="tieneAntecedentesPacienteParaMostrar()">
+                  <div class="antecedentes-paciente-cat" *ngIf="getAntecedentesPresentesCategoria('medicos').length">
+                    <strong>Médicos:</strong>
+                    <ul>
+                      <li *ngFor="let a of getAntecedentesPresentesCategoria('medicos')">
+                        {{ getTipoNombre(a.antecedente_tipo_id) }}<span *ngIf="a.detalle"> — {{ a.detalle }}</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div class="antecedentes-paciente-cat" *ngIf="getAntecedentesPresentesCategoria('quirurgicos').length">
+                    <strong>Quirúrgicos:</strong>
+                    <ul>
+                      <li *ngFor="let a of getAntecedentesPresentesCategoria('quirurgicos')">
+                        {{ getTipoNombre(a.antecedente_tipo_id) }}<span *ngIf="a.detalle"> — {{ a.detalle }}</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div class="antecedentes-paciente-cat" *ngIf="getAntecedentesPresentesCategoria('habitos').length">
+                    <strong>Hábitos:</strong>
+                    <ul>
+                      <li *ngFor="let a of getAntecedentesPresentesCategoria('habitos')">
+                        {{ getTipoNombre(a.antecedente_tipo_id) }}<span *ngIf="a.detalle"> — {{ a.detalle }}</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div class="antecedentes-paciente-cat" *ngIf="antecedentesPacienteData?.antecedentes_otros">
+                    <strong>Otros:</strong>
+                    <div class="antecedentes-otros-text" [innerHTML]="antecedentesPacienteData.antecedentes_otros"></div>
+                  </div>
+                  <a [routerLink]="['/patients', consultaData!.paciente_id, 'antecedentes']" target="_blank" class="antecedentes-paciente-edit-link">Editar antecedentes</a>
+                </ng-container>
+              </ng-container>
             </div>
           </div>
         </div>
@@ -142,29 +194,20 @@ import { Patient } from '../../../models/patient.model';
               <app-rich-text-editor
                 [value]="historiaForm.motivo_consulta"
                 [placeholder]="'Describa el motivo de la consulta...'"
-                [height]="120"
+                [height]="90"
                 (valueChange)="historiaForm.motivo_consulta = $event"
                 [class.readonly]="!esEditable">
               </app-rich-text-editor>
             </div>
 
-            <div class="form-group">
-              <label for="antecedentes_otros">Antecedentes Médicos</label>
-              <app-rich-text-editor
-                [value]="historiaForm.antecedentes_otros"
-                [placeholder]="'Ingrese los antecedentes médicos del paciente...'"
-                [height]="120"
-                (valueChange)="historiaForm.antecedentes_otros = $event"
-                [class.readonly]="!esEditable">
-              </app-rich-text-editor>
-            </div>
+            <!-- Los antecedentes del paciente se cargan al crear/editar el paciente, no en el control. Ver: Pacientes > [paciente] > Antecedentes -->
 
             <div class="form-group">
               <label for="examenes_medico">Examenes Fisicos *</label>
               <app-rich-text-editor
                 [value]="historiaForm.examenes_medico"
                 [placeholder]="'Ingrese los exámenes físicos del paciente...'"
-                [height]="120"
+                [height]="90"
                 (valueChange)="historiaForm.examenes_medico = $event"
                 [class.readonly]="!esEditable">
               </app-rich-text-editor>
@@ -175,7 +218,7 @@ import { Patient } from '../../../models/patient.model';
               <app-rich-text-editor
                 [value]="historiaForm.examenes_paraclinicos"
                 [placeholder]="'Ingrese los exámenes paraclínicos del paciente...'"
-                [height]="120"
+                [height]="90"
                 (valueChange)="historiaForm.examenes_paraclinicos = $event"
                 [class.readonly]="!esEditable">
               </app-rich-text-editor>
@@ -186,7 +229,7 @@ import { Patient } from '../../../models/patient.model';
               <app-rich-text-editor
                 [value]="historiaForm.diagnostico"
                 [placeholder]="'Ingrese el diagnóstico médico...'"
-                [height]="120"
+                [height]="90"
                 (valueChange)="historiaForm.diagnostico = $event"
                 [class.readonly]="!esEditable">
               </app-rich-text-editor>
@@ -197,7 +240,7 @@ import { Patient } from '../../../models/patient.model';
               <app-rich-text-editor
                 [value]="historiaForm.plan"
                 [placeholder]="'Plan de acciones a seguir en el tratamiento...'"
-                [height]="120"
+                [height]="90"
                 (valueChange)="historiaForm.plan = $event"
                 [class.readonly]="!esEditable">
               </app-rich-text-editor>
@@ -546,6 +589,60 @@ import { Patient } from '../../../models/patient.model';
       gap: 0.25rem;
     }
 
+    .antecedentes-paciente-block {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e2e8f0;
+    }
+    .antecedentes-paciente-toggle {
+      background: none;
+      border: none;
+      color: #0d6efd;
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 0.25rem 0;
+    }
+    .antecedentes-paciente-toggle:hover {
+      text-decoration: underline;
+    }
+    .antecedentes-paciente-content {
+      margin-top: 0.75rem;
+      padding: 0.75rem;
+      background: #fff;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      font-size: 0.875rem;
+    }
+    .antecedentes-paciente-loading {
+      color: #64748b;
+    }
+    .antecedentes-paciente-empty {
+      color: #64748b;
+    }
+    .antecedentes-paciente-empty a {
+      margin-left: 0.5rem;
+    }
+    .antecedentes-paciente-cat {
+      margin-bottom: 0.5rem;
+    }
+    .antecedentes-paciente-cat ul {
+      margin: 0.25rem 0 0 1rem;
+      padding: 0;
+    }
+    .antecedentes-otros-text {
+      margin-top: 0.25rem;
+      color: #374151;
+    }
+    .antecedentes-paciente-edit-link {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: #0d6efd;
+    }
+    .antecedentes-paciente-edit-link:hover {
+      text-decoration: underline;
+    }
+
     .medico-nombre {
       color: #1e293b;
       font-size: 0.875rem;
@@ -761,7 +858,11 @@ import { Patient } from '../../../models/patient.model';
       transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
       background: white;
       resize: vertical;
-      min-height: 100px;
+      min-height: 2.25rem;
+    }
+
+    textarea.form-control {
+      min-height: 80px;
     }
 
     /* Los selects no deben tener min-height */
@@ -1132,6 +1233,24 @@ export class HistoriaMedicaComponent implements OnInit {
     antecedentes_medicos_template: ''
   };
 
+  // Antecedentes estandarizados (catálogo + respuestas por historial)
+  antecedentesTiposMedicos: AntecedenteMedicoTipo[] = [];
+  antecedentesTiposQuirurgicos: AntecedenteMedicoTipo[] = [];
+  antecedentesTiposHabitos: AntecedenteMedicoTipo[] = [];
+  antecedentesForm: Record<number, { presente: boolean; detalle: string }> = {};
+  loadingAntecedentes = false;
+  private antecedentesLoadCount = 0;
+  antecedentesMedicosExpanded = false;
+  antecedentesQuirurgicosExpanded = false;
+  antecedentesHabitosExpanded = false;
+  /** Cache para evitar nuevo array en cada change detection (bucle infinito en *ngFor de cirugías). */
+  private cirugiaListCache: Record<number, { detalleKey: string; list: { tipo_cirugia: string; ano: string }[] }> = {};
+
+  /** Antecedentes del paciente (bloque solo lectura en Info Paciente y Médico) */
+  antecedentesPacienteData: AntecedentesResponse | null = null;
+  antecedentesPacienteLoading = false;
+  antecedentesPacienteExpanded = false;
+
   constructor(
     private consultaService: ConsultaService,
     private patientService: PatientService,
@@ -1144,7 +1263,9 @@ export class HistoriaMedicaComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private errorHandler: ErrorHandlerService,
-    private plantillaService: PlantillaHistoriaService
+    private plantillaService: PlantillaHistoriaService,
+    private antecedenteTipoService: AntecedenteTipoService,
+    private historicoAntecedenteService: HistoricoAntecedenteService
   ) {}
 
   ngOnInit(): void {
@@ -1271,6 +1392,7 @@ export class HistoriaMedicaComponent implements OnInit {
       paciente_email: patientData.email,
       medico_nombre: medico.nombres || 'Médico',
       medico_apellidos: medico.apellidos || 'Actual',
+      medico_sexo: medico.sexo ?? null,
       especialidad_nombre: medico.especialidad_nombre || 'Sin especialidad',
       historico_id: patientData.historico_id,
       diagnostico: patientData.diagnostico,
@@ -1313,6 +1435,8 @@ export class HistoriaMedicaComponent implements OnInit {
   inicializarPantalla(): void {
     if (!this.consultaData) return;
 
+    this.loadAntecedentesTipos();
+
     if (!this.historicoId) {
       if (!this.isMedico) {
         alert('ℹ️ Solo lectura\n\nSolo los médicos pueden crear nuevos controles.');
@@ -1335,6 +1459,7 @@ export class HistoriaMedicaComponent implements OnInit {
       };
       this.historiaOriginal = { ...this.historiaForm };
       this.archivos = [];
+      this.initAntecedentesFormVacío();
       this.loading = false;
       return;
     }
@@ -1343,20 +1468,22 @@ export class HistoriaMedicaComponent implements OnInit {
       next: (resp) => {
         if (resp.success && resp.data) {
           this.historiaData = resp.data;
+          this.asegurarMedicoSexoEnHistoriaData();
           this.mode = 'edit';
           const medicoId = this.currentUser?.medico_id;
-          this.esEditable = this.isMedico && !!medicoId && this.historiaData.medico_id === medicoId;
+          this.esEditable = this.isMedico && !!medicoId && this.historiaData!.medico_id === medicoId;
           this.modoVisualizacion = this.esEditable ? 'edicion' : 'lectura';
           this.historiaForm = {
-            motivo_consulta: this.historiaData.motivo_consulta || '',
-            examenes_medico: this.historiaData.examenes_medico || '',
+            motivo_consulta: this.historiaData!.motivo_consulta || '',
+            examenes_medico: this.historiaData!.examenes_medico || '',
             examenes_paraclinicos: (this.historiaData as any).examenes_paraclinicos || '',
-            diagnostico: this.historiaData.diagnostico || '',
-            plan: this.historiaData.plan || '',
-            antecedentes_otros: this.historiaData.antecedentes_otros || ''
+            diagnostico: this.historiaData!.diagnostico || '',
+            plan: this.historiaData!.plan || '',
+            antecedentes_otros: this.historiaData!.antecedentes_otros || ''
           };
           this.historiaOriginal = { ...this.historiaForm };
           this.cargarArchivos();
+          this.cargarHistoricoAntecedentes(this.historiaData!.id);
           this.loading = false;
         } else {
           this.error = 'No se pudo cargar el control seleccionado';
@@ -1377,6 +1504,7 @@ export class HistoriaMedicaComponent implements OnInit {
               }
 
               this.historiaData = found;
+              this.asegurarMedicoSexoEnHistoriaData();
               this.mode = 'edit';
               const medicoId = this.currentUser?.medico_id;
               this.esEditable = this.isMedico && !!medicoId && this.historiaData.medico_id === medicoId;
@@ -1390,6 +1518,7 @@ export class HistoriaMedicaComponent implements OnInit {
                 antecedentes_otros: this.historiaData.antecedentes_otros || ''
               };
               this.historiaOriginal = { ...this.historiaForm };
+              this.cargarHistoricoAntecedentes(this.historiaData.id);
               this.cargarArchivos();
               this.loading = false;
             },
@@ -1405,6 +1534,25 @@ export class HistoriaMedicaComponent implements OnInit {
         this.errorHandler.logError(error, 'cargar control');
         this.error = this.errorHandler.getSafeErrorMessage(error, 'cargar control');
         this.loading = false;
+      }
+    });
+  }
+
+  /**
+   * En edición, carga el médico del control para tener medico_sexo actualizado (Dr./Dra.).
+   * Así no dependemos del historico ni del médico logueado (consultaData).
+   */
+  private asegurarMedicoSexoEnHistoriaData(): void {
+    const h = this.historiaData;
+    if (!h?.medico_id) return;
+    this.medicoService.getMedicoById(h.medico_id).subscribe({
+      next: (resp) => {
+        if (resp.success && resp.data) {
+          const sexo = (resp.data as any).sexo ?? null;
+          if (this.historiaData?.medico_id === (resp.data as any).id) {
+            this.historiaData = { ...this.historiaData!, medico_sexo: sexo };
+          }
+        }
       }
     });
   }
@@ -1521,13 +1669,10 @@ export class HistoriaMedicaComponent implements OnInit {
             antecedentes_otros: this.historiaData.antecedentes_otros || ''
           };
           this.historiaOriginal = { ...this.historiaForm };
-          
-          // Cargar archivos si existe la historia
+          this.cargarHistoricoAntecedentes(this.historiaData.id);
           this.cargarArchivos();
-          
           console.log('✅ Mi historia cargada:', this.historiaData);
         } else {
-          // No existe historia del médico actual, modo creación
           this.mode = 'create';
           this.historiaData = null;
           this.historiaForm = {
@@ -1538,6 +1683,7 @@ export class HistoriaMedicaComponent implements OnInit {
             plan: '',
             antecedentes_otros: ''
           };
+          this.initAntecedentesFormVacío();
           console.log('ℹ️ No existe mi historia, modo creación');
         }
       },
@@ -1587,13 +1733,10 @@ export class HistoriaMedicaComponent implements OnInit {
             antecedentes_otros: this.historiaData.antecedentes_otros || ''
           };
           this.historiaOriginal = { ...this.historiaForm };
-          
-          // Cargar archivos si existe la historia
+          this.cargarHistoricoAntecedentes(this.historiaData.id);
           this.cargarArchivos();
-          
           console.log('✅ Historia del médico seleccionado cargada:', this.historiaData);
         } else {
-          // No existe historia para este médico
           this.mode = 'create';
           this.historiaData = null;
           this.historiaForm = {
@@ -1604,6 +1747,7 @@ export class HistoriaMedicaComponent implements OnInit {
             plan: '',
             antecedentes_otros: ''
           };
+          this.initAntecedentesFormVacío();
           console.log('ℹ️ No existe historia para el médico seleccionado');
         }
       },
@@ -1615,6 +1759,171 @@ export class HistoriaMedicaComponent implements OnInit {
     });
   }
 
+  loadAntecedentesTipos(): void {
+    this.loadingAntecedentes = true;
+    this.antecedentesLoadCount = 0;
+    const maybeDone = () => {
+      this.antecedentesLoadCount++;
+      if (this.antecedentesLoadCount === 3) {
+        this.loadingAntecedentes = false;
+        this.loadAntecedentesPaciente();
+        if (!this.historiaData) this.initAntecedentesFormVacío();
+        else if (this.historiaData.id) this.cargarHistoricoAntecedentes(this.historiaData.id);
+      }
+    };
+    this.antecedenteTipoService.getByTipo('antecedentes_medicos').subscribe({
+      next: (r) => { if (r.success && r.data) this.antecedentesTiposMedicos = r.data; maybeDone(); },
+      error: () => maybeDone()
+    });
+    this.antecedenteTipoService.getByTipo('antecedentes_quirurgicos').subscribe({
+      next: (r) => { if (r.success && r.data) this.antecedentesTiposQuirurgicos = r.data; maybeDone(); },
+      error: () => maybeDone()
+    });
+    this.antecedenteTipoService.getByTipo('habitos_psicobiologicos').subscribe({
+      next: (r) => { if (r.success && r.data) this.antecedentesTiposHabitos = r.data; maybeDone(); },
+      error: () => maybeDone()
+    });
+  }
+
+  /** Carga antecedentes del paciente (solo lectura en bloque Info). */
+  loadAntecedentesPaciente(): void {
+    if (!this.consultaData?.paciente_id) return;
+    this.antecedentesPacienteLoading = true;
+    this.antecedentesPacienteData = null;
+    this.historicoAntecedenteService.getByPacienteId(this.consultaData.paciente_id).subscribe({
+      next: (r) => {
+        this.antecedentesPacienteLoading = false;
+        if (r.success && r.data) this.antecedentesPacienteData = r.data;
+      },
+      error: () => { this.antecedentesPacienteLoading = false; }
+    });
+  }
+
+  getTipoNombre(tipoId: number): string {
+    const t = [...this.antecedentesTiposMedicos, ...this.antecedentesTiposQuirurgicos, ...this.antecedentesTiposHabitos].find(x => x.id === tipoId);
+    return t?.nombre ?? `Tipo ${tipoId}`;
+  }
+
+  getAntecedentesPresentesCategoria(categoria: 'medicos' | 'quirurgicos' | 'habitos'): HistoricoAntecedente[] {
+    if (!this.antecedentesPacienteData?.antecedentes) return [];
+    const list = this.antecedentesPacienteData.antecedentes.filter(a => a.presente);
+    const idsMedicos = this.antecedentesTiposMedicos.map(x => x.id).filter((id): id is number => id != null);
+    const idsQuirurgicos = this.antecedentesTiposQuirurgicos.map(x => x.id).filter((id): id is number => id != null);
+    const idsHabitos = this.antecedentesTiposHabitos.map(x => x.id).filter((id): id is number => id != null);
+    if (categoria === 'medicos') return list.filter(a => idsMedicos.includes(a.antecedente_tipo_id));
+    if (categoria === 'quirurgicos') return list.filter(a => idsQuirurgicos.includes(a.antecedente_tipo_id));
+    return list.filter(a => idsHabitos.includes(a.antecedente_tipo_id));
+  }
+
+  tieneAntecedentesPacienteParaMostrar(): boolean {
+    if (!this.antecedentesPacienteData) return false;
+    const conPresente = (this.antecedentesPacienteData.antecedentes || []).some(a => a.presente);
+    const conOtros = !!(this.antecedentesPacienteData.antecedentes_otros && this.antecedentesPacienteData.antecedentes_otros.trim());
+    return conPresente || conOtros;
+  }
+
+  initAntecedentesFormVacío(): void {
+    const map: Record<number, { presente: boolean; detalle: string }> = {};
+    [...this.antecedentesTiposMedicos, ...this.antecedentesTiposQuirurgicos, ...this.antecedentesTiposHabitos].forEach(t => {
+      if (t.id != null) map[t.id] = { presente: false, detalle: '' };
+    });
+    this.antecedentesForm = map;
+    this.cirugiaListCache = {};
+  }
+
+  cargarHistoricoAntecedentes(historicoId: number): void {
+    this.historicoAntecedenteService.getByHistoricoId(historicoId).subscribe({
+      next: (r) => {
+        if (!r.success || !r.data) return;
+        const data = r.data as { antecedentes: HistoricoAntecedente[]; antecedentes_otros: string | null };
+        const list = data.antecedentes || [];
+        const otros = data.antecedentes_otros ?? '';
+        const map: Record<number, { presente: boolean; detalle: string }> = {};
+        [...this.antecedentesTiposMedicos, ...this.antecedentesTiposQuirurgicos, ...this.antecedentesTiposHabitos].forEach(t => {
+          if (t.id == null) return;
+          const item = list.find(a => a.antecedente_tipo_id === t.id);
+          map[t.id] = item
+            ? { presente: item.presente, detalle: item.detalle ?? '' }
+            : { presente: false, detalle: '' };
+        });
+        this.antecedentesForm = map;
+        this.historiaForm.antecedentes_otros = otros;
+        this.cirugiaListCache = {};
+      }
+    });
+  }
+
+  getAntecedenteForm(tipoId: number): { presente: boolean; detalle: string } {
+    if (!this.antecedentesForm[tipoId]) this.antecedentesForm[tipoId] = { presente: false, detalle: '' };
+    return this.antecedentesForm[tipoId];
+  }
+
+  /** Detalle para requiere_detalle === 'cirugia': JSON array [{ tipo_cirugia, ano }, ...]. Compatible con formato antiguo de un solo objeto. Devuelve la misma referencia cuando el detalle no cambia para evitar bucle en *ngFor. */
+  getDetalleCirugiaList(tipoId: number): { tipo_cirugia: string; ano: string }[] {
+    const detalle = this.getAntecedenteForm(tipoId).detalle || '';
+    const cache = this.cirugiaListCache[tipoId];
+    if (cache && cache.detalleKey === detalle) return cache.list;
+
+    let list: { tipo_cirugia: string; ano: string }[] = [];
+    if (detalle.trim()) {
+      try {
+        const parsed = JSON.parse(detalle);
+        if (Array.isArray(parsed)) {
+          list = parsed.map((o: any) => ({ tipo_cirugia: o.tipo_cirugia ?? '', ano: o.ano ?? '' }));
+        } else if (parsed && typeof parsed === 'object' && (parsed.tipo_cirugia != null || parsed.ano != null)) {
+          list = [{ tipo_cirugia: parsed.tipo_cirugia ?? '', ano: parsed.ano ?? '' }];
+        }
+      } catch { /* list queda [] */ }
+    }
+    this.cirugiaListCache[tipoId] = { detalleKey: detalle, list };
+    return list;
+  }
+
+  private writeDetalleCirugiaList(tipoId: number, list: { tipo_cirugia: string; ano: string }[]): void {
+    const detalle = list.length > 0 ? JSON.stringify(list) : '';
+    this.getAntecedenteForm(tipoId).detalle = detalle;
+    this.cirugiaListCache[tipoId] = { detalleKey: detalle, list };
+  }
+
+  addDetalleCirugia(tipoId: number): void {
+    const list = this.getDetalleCirugiaList(tipoId);
+    list.push({ tipo_cirugia: '', ano: '' });
+    this.writeDetalleCirugiaList(tipoId, list);
+  }
+
+  removeDetalleCirugia(tipoId: number, index: number): void {
+    const list = this.getDetalleCirugiaList(tipoId);
+    list.splice(index, 1);
+    this.writeDetalleCirugiaList(tipoId, list);
+  }
+
+  setDetalleCirugiaItem(tipoId: number, index: number, field: 'tipo_cirugia' | 'ano', value: string): void {
+    const list = this.getDetalleCirugiaList(tipoId);
+    if (list[index]) {
+      list[index][field] = value;
+      this.writeDetalleCirugiaList(tipoId, list);
+    }
+  }
+
+  onCirugiaPresenteChange(tipoId: number, presente: boolean): void {
+    if (!presente) this.writeDetalleCirugiaList(tipoId, []);
+  }
+
+  guardarAntecedentes(historicoId: number): void {
+    const allTipos = [...this.antecedentesTiposMedicos, ...this.antecedentesTiposQuirurgicos, ...this.antecedentesTiposHabitos];
+    const items: HistoricoAntecedente[] = allTipos
+      .filter(t => t.id != null)
+      .map(t => ({
+        paciente_id: 0,
+        antecedente_tipo_id: t.id!,
+        presente: this.getAntecedenteForm(t.id!).presente,
+        detalle: this.getAntecedenteForm(t.id!).detalle || null
+      }));
+    this.historicoAntecedenteService.saveBulk(historicoId, items, this.historiaForm.antecedentes_otros ?? null).subscribe({
+      next: () => {},
+      error: (err) => this.errorHandler.logError(err, 'guardar antecedentes')
+    });
+  }
 
   guardarHistoria(): void {
     if (this.isSubmitting) return;
@@ -1675,21 +1984,16 @@ export class HistoriaMedicaComponent implements OnInit {
       examenes_paraclinicos: this.historiaForm.examenes_paraclinicos,
       diagnostico: this.historiaForm.diagnostico,
       plan: this.historiaForm.plan,
-      antecedentes_otros: this.historiaForm.antecedentes_otros,
       fecha_consulta: new Date().toISOString(),
       consulta_id: this.consultaData.id && this.consultaData.id > 0 ? this.consultaData.id : undefined
     };
 
     this.historicoService.createHistorico(historiaData).subscribe({
       next: (response) => {
-        if (response.success) {
-          // Actualizar historiaData con el ID de la nueva historia
+        if (response.success && response.data?.id) {
           this.historiaData = response.data;
           this.mode = 'edit';
-          
-          // Cargar archivos después de crear la historia
           this.cargarArchivos();
-          
           alert('✅ Control creado exitosamente\n\nAhora puede agregar archivos anexos si lo desea.');
           this.router.navigate(['/patients', this.consultaId, 'historia-medica']);
         } else {
@@ -1714,11 +2018,11 @@ export class HistoriaMedicaComponent implements OnInit {
       examenes_medico: this.historiaForm.examenes_medico,
       examenes_paraclinicos: this.historiaForm.examenes_paraclinicos,
       diagnostico: this.historiaForm.diagnostico,
-      plan: this.historiaForm.plan,
-      antecedentes_otros: this.historiaForm.antecedentes_otros
+      plan: this.historiaForm.plan
     };
 
-    this.historicoService.updateHistorico(this.historiaData.id, updateData).subscribe({
+    const historicoId = this.historiaData.id;
+    this.historicoService.updateHistorico(historicoId, updateData).subscribe({
       next: (response) => {
         if (response.success) {
           alert('✅ Control actualizado exitosamente');
@@ -1768,6 +2072,12 @@ export class HistoriaMedicaComponent implements OnInit {
     return this.isMedico
       ? 'Crear un nuevo control para el paciente'
       : 'Puede consultar los controles registrados del paciente';
+  }
+
+  /** Título Dr./Dra. Solo usa el médico del control (historiaData); en edición no usar consultaData (es el médico logueado). */
+  get displayMedicoTitulo(): string {
+    const sexo = this.historiaData ? this.historiaData.medico_sexo : this.consultaData?.medico_sexo;
+    return sexo === 'Femenino' ? 'Dra.' : 'Dr.';
   }
 
   get displayMedicoNombre(): string {
@@ -1976,8 +2286,10 @@ export class HistoriaMedicaComponent implements OnInit {
     const pacienteApellidos = remision?.paciente_apellidos || this.pacienteData?.apellidos || 'N/A';
     const medicoRemitenteNombre = remision?.medico_remitente_nombre || this.medicoActual?.medico_nombre || 'N/A';
     const medicoRemitenteApellidos = remision?.medico_remitente_apellidos || this.medicoActual?.medico_apellidos || 'N/A';
+    const medicoRemitenteSexo = remision?.medico_remitente_sexo ?? this.medicoActual?.medico_sexo ?? null;
     const medicoRemitidoNombre = remision?.medico_remitido_nombre || 'N/A';
     const medicoRemitidoApellidos = remision?.medico_remitido_apellidos || 'N/A';
+    const medicoRemitidoSexo = remision?.medico_remitido_sexo ?? null;
     
     // Obtener especialidad del médico remitido desde consultaData o remision
     const especialidadNombre = this.consultaData?.especialidad_nombre || 'N/A';
@@ -1989,9 +2301,9 @@ export class HistoriaMedicaComponent implements OnInit {
 ${this.pacienteData?.edad ? `👤 Edad: ${this.pacienteData.edad} años` : ''}
 ${this.pacienteData?.sexo ? `⚧️ Sexo: ${this.pacienteData.sexo}` : ''}
 
-👨‍⚕️ Médico Remitente: Dr./Dra. ${medicoRemitenteNombre} ${medicoRemitenteApellidos}
+👨‍⚕️ Médico Remitente: ${medicoRemitenteSexo === 'Femenino' ? 'Dra.' : 'Dr.'} ${medicoRemitenteNombre} ${medicoRemitenteApellidos}
 
-👨‍⚕️ Médico Remitido: Dr./Dra. ${medicoRemitidoNombre} ${medicoRemitidoApellidos}
+👨‍⚕️ Médico Remitido: ${medicoRemitidoSexo === 'Femenino' ? 'Dra.' : 'Dr.'} ${medicoRemitidoNombre} ${medicoRemitidoApellidos}
 🏥 Especialidad: ${especialidadNombre}
 
 La remisión ha sido procesada y se ha enviado una notificación al médico de destino.`;

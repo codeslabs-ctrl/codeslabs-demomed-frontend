@@ -30,7 +30,8 @@ export class PatientFormComponent implements OnInit {
   patientId: number | null = null;
   showSuccessActions = false;
   patientCreated = false;
-  
+  loadingPatientData = false;
+
   // Variables para validación de email
   emailExists = false;
   emailChecked = false;
@@ -139,22 +140,40 @@ export class PatientFormComponent implements OnInit {
         next: (response) => {
           console.log('✅ Respuesta del servidor:', response);
           if (response.success) {
-            this.patientCreated = true;
-            this.showSuccessActions = true;
-            // Obtener el ID del paciente recién creado
-            // La respuesta viene como: { success: true, data: { message: '...', id: 123, ... } }
             const newPatientId = (response.data as any)?.id;
             console.log('🔍 ID del paciente obtenido:', newPatientId);
-            // Guardar el ID para usarlo en la navegación
             if (newPatientId) {
               this.patientId = newPatientId;
+              this.loading = false;
+              this.loadingPatientData = true;
+              this.patientService.getPatientById(newPatientId).subscribe({
+                next: (loadRes) => {
+                  this.loadingPatientData = false;
+                  if (loadRes.success && loadRes.data) {
+                    this.patient = loadRes.data;
+                    this.patientCreated = true;
+                    this.showSuccessActions = true;
+                  } else {
+                    this.patientCreated = true;
+                    this.showSuccessActions = true;
+                  }
+                },
+                error: () => {
+                  this.loadingPatientData = false;
+                  this.patientCreated = true;
+                  this.showSuccessActions = true;
+                }
+              });
+            } else {
+              this.patientCreated = true;
+              this.showSuccessActions = true;
+              this.loading = false;
             }
-            this.askForConsulta(newPatientId);
           } else {
             const errorMessage = (response as any).error?.message || 'Error creando paciente';
             alert(`❌ Error creando paciente:\n\n${errorMessage}\n\nPor favor, intente nuevamente.`);
+            this.loading = false;
           }
-          this.loading = false;
         },
         error: (error) => {
           this.errorHandler.logError(error, 'crear paciente');
@@ -364,14 +383,29 @@ export class PatientFormComponent implements OnInit {
         });
       }
     } else {
-      // Redirigir a la lista de pacientes
-      console.log('📍 Redirigiendo a /patients (lista de pacientes)');
-      this.router.navigate(['/patients']).then(() => {
-        console.log('✅ Navegación completada a lista de pacientes');
-      }).catch((error) => {
-        console.error('❌ Error en navegación:', error);
-      });
+      this.askForAntecedentes(patientId || this.patientId);
     }
+  }
+
+  askForAntecedentes(patientId?: number | null) {
+    if (!patientId) {
+      this.router.navigate(['/patients']);
+      return;
+    }
+    const wantsAntecedentes = confirm(
+      '¿Desea cargar los antecedentes del paciente ahora?\n\n' +
+      '• Aceptar: Irá a la pantalla de antecedentes (médicos, quirúrgicos, hábitos, otros)\n' +
+      '• Cancelar: Volverá a la lista de pacientes'
+    );
+    if (wantsAntecedentes) {
+      this.router.navigate(['/patients', patientId, 'antecedentes']);
+    } else {
+      this.router.navigate(['/patients']);
+    }
+  }
+
+  goToList() {
+    this.router.navigate(['/patients']);
   }
 
   onCancel() {

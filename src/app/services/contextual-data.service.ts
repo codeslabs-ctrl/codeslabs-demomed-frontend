@@ -20,6 +20,7 @@ export interface DatosMedico {
   nombres: string;
   apellidos: string;
   especialidad: string;
+  sexo?: string | null;
   cedula_profesional: string;
   telefono: string;
   email: string;
@@ -160,7 +161,8 @@ export class ContextualDataService {
    * @returns String formateado con información del médico
    */
   formatearDatosMedico(medico: DatosMedico): string {
-    return `Dr. ${medico.nombres} ${medico.apellidos} - ${medico.especialidad}`;
+    const titulo = medico.sexo === 'Femenino' ? 'Dra.' : 'Dr.';
+    return `${titulo} ${medico.nombres} ${medico.apellidos} - ${medico.especialidad}`;
   }
 
   /**

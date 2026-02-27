@@ -95,7 +95,7 @@ import { Medico } from '../../../services/medico.service';
                       {{ selectedEspecialidadId && selectedEspecialidadId !== 0 ? 'Seleccionar médico' : 'Primero seleccione una especialidad' }}
                     </option>
                     <option *ngFor="let medico of medicosFiltrados" [value]="medico.id">
-                      Dr./Dra. {{medico.nombres}} {{medico.apellidos}}
+                      {{ medico.sexo === 'Femenino' ? 'Dra.' : 'Dr.' }} {{medico.nombres}} {{medico.apellidos}}
                     </option>
                   </select>
                 </div>
@@ -105,7 +105,7 @@ import { Medico } from '../../../services/medico.service';
               <div class="form-group" *ngIf="currentUser?.rol === 'medico'">
                 <label>Médico asignado</label>
                 <div class="medico-info">
-                  <span class="medico-nombre">Dr./Dra. {{currentUser.nombres}} {{currentUser.apellidos}}</span>
+                  <span class="medico-nombre">{{ currentUserMedicoTitulo() }} {{currentUser.nombres}} {{currentUser.apellidos}}</span>
                   <span class="medico-especialidad">{{currentUser.especialidad_nombre}}</span>
                 </div>
               </div>
@@ -639,6 +639,12 @@ export class NuevaConsultaComponent implements OnInit {
     } else {
       this.medicosFiltrados = [];
     }
+  }
+
+  currentUserMedicoTitulo(): string {
+    if (!this.currentUser?.medico_id) return 'Dr.';
+    const medico = this.medicos.find(m => m.id === this.currentUser!.medico_id);
+    return medico?.sexo === 'Femenino' ? 'Dra.' : 'Dr.';
   }
 
   getPreselectedPatientName(): string {

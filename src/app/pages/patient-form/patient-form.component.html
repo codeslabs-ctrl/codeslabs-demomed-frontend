@@ -137,6 +137,11 @@
       </div>
     </div>
 
+    <div class="form-actions" *ngIf="isEdit && patientId">
+      <a [routerLink]="['/patients', patientId, 'antecedentes']" class="btn btn-outline">
+        📋 Antecedentes del paciente
+      </a>
+    </div>
     <div class="form-actions">
       <button 
         type="button" 
@@ -154,11 +159,26 @@
     </div>
   </form>
 
-  <div class="loading" *ngIf="loading && !isEdit">
+  <div class="loading" *ngIf="(loading || loadingPatientData) && !isEdit">
     <div class="spinner"></div>
-    <p>Cargando datos del paciente...</p>
+    <p>{{ loadingPatientData ? 'Cargando datos del paciente...' : 'Creando paciente...' }}</p>
   </div>
 
-  <!-- Nota: Los archivos anexos y datos médicos se manejan en la sección "Historia Médica" -->
-  <!-- Este formulario solo maneja datos básicos del paciente -->
+  <!-- Panel de éxito al crear paciente (se muestra tras cargar los datos generales) -->
+  <div class="success-actions-panel" *ngIf="showSuccessActions && patientCreated && !isEdit && patientId && !loadingPatientData">
+    <h3>✅ Paciente registrado exitosamente</h3>
+    <p class="success-patient-name">{{ patient.nombres }} {{ patient.apellidos }}</p>
+    <p class="success-hint">¿Qué desea hacer ahora?</p>
+    <div class="success-actions">
+      <a [routerLink]="['/admin/consultas/nueva']" [queryParams]="{ paciente_id: patientId }" class="btn btn-primary">
+        📅 Agendar consulta médica
+      </a>
+      <a [routerLink]="['/patients', patientId, 'antecedentes']" class="btn btn-outline-primary">
+        📋 Antecedentes del paciente
+      </a>
+      <button type="button" class="btn btn-secondary" (click)="goToList()">
+        Ir a lista de pacientes
+      </button>
+    </div>
+  </div>
 </div>

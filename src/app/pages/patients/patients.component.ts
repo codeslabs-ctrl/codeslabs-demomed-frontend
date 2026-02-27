@@ -44,6 +44,17 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
               (input)="onCedulaSearchChange()"
               placeholder="V-12345678">
           </div>
+          <div class="form-group form-group-patologia">
+            <label class="form-label">Buscar por patología / dolencia</label>
+            <input 
+              type="text" 
+              class="form-input" 
+              [(ngModel)]="searchPatologia"
+              (input)="onPatologiaSearchChange()"
+              placeholder="Ej: cáncer de colon, diabetes, hipertensión">
+          </div>
+        </div>
+        <div class="filters-grid filters-grid-other" *ngIf="showOtherFilters">
           <div class="form-group">
             <label class="form-label">Sexo</label>
             <select class="form-input" [(ngModel)]="filters.sexo" (change)="applyFilters()">
@@ -72,7 +83,10 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
           </div>
         </div>
         <div class="filters-actions">
-          <button class="btn btn-clear" (click)="clearFilters()">
+          <button type="button" class="btn btn-other-filters" (click)="showOtherFilters = !showOtherFilters">
+            {{ showOtherFilters ? '▲ Ocultar otros filtros' : '▼ Otros filtros' }}
+          </button>
+          <button type="button" class="btn btn-clear" (click)="clearFilters()">
             🗑️ Limpiar Filtros
           </button>
         </div>
@@ -334,9 +348,26 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
       margin-bottom: 1rem;
     }
 
+    .filters-grid-other {
+      margin-top: 0.5rem;
+    }
     .filters-actions {
       display: flex;
       gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .btn-other-filters {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: 1px solid #dee2e6;
+      background: #fff;
+      color: #495057;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .btn-other-filters:hover {
+      background: #f8f9fa;
+      border-color: #adb5bd;
     }
 
     .patients-table {
@@ -810,6 +841,9 @@ export class PatientsComponent implements OnInit {
   pagination: any = null;
   searchName = '';
   searchCedula = '';
+  searchPatologia = '';
+  private patologiaSearchTimeout: any = null;
+  showOtherFilters = false;
   filters: PatientFilters = {};
   pageSizeOptions = APP_CONFIG.PAGINATION.PAGE_SIZE_OPTIONS;
   currentUser: User | null = null;
@@ -817,6 +851,8 @@ export class PatientsComponent implements OnInit {
   // Modal de confirmación eliminar
   showConfirmModal: boolean = false;
   patientToDelete: Patient | null = null;
+
+  error: string | null = null;
 
   constructor(
     private patientService: PatientService,
@@ -836,9 +872,16 @@ export class PatientsComponent implements OnInit {
 
   loadPatients() {
     this.loading = true;
-    
+    this.error = null;
+
     if (!this.currentUser) {
       this.loading = false;
+      return;
+    }
+
+    // Si hay búsqueda por patología activa, usar esa en lugar del listado normal
+    if (this.searchPatologia.trim()) {
+      this.runPatologiaSearch();
       return;
     }
 
@@ -925,6 +968,54 @@ export class PatientsComponent implements OnInit {
     }
   }
 
+  onPatologiaSearchChange() {
+    if (this.patologiaSearchTimeout) clearTimeout(this.patologiaSearchTimeout);
+    const term = this.searchPatologia.trim();
+    if (!term) {
+      this.loadPatients();
+      return;
+    }
+    this.patologiaSearchTimeout = setTimeout(() => this.runPatologiaSearch(), 400);
+  }
+
+  /**
+   * Ejecuta la búsqueda por patología/dolencia (usa searchPatologia).
+   * Acepta response.data como array o response.data.patients por si el backend devuelve formato distinto.
+   */
+  private runPatologiaSearch() {
+    const term = this.searchPatologia.trim();
+    if (!term) return;
+    this.loading = true;
+    this.error = null;
+    // No filtrar por medico_id: la búsqueda por patología devuelve todos los pacientes que coincidan
+    this.patientService.searchPatientsByPatologia(term, undefined).subscribe({
+      next: (response) => {
+        let list: unknown = null;
+        if (response && (response as any).success !== false) {
+          const data = (response as any).data;
+          if (Array.isArray(data)) {
+            list = data;
+          } else if (data && Array.isArray((data as any).patients)) {
+            list = (data as any).patients;
+          }
+        }
+        this.patients = Array.isArray(list) ? list : [];
+        this.pagination = null;
+        if (this.patients.length > 0) {
+          this.patients.forEach(patient => this.verificarHistoriaMedica(patient));
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        this.errorHandler.logError(error, 'buscar pacientes por patología');
+        this.patients = [];
+        this.pagination = null;
+        this.error = this.errorHandler.getSafeErrorMessage(error, 'buscar por patología');
+        this.loading = false;
+      }
+    });
+  }
+
   applyFilters() {
     this.currentPage = 1;
     this.loadPatients();
@@ -934,6 +1025,8 @@ export class PatientsComponent implements OnInit {
     this.filters = {};
     this.searchName = '';
     this.searchCedula = '';
+    this.searchPatologia = '';
+    if (this.patologiaSearchTimeout) clearTimeout(this.patologiaSearchTimeout);
     this.currentPage = 1;
     this.loadPatients();
   }

@@ -81,7 +81,7 @@ import { Medico } from '../../../services/medico.service';
                   required>
                   <option value="0">Seleccionar médico</option>
                   <option *ngFor="let medico of medicos" [value]="medico.id">
-                    Dr./Dra. {{medico.nombres}} {{medico.apellidos}} - {{medico.especialidad_nombre}}
+                    {{ medico.sexo === 'Femenino' ? 'Dra.' : 'Dr.' }} {{medico.nombres}} {{medico.apellidos}} - {{medico.especialidad_nombre}}
                   </option>
                 </select>
               </div>
@@ -90,7 +90,7 @@ import { Medico } from '../../../services/medico.service';
               <div class="form-group" *ngIf="currentUser?.rol === 'medico'">
                 <label>Médico asignado</label>
                 <div class="medico-info">
-                  <span class="medico-nombre">Dr./Dra. {{getMedicoNombre()}}</span>
+                  <span class="medico-nombre">{{ getMedicoTitulo() }} {{ getMedicoNombre() }}</span>
                   <span class="medico-especialidad">{{getMedicoEspecialidad()}}</span>
                 </div>
               </div>
@@ -760,6 +760,10 @@ export class EditarConsultaComponent implements OnInit {
       return 'Sin cédula';
     }
     return '';
+  }
+
+  getMedicoTitulo(): string {
+    return this.consultaData?.medico_sexo === 'Femenino' ? 'Dra.' : 'Dr.';
   }
 
   getMedicoNombre(): string {

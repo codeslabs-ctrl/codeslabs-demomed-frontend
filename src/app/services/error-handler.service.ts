@@ -15,7 +15,14 @@ export class ErrorHandlerService {
    * @returns Mensaje seguro para el usuario
    */
   getSafeErrorMessage(error: any, context: string = 'operación'): string {
-    // Siempre mostrar mensajes genéricos y seguros
+    // Error de red o "Unknown Error" (sin detalles técnicos para el usuario)
+    const status = error?.status;
+    const rawMessage = (error?.message || error?.error?.message || '') as string;
+    const isUnknownOrNetwork = status === 0 || (typeof rawMessage === 'string' && /unknown\s*error|failure\s*response\s*for/i.test(rawMessage));
+    if (isUnknownOrNetwork) {
+      return 'Ha ocurrido un error. Por favor, intente de nuevo más tarde.';
+    }
+    // Resto: mensaje genérico y seguro
     return `❌ Error en ${context}. Por favor, verifica los datos e intenta de nuevo.`;
   }
 

@@ -66,7 +66,7 @@
               <div class="cedula">{{ informe.pacientes?.cedula }}</div>
             </div>
           </td>
-          <td>Dr. {{ informe.medicos?.nombres }} {{ informe.medicos?.apellidos }}</td>
+          <td>{{ informe.medicos?.sexo === 'Femenino' ? 'Dra.' : 'Dr.' }} {{ informe.medicos?.nombres }} {{ informe.medicos?.apellidos }}</td>
           <td>
             <span class="estado-badge" [ngClass]="informe.estado">
               {{ getEstadoTexto(informe.estado) }}

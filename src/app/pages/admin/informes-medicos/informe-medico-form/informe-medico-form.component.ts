@@ -12,6 +12,8 @@ import { ContextualDataService, DatosContextuales } from '../../../../services/c
 import { AuthService } from '../../../../services/auth.service';
 import { ErrorHandlerService } from '../../../../services/error-handler.service';
 import { HistoricoService } from '../../../../services/historico.service';
+import { HistoricoAntecedenteService } from '../../../../services/historico-antecedente.service';
+import { AntecedenteTipoService } from '../../../../services/antecedente-tipo.service';
 import { 
   InformeMedico, 
   TemplateInforme, 
@@ -88,6 +90,8 @@ export class InformeMedicoFormComponent implements OnInit {
     private authService: AuthService,
     private errorHandler: ErrorHandlerService,
     private historicoService: HistoricoService,
+    private historicoAntecedenteService: HistoricoAntecedenteService,
+    private antecedenteTipoService: AntecedenteTipoService,
     private cdr: ChangeDetectorRef
   ) {
     this.informeForm = this.fb.group({
@@ -599,7 +603,7 @@ export class InformeMedicoFormComponent implements OnInit {
   private generarFirmaConImagen(medico: any): string {
     return `
       <div class="firma-personalizada">
-        <p><strong>Dr. ${medico.nombres} ${medico.apellidos}</strong></p>
+        <p><strong>${medico.sexo === 'Femenino' ? 'Dra.' : 'Dr.'} ${medico.nombres} ${medico.apellidos}</strong></p>
         <p>Cédula Profesional: ${medico.cedula_profesional || 'No especificada'}</p>
         <p>Especialidad: ${medico.especialidad || 'No especificada'}</p>
         <div style="margin: 20px 0;">
@@ -619,7 +623,7 @@ export class InformeMedicoFormComponent implements OnInit {
   private generarFirmaSistema(medico: any): string {
     return `
       <div class="firma-sistema">
-        <p><strong>Dr. ${medico.nombres} ${medico.apellidos}</strong></p>
+        <p><strong>${medico.sexo === 'Femenino' ? 'Dra.' : 'Dr.'} ${medico.nombres} ${medico.apellidos}</strong></p>
         <p>Cédula Profesional: ${medico.cedula_profesional || 'No especificada'}</p>
         <p>Especialidad: ${medico.especialidad || 'No especificada'}</p>
         <p>Teléfono: ${medico.telefono || 'No especificada'}</p>
@@ -632,6 +636,79 @@ export class InformeMedicoFormComponent implements OnInit {
     `;
   }
 
+  /**
+   * Construye HTML de antecedentes estandarizados (antecedente_paciente) e incluye antecedentes_otros del paciente.
+   */
+  private async buildAntecedentesEstandarizadosHTML(historicoId: number): Promise<{ html: string; antecedentes_otros: string | null }> {
+    try {
+      const [antRes, tiposMedRes, tiposQuirurRes, tiposHabRes] = await Promise.all([
+        firstValueFrom(this.historicoAntecedenteService.getByHistoricoId(historicoId)),
+        firstValueFrom(this.antecedenteTipoService.getByTipo('antecedentes_medicos')),
+        firstValueFrom(this.antecedenteTipoService.getByTipo('antecedentes_quirurgicos')),
+        firstValueFrom(this.antecedenteTipoService.getByTipo('habitos_psicobiologicos'))
+      ]);
+      const data = (antRes?.success && antRes?.data) ? antRes.data : null;
+      const lista = data && typeof data === 'object' && (data as any).antecedentes
+        ? (data as any).antecedentes
+        : (Array.isArray(data) ? data : []);
+      const antecedentes_otros = data && typeof data === 'object' && (data as any).antecedentes_otros !== undefined
+        ? (data as any).antecedentes_otros
+        : null;
+      const tiposMed = (tiposMedRes?.success && tiposMedRes?.data) ? tiposMedRes.data : [];
+      const tiposQuirur = (tiposQuirurRes?.success && tiposQuirurRes?.data) ? tiposQuirurRes.data : [];
+      const tiposHab = (tiposHabRes?.success && tiposHabRes?.data) ? tiposHabRes.data : [];
+      const mapaNombres: Record<number, string> = {};
+      [...tiposMed, ...tiposQuirur, ...tiposHab].forEach(t => { if (t.id != null) mapaNombres[t.id] = t.nombre; });
+
+      const lineasMed: string[] = [];
+      const lineasQuirur: string[] = [];
+      const lineasHab: string[] = [];
+      lista.forEach((a: { antecedente_tipo_id: number; presente: boolean; detalle?: string | null }) => {
+        const nombre = mapaNombres[a.antecedente_tipo_id] || `Ítem ${a.antecedente_tipo_id}`;
+        let detalleTexto = a.detalle?.trim() ?? '';
+        if (detalleTexto) {
+          try {
+            const parsed = JSON.parse(detalleTexto);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const partes = (parsed as { tipo_cirugia?: string; ano?: string }[]).map(
+                x => `${(x.tipo_cirugia || '').trim()}${x.ano ? ` (${x.ano})` : ''}`
+              ).filter(Boolean);
+              if (partes.length) detalleTexto = partes.join('; ');
+            }
+          } catch { /* mantener detalleTexto original */ }
+        }
+        const texto = a.presente
+          ? (detalleTexto ? `${nombre}: Sí. ${detalleTexto}` : `${nombre}: Sí`)
+          : `${nombre}: No`;
+        const li = `<li>${this.escapeHtml(texto)}</li>`;
+        if (tiposMed.some(t => t.id === a.antecedente_tipo_id)) lineasMed.push(li);
+        else if (tiposQuirur.some(t => t.id === a.antecedente_tipo_id)) lineasQuirur.push(li);
+        else lineasHab.push(li);
+      });
+
+      let html = '';
+      if (lineasMed.length > 0) {
+        html += `<h3><strong>Antecedentes Médicos:</strong></h3><ul>${lineasMed.join('')}</ul>`;
+      }
+      if (lineasQuirur.length > 0) {
+        html += `<h3><strong>Antecedentes Quirúrgicos:</strong></h3><ul>${lineasQuirur.join('')}</ul>`;
+      }
+      if (lineasHab.length > 0) {
+        html += `<h3><strong>Hábitos Psicobiológicos:</strong></h3><ul>${lineasHab.join('')}</ul>`;
+      }
+      return { html, antecedentes_otros };
+    } catch {
+      return { html: '', antecedentes_otros: null };
+    }
+  }
+
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
 
   /**
    * Aplica sugerencias automáticamente al campo contenido
@@ -666,13 +743,12 @@ export class InformeMedicoFormComponent implements OnInit {
             const historico = historicoResponse?.data;
             if (historico) {
               console.log('📋 Historia médica encontrada para antecedentes:', historico.id);
-              
               const antecedentesSecciones: string[] = [];
-              
-              if (historico.antecedentes_otros && historico.antecedentes_otros.trim() !== '' && historico.antecedentes_otros.trim() !== '<p></p>') {
-                antecedentesSecciones.push(`<h4><strong>Antecedentes Médicos:</strong></h4><p>${historico.antecedentes_otros}</p>`);
+              const { html: estandarizados, antecedentes_otros } = await this.buildAntecedentesEstandarizadosHTML(historico.id);
+              if (estandarizados) antecedentesSecciones.push(estandarizados);
+              if (antecedentes_otros && antecedentes_otros.trim() !== '' && antecedentes_otros.trim() !== '<p></p>') {
+                antecedentesSecciones.push(`<h4><strong>Otros antecedentes:</strong></h4><p>${antecedentes_otros}</p>`);
               }
-              
               if (antecedentesSecciones.length > 0) {
                 antecedentesHTML = `<div class="antecedentes-seccion">${antecedentesSecciones.join('')}</div><hr>`;
                 console.log('✅ Antecedentes encontrados y añadidos al contenido auto-aplicado');
@@ -707,7 +783,8 @@ export class InformeMedicoFormComponent implements OnInit {
         // 2. Agregar datos del médico
         if (this.datosContextuales.medico) {
           contenidoSugerido += `<h2>Datos del Médico</h2>`;
-          contenidoSugerido += `<p><strong>Dr.</strong> ${this.datosContextuales.medico.nombres} ${this.datosContextuales.medico.apellidos}</p>`;
+          const tituloMed = this.datosContextuales.medico.sexo === 'Femenino' ? 'Dra.' : 'Dr.';
+          contenidoSugerido += `<p><strong>${tituloMed}</strong> ${this.datosContextuales.medico.nombres} ${this.datosContextuales.medico.apellidos}</p>`;
           contenidoSugerido += `<p><strong>Especialidad:</strong> ${this.datosContextuales.medico.especialidad}</p>`;
           contenidoSugerido += `<hr>`;
         }
@@ -734,9 +811,13 @@ export class InformeMedicoFormComponent implements OnInit {
           contenidoSugerido += `<h3><strong>Motivo de Consulta:</strong></h3><p>${historico.motivo_consulta}</p>`;
         }
         
-        // 4.2. Antecedentes Médicos
-        if (historico?.antecedentes_otros && historico.antecedentes_otros.trim() !== '' && historico.antecedentes_otros.trim() !== '<p></p>') {
-          contenidoSugerido += `<h3><strong>Antecedentes Médicos:</strong></h3><p>${historico.antecedentes_otros}</p>`;
+        // 4.2. Antecedentes (estandarizados + otros; otros vienen de pacientes.antecedentes_otros)
+        if (historico?.id) {
+          const { html: antEstandarizados, antecedentes_otros } = await this.buildAntecedentesEstandarizadosHTML(historico.id);
+          if (antEstandarizados) contenidoSugerido += antEstandarizados;
+          if (antecedentes_otros && antecedentes_otros.trim() !== '' && antecedentes_otros.trim() !== '<p></p>') {
+            contenidoSugerido += `<h3><strong>Otros antecedentes:</strong></h3><p>${antecedentes_otros}</p>`;
+          }
         }
         
         // 4.3. Examenes Fisicos
