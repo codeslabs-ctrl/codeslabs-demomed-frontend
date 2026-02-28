@@ -3,21 +3,24 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONFIG } from '../config/app.config';
 
-export interface PlanComparativaRow {
+/** Plan desde la tabla planes_comparativos (orden por campo orden). */
+export interface PlanComparativo {
   id: number;
-  caracteristica: string;
-  plan_profesional: string;
-  plan_clinica_core: string;
-  plan_clinica_pro: string;
+  plan: string;
+  costo_base: string | null;
+  medicos_incluidos: string | null;
+  pacientes_incluidos: string | null;
+  almacenamiento: string | null;
   orden: number;
 }
 
+/** Fila de add-on desde la tabla addons_progresivos. */
 export interface AddonProgresivoRow {
   id: number;
   complemento: string;
-  en_plan_profesional: string;
-  en_plan_clinica_core: string;
-  en_plan_clinica_pro: string;
+  en_plan_profesional: string | null;
+  en_plan_clinica_core: string | null;
+  en_plan_clinica_pro: string | null;
   orden: number;
 }
 
@@ -33,8 +36,8 @@ export class PlanesService {
 
   constructor(private http: HttpClient) {}
 
-  getPlanesComparativa(): Observable<ApiResponse<PlanComparativaRow[]>> {
-    return this.http.get<ApiResponse<PlanComparativaRow[]>>(`${this.baseUrl}/comparativa`);
+  getPlanesComparativa(): Observable<ApiResponse<PlanComparativo[]>> {
+    return this.http.get<ApiResponse<PlanComparativo[]>>(`${this.baseUrl}/comparativa`);
   }
 
   getAddonsProgresivos(): Observable<ApiResponse<AddonProgresivoRow[]>> {

@@ -25,24 +25,26 @@
         <button type="button" class="modal-close" (click)="closePlanesModal()" aria-label="Cerrar">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="planes-section" *ngIf="planesComparativa.length">
+        <div class="planes-section" *ngIf="planes.length">
           <h3>Comparativa de planes</h3>
           <div class="table-wrap">
             <table class="planes-table">
               <thead>
                 <tr>
-                  <th>Característica</th>
-                  <th>Plan Profesional</th>
-                  <th>Plan Clínica Core</th>
-                  <th>Plan Clínica Pro</th>
+                  <th>Plan</th>
+                  <th>Costo base</th>
+                  <th>Médicos incluidos</th>
+                  <th>Pacientes incluidos</th>
+                  <th>Almacenamiento</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let row of planesComparativa">
-                  <td>{{ row.caracteristica }}</td>
-                  <td>{{ row.plan_profesional }}</td>
-                  <td>{{ row.plan_clinica_core }}</td>
-                  <td>{{ row.plan_clinica_pro }}</td>
+                <tr *ngFor="let p of planes">
+                  <td>{{ p.plan }}</td>
+                  <td>{{ p.costo_base ?? '—' }}</td>
+                  <td>{{ p.medicos_incluidos ?? '—' }}</td>
+                  <td>{{ p.pacientes_incluidos ?? '—' }}</td>
+                  <td>{{ p.almacenamiento ?? '—' }}</td>
                 </tr>
               </tbody>
             </table>
@@ -63,16 +65,16 @@
               <tbody>
                 <tr *ngFor="let row of addonsProgresivos">
                   <td>{{ row.complemento }}</td>
-                  <td>{{ row.en_plan_profesional }}</td>
-                  <td>{{ row.en_plan_clinica_core }}</td>
-                  <td>{{ row.en_plan_clinica_pro }}</td>
+                  <td>{{ row.en_plan_profesional ?? '—' }}</td>
+                  <td>{{ row.en_plan_clinica_core ?? '—' }}</td>
+                  <td>{{ row.en_plan_clinica_pro ?? '—' }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
         <p *ngIf="planesLoading" class="loading-text">Cargando planes...</p>
-        <p *ngIf="!planesLoading && !planesComparativa.length && !addonsProgresivos.length" class="no-data">No hay datos de planes disponibles.</p>
+        <p *ngIf="!planesLoading && !planes.length && !addonsProgresivos.length" class="no-data">No hay datos de planes disponibles.</p>
         <div class="planes-note">
           <p><strong>¿Superas los 50,000 pacientes o 50 médicos?</strong></p>
           <p>Contáctanos para un plan personalizado (Enterprise) con servidor dedicado, backups de alta frecuencia y soporte presencial.</p>

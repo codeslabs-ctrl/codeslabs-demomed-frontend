@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ErrorHandlerService } from '../../services/error-handler.service';
-import { PlanesService, PlanComparativaRow, AddonProgresivoRow } from '../../services/planes.service';
+import { PlanesService, PlanComparativo, AddonProgresivoRow } from '../../services/planes.service';
 import { EspecialidadService, Especialidad } from '../../services/especialidad.service';
 
 @Component({
@@ -27,7 +27,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   showPlanesModal = false;
   showSolicitudModal = false;
-  planesComparativa: PlanComparativaRow[] = [];
+  planes: PlanComparativo[] = [];
   addonsProgresivos: AddonProgresivoRow[] = [];
   planesLoading = false;
   solicitudSending = false;
@@ -170,10 +170,10 @@ export class LoginComponent implements OnInit, OnDestroy {
   openPlanesModal() {
     this.showPlanesModal = true;
     this.planesLoading = true;
-    this.planesComparativa = [];
+    this.planes = [];
     this.addonsProgresivos = [];
     this.planesService.getPlanesComparativa().subscribe({
-      next: (r) => { if (r.success && r.data) this.planesComparativa = r.data; },
+      next: (r) => { if (r.success && r.data) this.planes = r.data; },
       error: () => { this.planesLoading = false; },
       complete: () => { this.planesLoading = false; }
     });
