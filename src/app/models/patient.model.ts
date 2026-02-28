@@ -8,6 +8,7 @@ export interface Patient {
   email: string;
   telefono: string;
   plan?: string;
+  remitido_por?: string;
   medico_id?: number;
   antecedentes_otros?: string; // Otros antecedentes (texto libre) del paciente
   motivo_consulta?: string; // Opcional - solo para edición

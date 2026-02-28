@@ -23,7 +23,8 @@ export class PatientFormComponent implements OnInit {
     edad: 0,
     sexo: 'Femenino',
     email: '',
-    telefono: ''
+    telefono: '',
+    remitido_por: ''
   };
   isEdit = false;
   loading = false;
@@ -130,6 +131,7 @@ export class PatientFormComponent implements OnInit {
       sexo: this.patient.sexo!,
       email: this.patient.email!,
       telefono: this.patient.telefono!,
+      remitido_por: this.patient.remitido_por ?? undefined,
       activo: true // Los pacientes nuevos siempre se crean como activos
     };
 
@@ -216,7 +218,8 @@ export class PatientFormComponent implements OnInit {
       edad: this.patient.edad!,
       sexo: this.patient.sexo!,
       email: this.patient.email!,
-      telefono: this.patient.telefono!
+      telefono: this.patient.telefono!,
+      remitido_por: this.patient.remitido_por ?? undefined
     };
 
     console.log('🔍 Datos a actualizar:', updateData);

@@ -4,6 +4,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ErrorHandlerService } from '../../services/error-handler.service';
+import { PlanesService, PlanComparativaRow, AddonProgresivoRow } from '../../services/planes.service';
+import { EspecialidadService, Especialidad } from '../../services/especialidad.service';
 
 @Component({
   selector: 'app-login',
@@ -14,6 +16,7 @@ import { ErrorHandlerService } from '../../services/error-handler.service';
 })
 export class LoginComponent implements OnInit, OnDestroy {
   loginForm: FormGroup;
+  solicitudForm: FormGroup;
   isLoading = false;
   errorMessage = '';
   showPassword = false;
@@ -22,15 +25,36 @@ export class LoginComponent implements OnInit, OnDestroy {
   currentYear = new Date().getFullYear();
   private countdownInterval: any;
 
+  showPlanesModal = false;
+  showSolicitudModal = false;
+  planesComparativa: PlanComparativaRow[] = [];
+  addonsProgresivos: AddonProgresivoRow[] = [];
+  planesLoading = false;
+  solicitudSending = false;
+  solicitudSuccess = '';
+  solicitudError = '';
+  especialidades: Especialidad[] = [];
+  especialidadesLoading = false;
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private planesService: PlanesService,
+    private especialidadService: EspecialidadService
   ) {
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
       password: ['', Validators.required]
+    });
+    this.solicitudForm = this.fb.group({
+      nombre: ['', [Validators.required, Validators.minLength(2)]],
+      apellido: ['', [Validators.required, Validators.minLength(2)]],
+      email: ['', [Validators.required, Validators.email]],
+      telefono: [''],
+      especialidad_id: [null as number | null, Validators.required],
+      mensaje: ['']
     });
   }
 
@@ -141,6 +165,75 @@ export class LoginComponent implements OnInit, OnDestroy {
       // Para otros roles, ir al dashboard general
       this.router.navigate(['/dashboard']);
     }
+  }
+
+  openPlanesModal() {
+    this.showPlanesModal = true;
+    this.planesLoading = true;
+    this.planesComparativa = [];
+    this.addonsProgresivos = [];
+    this.planesService.getPlanesComparativa().subscribe({
+      next: (r) => { if (r.success && r.data) this.planesComparativa = r.data; },
+      error: () => { this.planesLoading = false; },
+      complete: () => { this.planesLoading = false; }
+    });
+    this.planesService.getAddonsProgresivos().subscribe({
+      next: (r) => { if (r.success && r.data) this.addonsProgresivos = r.data; },
+      error: () => { this.planesLoading = false; },
+      complete: () => { this.planesLoading = false; }
+    });
+  }
+
+  closePlanesModal() {
+    this.showPlanesModal = false;
+  }
+
+  openSolicitudModal() {
+    this.showSolicitudModal = true;
+    this.solicitudForm.reset({ nombre: '', apellido: '', email: '', telefono: '', especialidad_id: null, mensaje: '' });
+    this.solicitudSuccess = '';
+    this.solicitudError = '';
+    this.especialidades = [];
+    this.especialidadesLoading = true;
+    this.especialidadService.getAllEspecialidades().subscribe({
+      next: (r) => { if (r.success && r.data) this.especialidades = r.data; },
+      error: () => { this.especialidadesLoading = false; },
+      complete: () => { this.especialidadesLoading = false; }
+    });
+  }
+
+  closeSolicitudModal() {
+    this.showSolicitudModal = false;
+  }
+
+  onSubmitSolicitud() {
+    if (this.solicitudForm.invalid || this.solicitudSending) return;
+    this.solicitudSending = true;
+    this.solicitudSuccess = '';
+    this.solicitudError = '';
+    const v = this.solicitudForm.value;
+    this.planesService.solicitarUsuarioPruebas({
+      nombre: v.nombre,
+      apellido: v.apellido,
+      email: v.email,
+      telefono: v.telefono || undefined,
+      especialidad_id: Number(v.especialidad_id),
+      mensaje: v.mensaje || undefined
+    }).subscribe({
+      next: (r) => {
+        this.solicitudSending = false;
+        if (r.success && r.data?.message) {
+          this.solicitudSuccess = r.data.message;
+          this.solicitudForm.reset();
+        } else {
+          this.solicitudError = r.error?.message || 'Error al enviar la solicitud.';
+        }
+      },
+      error: (err) => {
+        this.solicitudSending = false;
+        this.solicitudError = err?.error?.error?.message || err?.message || 'Error de conexión. Intenta de nuevo.';
+      }
+    });
   }
 
   ngOnDestroy() {

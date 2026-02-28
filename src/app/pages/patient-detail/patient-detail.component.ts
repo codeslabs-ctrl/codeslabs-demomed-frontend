@@ -89,6 +89,10 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
                 <label>Cédula</label>
                 <span class="cedula-badge">{{ patient.cedula }}</span>
               </div>
+              <div class="info-item" *ngIf="patient.remitido_por">
+                <label>Remitido por</label>
+                <span class="remitido-por-info">{{ patient.remitido_por }}</span>
+              </div>
             </div>
           </div>
 
@@ -553,6 +557,16 @@ import { RemitirPacienteModalComponent } from '../../components/remitir-paciente
       background-color: #f0f9ff;
       color: #0369a1;
       white-space: nowrap;
+    }
+
+    .remitido-por-info {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      background-color: #f0fdf4;
+      color: #166534;
+      border-left: 3px solid #22c55e;
     }
 
     .patient-actions {

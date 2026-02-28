@@ -1,10 +1,303 @@
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, rgba(122, 156, 198, 0.8) 0%, rgba(90, 122, 154, 0.8) 100%);
+  padding: 2rem;
+  position: relative;
+}
+
+.login-navbar {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  z-index: 10;
+}
+
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(122, 156, 198, 0.3);
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.nav-btn:hover {
+  background: #fff;
+  border-color: #7A9CC6;
+  color: #5A7A9A;
+  box-shadow: 0 4px 12px rgba(122, 156, 198, 0.2);
+}
+
+.nav-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.planes-modal {
+  width: 100%;
+  max-width: 800px;
+}
+
+.solicitud-modal {
+  width: 100%;
+  max-width: 480px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.375rem;
+}
+
+.modal-close:hover {
+  color: #1e293b;
+  background: #f1f5f9;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.planes-section {
+  margin-bottom: 1.5rem;
+}
+
+.planes-section:last-child {
+  margin-bottom: 0;
+}
+
+.planes-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #475569;
+  margin: 0 0 0.75rem 0;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+}
+
+.planes-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.planes-table th,
+.planes-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.planes-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #334155;
+}
+
+.planes-table tr:last-child td {
+  border-bottom: none;
+}
+
+.loading-text,
+.no-data {
+  color: #64748b;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.planes-note {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: #f0f9ff;
+  border-left: 4px solid #7A9CC6;
+  border-radius: 0.5rem;
+}
+
+.planes-note p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.planes-note p:last-child {
+  margin-bottom: 0;
+}
+
+.solicitud-hint {
+  color: #475569;
+  font-size: 0.9rem;
+  margin: 0 0 1.25rem 0;
+  line-height: 1.5;
+}
+
+.solicitud-form .form-group {
+  margin-bottom: 1rem;
+}
+
+.solicitud-form .form-group label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  margin-bottom: 0.35rem;
+}
+
+.solicitud-form input,
+.solicitud-form textarea,
+.solicitud-form select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #374151;
+  background-color: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.solicitud-form select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.25rem;
+  cursor: pointer;
+}
+
+.solicitud-form select:hover:not(:disabled) {
+  border-color: #9ca3af;
+}
+
+.solicitud-form select:focus {
+  outline: none;
+  border-color: #7A9CC6;
+  box-shadow: 0 0 0 3px rgba(122, 156, 198, 0.15);
+}
+
+.solicitud-form select:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.solicitud-form select option {
+  padding: 0.5rem;
+  font-weight: 400;
+}
+
+.solicitud-form .field-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.solicitud-form .form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+}
+
+.solicitud-form .btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: none;
+}
+
+.solicitud-form .btn-primary {
+  background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
+  color: #fff;
+}
+
+.solicitud-form .btn-secondary {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.success-msg {
+  color: #15803d;
+  font-size: 0.9rem;
+  margin: 1rem 0 0 0;
+}
+
+.error-msg {
+  color: #b91c1c;
+  font-size: 0.9rem;
+  margin: 1rem 0 0 0;
+}
+
 .login-container {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(122, 156, 198, 0.8) 0%, rgba(90, 122, 154, 0.8) 100%);
   padding: 2rem;
+  padding-top: 5rem;
 }
 
 .login-card {
@@ -184,6 +477,21 @@
 }
 
 @media (max-width: 480px) {
+  .login-navbar {
+    top: 0.75rem;
+    right: 0.75rem;
+    left: 0.75rem;
+    justify-content: center;
+  }
+
+  .nav-btn span {
+    display: none;
+  }
+
+  .nav-btn {
+    padding: 0.6rem 0.9rem;
+  }
+
   .login-container {
     padding: 1rem;
   }
@@ -218,6 +526,17 @@
   font-size: 0.75rem;
   margin: 0;
   font-weight: 400;
+}
+
+.copyright-link {
+  color: #7A9CC6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.copyright-link:hover {
+  text-decoration: underline;
+  color: #5A7A9A;
 }
 
 

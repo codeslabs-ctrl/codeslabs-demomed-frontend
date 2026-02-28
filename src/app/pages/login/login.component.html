@@ -1,4 +1,138 @@
-<div class="login-container">
+<div class="login-page">
+  <nav class="login-navbar">
+    <button type="button" class="nav-btn" (click)="openPlanesModal()" title="Conoce nuestros planes">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 3h7v7H3V3zm11 0h7v7h-7V3zM3 14h7v7H3v-7zm11 0h7v7h-7v-7z"/>
+      </svg>
+      <span>Conoce nuestros planes</span>
+    </button>
+    <button type="button" class="nav-btn" (click)="openSolicitudModal()" title="Solicita un usuario de pruebas">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <line x1="19" y1="8" x2="19" y2="14"/>
+        <line x1="22" y1="11" x2="16" y2="11"/>
+      </svg>
+      <span>Solicita un usuario de pruebas</span>
+    </button>
+  </nav>
+
+  <!-- Modal Conoce nuestros planes -->
+  <div class="modal-overlay" *ngIf="showPlanesModal" (click)="closePlanesModal()">
+    <div class="modal-box planes-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Conoce nuestros planes</h2>
+        <button type="button" class="modal-close" (click)="closePlanesModal()" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="planes-section" *ngIf="planesComparativa.length">
+          <h3>Comparativa de planes</h3>
+          <div class="table-wrap">
+            <table class="planes-table">
+              <thead>
+                <tr>
+                  <th>Característica</th>
+                  <th>Plan Profesional</th>
+                  <th>Plan Clínica Core</th>
+                  <th>Plan Clínica Pro</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of planesComparativa">
+                  <td>{{ row.caracteristica }}</td>
+                  <td>{{ row.plan_profesional }}</td>
+                  <td>{{ row.plan_clinica_core }}</td>
+                  <td>{{ row.plan_clinica_pro }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="planes-section" *ngIf="addonsProgresivos.length">
+          <h3>Add-ons progresivos</h3>
+          <div class="table-wrap">
+            <table class="planes-table">
+              <thead>
+                <tr>
+                  <th>Complemento</th>
+                  <th>En Plan Profesional</th>
+                  <th>En Plan Clínica Core</th>
+                  <th>En Plan Clínica Pro</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of addonsProgresivos">
+                  <td>{{ row.complemento }}</td>
+                  <td>{{ row.en_plan_profesional }}</td>
+                  <td>{{ row.en_plan_clinica_core }}</td>
+                  <td>{{ row.en_plan_clinica_pro }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p *ngIf="planesLoading" class="loading-text">Cargando planes...</p>
+        <p *ngIf="!planesLoading && !planesComparativa.length && !addonsProgresivos.length" class="no-data">No hay datos de planes disponibles.</p>
+        <div class="planes-note">
+          <p><strong>¿Superas los 50,000 pacientes o 50 médicos?</strong></p>
+          <p>Contáctanos para un plan personalizado (Enterprise) con servidor dedicado, backups de alta frecuencia y soporte presencial.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Solicita usuario de pruebas -->
+  <div class="modal-overlay" *ngIf="showSolicitudModal" (click)="closeSolicitudModal()">
+    <div class="modal-box solicitud-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Solicita un usuario de pruebas</h2>
+        <button type="button" class="modal-close" (click)="closeSolicitudModal()" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="solicitud-hint">Completa el formulario. Se creará tu usuario de pruebas con rol médico y recibirás las credenciales por email.</p>
+        <form [formGroup]="solicitudForm" (ngSubmit)="onSubmitSolicitud()" class="solicitud-form">
+          <div class="form-group">
+            <label for="s-nombre">Nombre *</label>
+            <input id="s-nombre" type="text" formControlName="nombre" placeholder="Ej. Juan">
+          </div>
+          <div class="form-group">
+            <label for="s-apellido">Apellido *</label>
+            <input id="s-apellido" type="text" formControlName="apellido" placeholder="Ej. Pérez">
+          </div>
+          <div class="form-group">
+            <label for="s-email">Email *</label>
+            <input id="s-email" type="email" formControlName="email" placeholder="tu@email.com">
+          </div>
+          <div class="form-group">
+            <label for="s-especialidad">Especialidad *</label>
+            <select id="s-especialidad" formControlName="especialidad_id" [disabled]="especialidadesLoading">
+              <option [ngValue]="null">Seleccione una especialidad</option>
+              <option *ngFor="let e of especialidades" [ngValue]="e.id">{{ e.nombre_especialidad }}</option>
+            </select>
+            <span *ngIf="especialidadesLoading" class="field-hint">Cargando...</span>
+          </div>
+          <div class="form-group">
+            <label for="s-telefono">Teléfono</label>
+            <input id="s-telefono" type="tel" formControlName="telefono" placeholder="Opcional">
+          </div>
+          <div class="form-group">
+            <label for="s-mensaje">Mensaje</label>
+            <textarea id="s-mensaje" formControlName="mensaje" rows="3" placeholder="Cuéntanos brevemente tu interés (opcional)"></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeSolicitudModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" [disabled]="solicitudForm.invalid || solicitudSending">
+              {{ solicitudSending ? 'Enviando...' : 'Enviar solicitud' }}
+            </button>
+          </div>
+        </form>
+        <p *ngIf="solicitudSuccess" class="success-msg">{{ solicitudSuccess }}</p>
+        <p *ngIf="solicitudError" class="error-msg">{{ solicitudError }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="login-container">
   <div class="login-card">
     <div class="login-header">
       <div class="logo">
@@ -71,7 +205,8 @@
     </form>
 
     <div class="copyright">
-      <p>&copy; {{ currentYear }} Codes-Labs. Todos los derechos reservados.</p>
+      <p>&copy; {{ currentYear }} <a href="https://codes-labs.com" target="_blank" rel="noopener noreferrer" class="copyright-link">Codes-Labs</a>. Todos los derechos reservados.</p>
     </div>
+  </div>
   </div>
 </div>

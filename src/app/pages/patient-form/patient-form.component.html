@@ -134,6 +134,15 @@
             El teléfono es requerido
           </div>
         </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label class="form-label">Remitido por</label>
+          <input 
+            type="text" 
+            class="form-input" 
+            [(ngModel)]="patient.remitido_por"
+            name="remitido_por"
+            placeholder="Persona o institución que remitió al paciente (opcional)">
+        </div>
       </div>
     </div>
 
