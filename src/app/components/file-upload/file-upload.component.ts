@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ArchivoService } from '../../services/archivo.service';
 import { ErrorHandlerService } from '../../services/error-handler.service';
+import { AlertService } from '../../services/alert.service';
 import { ArchivoAnexo, ArchivoFormData } from '../../models/archivo.model';
 
 @Component({
@@ -400,7 +401,8 @@ export class FileUploadComponent implements OnInit {
 
   constructor(
     private archivoService: ArchivoService,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit() {
@@ -530,7 +532,8 @@ export class FileUploadComponent implements OnInit {
   }
 
   deleteFile(archivo: ArchivoAnexo) {
-    if (confirm(`¿Estás seguro de que quieres eliminar el archivo "${archivo.nombre_original}"?`)) {
+    this.alertService.confirm(`¿Estás seguro de que quieres eliminar el archivo "${archivo.nombre_original}"?`, 'Eliminar archivo').then((ok) => {
+      if (!ok) return;
       this.archivoService.deleteArchivo(archivo.id!).subscribe({
         next: (response) => {
           if (response.success) {
@@ -543,7 +546,7 @@ export class FileUploadComponent implements OnInit {
           this.errorMessage = 'Error al eliminar el archivo';
         }
       });
-    }
+    });
   }
 
   getFileIcon(mimeType: string): string {

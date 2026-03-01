@@ -7,11 +7,12 @@ import { filter } from 'rxjs/operators';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { ChangePasswordModalComponent } from './components/change-password-modal/change-password-modal.component';
 import { SnackbarComponent } from './components/snackbar/snackbar.component';
+import { AlertModalComponent } from './components/alert-modal/alert-modal.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, NavbarComponent, ChangePasswordModalComponent, SnackbarComponent],
+  imports: [RouterOutlet, CommonModule, NavbarComponent, ChangePasswordModalComponent, SnackbarComponent, AlertModalComponent],
   template: `
     <div class="app-container">
       <app-navbar *ngIf="showNavbar"></app-navbar>
@@ -26,6 +27,9 @@ import { SnackbarComponent } from './components/snackbar/snackbar.component';
         (close)="closePasswordModal()"
         (passwordChanged)="onPasswordChanged()">
       </app-change-password-modal>
+      
+      <!-- Alert elegante global -->
+      <app-alert-modal></app-alert-modal>
       
       <!-- Snackbar global -->
       <app-snackbar></app-snackbar>

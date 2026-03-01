@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ServiciosService, Servicio, FinalizarConsultaRequest } from '../../../services/servicios.service';
 import { ConsultaService } from '../../../services/consulta.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
+import { AlertService } from '../../../services/alert.service';
 
 export interface ServicioSeleccionado {
   servicio_id: number;
@@ -40,7 +41,8 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
     private router: Router,
     private serviciosService: ServiciosService,
     private consultaService: ConsultaService,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit(): void {
@@ -341,17 +343,12 @@ export class FinalizarConsultaComponent implements OnInit, OnDestroy {
         });
       } else {
         this.errorHandler.logError(response, 'finalizar consulta');
-        alert('Error al finalizar la consulta. Por favor, intente nuevamente.');
+        this.alertService.showError('Error al finalizar la consulta. Por favor, intente nuevamente.');
       }
     } catch (error: any) {
       this.errorHandler.logError(error, 'finalizar consulta');
-      
-      let errorMessage = 'Error al finalizar la consulta. Por favor, intente nuevamente.';
-      if (error.error && error.error.error) {
-        errorMessage = `Error: ${error.error.error}`;
-      }
       const safeErrorMessage = this.errorHandler.getSafeErrorMessage(error, 'finalizar consulta');
-      alert(safeErrorMessage);
+      this.alertService.showError(safeErrorMessage);
     } finally {
       this.isSubmitting = false;
     }

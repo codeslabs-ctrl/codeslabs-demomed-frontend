@@ -6,6 +6,7 @@ import { PatientService } from '../../services/patient.service';
 import { AntecedenteTipoService } from '../../services/antecedente-tipo.service';
 import { HistoricoAntecedenteService } from '../../services/historico-antecedente.service';
 import { ErrorHandlerService } from '../../services/error-handler.service';
+import { AlertService } from '../../services/alert.service';
 import { AntecedenteMedicoTipo } from '../../models/antecedente-tipo.model';
 import { HistoricoAntecedente } from '../../models/historico-antecedente.model';
 import { Patient } from '../../models/patient.model';
@@ -157,7 +158,8 @@ export class PatientAntecedentesComponent implements OnInit {
     private patientService: PatientService,
     private antecedenteTipoService: AntecedenteTipoService,
     private antecedenteService: HistoricoAntecedenteService,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit(): void {
@@ -285,19 +287,17 @@ export class PatientAntecedentesComponent implements OnInit {
     this.antecedenteService.saveByPacienteId(this.pacienteId, items, this.antecedentesOtros || null).subscribe({
       next: () => {
         this.saving = false;
-        alert('Antecedentes guardados correctamente.');
-        this.router.navigate(['/patients', this.pacienteId]);
+        this.alertService.showSuccess('Antecedentes guardados correctamente.', { navigateTo: '/patients' });
       },
       error: (err) => {
         this.saving = false;
         this.errorHandler.logError(err, 'guardar antecedentes');
-        alert(this.errorHandler.getSafeErrorMessage(err, 'guardar antecedentes'));
+        this.alertService.showError(this.errorHandler.getSafeErrorMessage(err, 'guardar antecedentes'));
       }
     });
   }
 
   volver(): void {
-    if (this.pacienteId) this.router.navigate(['/patients', this.pacienteId]);
-    else this.router.navigate(['/patients']);
+    this.router.navigate(['/patients']);
   }
 }

@@ -74,7 +74,7 @@
           [(ngModel)]="filtros.fecha_hasta"
         />
       </div>
-      <div class="form-group">
+      <div class="form-group" *ngIf="currentUser?.rol !== 'medico'">
         <label for="medico_id">Médico</label>
         <select id="medico_id" class="form-control" [(ngModel)]="filtros.medico_id">
           <option value="">Todos los médicos</option>
@@ -82,6 +82,9 @@
             {{ medico.nombres }} {{ medico.apellidos }}
           </option>
         </select>
+      </div>
+      <div class="form-group" *ngIf="currentUser?.rol === 'medico'" style="align-self: center;">
+        <span class="badge-info">Mostrando solo sus consultas</span>
       </div>
       <div class="form-group">
         <label for="estado_pago">Estado de Pago</label>

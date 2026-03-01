@@ -6,6 +6,7 @@ import { MedicoService, Medico } from '../../../../services/medico.service';
 import { EspecialidadService, Especialidad } from '../../../../services/especialidad.service';
 import { FirmaService } from '../../../../services/firma.service';
 import { ErrorHandlerService } from '../../../../services/error-handler.service';
+import { AlertService } from '../../../../services/alert.service';
 
 @Component({
   selector: 'app-crear-medico',
@@ -29,9 +30,6 @@ export class CrearMedicoComponent implements OnInit {
 
   especialidades: Especialidad[] = [];
   saving = false;
-  showSnackbar = false;
-  snackbarMessage = '';
-  snackbarType: 'success' | 'error' = 'success';
   
   // Variables para firma digital
   firmaFile: File | null = null;
@@ -53,7 +51,8 @@ export class CrearMedicoComponent implements OnInit {
     private especialidadService: EspecialidadService,
     private firmaService: FirmaService,
     private router: Router,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit() {
@@ -69,7 +68,7 @@ export class CrearMedicoComponent implements OnInit {
       },
       error: (error: any) => {
         this.errorHandler.logError(error, 'cargar especialidades');
-        this.showSnackbarMessage('Error cargando especialidades', 'error');
+        this.alertService.show('Error cargando especialidades', 'error');
       }
     });
   }
@@ -77,18 +76,18 @@ export class CrearMedicoComponent implements OnInit {
   onSubmit() {
     // Verificar validaciones adicionales
     if (this.emailExists && this.emailChecked) {
-      this.showSnackbarMessage('❌ Error: El email ya está registrado en el sistema.', 'error');
+      this.alertService.show('El email ya está registrado en el sistema.', 'error');
       return;
     }
     
     if (this.cedulaExists && this.cedulaChecked) {
-      this.showSnackbarMessage('❌ Error: La cédula ya está registrada en el sistema.', 'error');
+      this.alertService.show('La cédula ya está registrada en el sistema.', 'error');
       return;
     }
     
     if (this.validateForm()) {
       this.saving = true;
-      this.hideSnackbar();
+      this.alertService.close();
       
       console.log('Datos del médico a crear:', this.medicoData);
       
@@ -113,15 +112,11 @@ export class CrearMedicoComponent implements OnInit {
             if (this.firmaFile && medicoId) {
               this.uploadFirmaAfterCreate(medicoId);
             } else {
-              this.showSnackbarMessage(
-                `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} creado exitosamente. Email enviado.`,
-                'success'
+              this.alertService.show(
+                `Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} creado exitosamente. Se ha enviado el email con las credenciales.`,
+                'success',
+                { navigateTo: '/admin/medicos' }
               );
-              
-              // Redirigir después de 2 segundos
-              setTimeout(() => {
-                this.router.navigate(['/admin/medicos']);
-              }, 2000);
             }
           }
           this.saving = false;
@@ -130,25 +125,24 @@ export class CrearMedicoComponent implements OnInit {
           this.errorHandler.logError(error, 'crear médico');
           
           // Manejar errores específicos del backend
-          let errorMessage = '❌ Error al crear el médico. Por favor, intente nuevamente.';
+          let errorMessage = 'Error al crear el médico. Por favor, intente nuevamente.';
           
           if (error.error && error.error.error && error.error.error.message) {
-            errorMessage = `❌ ${error.error.error.message}`;
+            errorMessage = error.error.error.message;
           } else if (error.error && error.error.message) {
-            errorMessage = `❌ ${error.error.message}`;
+            errorMessage = error.error.message;
           }
           
-          // Mostrar mensaje específico para duplicados
           if (errorMessage.includes('Email already exists') || errorMessage.includes('email ya está registrado')) {
             this.emailExists = true;
             this.emailChecked = true;
-            this.showSnackbarMessage('❌ Error: El email ya está registrado en el sistema.', 'error');
+            this.alertService.show('El email ya está registrado en el sistema.', 'error');
           } else if (errorMessage.includes('cédula ya está registrada') || errorMessage.includes('Cédula ya está registrada')) {
             this.cedulaExists = true;
             this.cedulaChecked = true;
-            this.showSnackbarMessage('❌ Error: La cédula ya está registrada en el sistema.', 'error');
+            this.alertService.show('La cédula ya está registrada en el sistema.', 'error');
           } else {
-            this.showSnackbarMessage(errorMessage, 'error');
+            this.alertService.show(errorMessage, 'error');
           }
           
           this.saving = false;
@@ -159,23 +153,23 @@ export class CrearMedicoComponent implements OnInit {
 
   validateForm(): boolean {
     if (!this.medicoData.nombres?.trim()) {
-      this.showSnackbarMessage('❌ El nombre es requerido', 'error');
+      this.alertService.show('El nombre es requerido', 'error');
       return false;
     }
     if (!this.medicoData.apellidos?.trim()) {
-      this.showSnackbarMessage('❌ Los apellidos son requeridos', 'error');
+      this.alertService.show('Los apellidos son requeridos', 'error');
       return false;
     }
     if (!this.medicoData.email?.trim()) {
-      this.showSnackbarMessage('❌ El email es requerido', 'error');
+      this.alertService.show('El email es requerido', 'error');
       return false;
     }
     if (!this.medicoData.telefono?.trim()) {
-      this.showSnackbarMessage('❌ El teléfono es requerido', 'error');
+      this.alertService.show('El teléfono es requerido', 'error');
       return false;
     }
     if (!this.medicoData.especialidad_id || this.medicoData.especialidad_id === 0) {
-      this.showSnackbarMessage('❌ La especialidad es requerida', 'error');
+      this.alertService.show('La especialidad es requerida', 'error');
       return false;
     }
     return true;
@@ -187,13 +181,12 @@ export class CrearMedicoComponent implements OnInit {
     if (file) {
       // Validar tipo de archivo
       if (!file.type.startsWith('image/')) {
-        this.showSnackbarMessage('❌ Solo se permiten archivos de imagen', 'error');
+        this.alertService.show('Solo se permiten archivos de imagen', 'error');
         return;
       }
       
-      // Validar tamaño (2MB max)
       if (file.size > 2 * 1024 * 1024) {
-        this.showSnackbarMessage('❌ El archivo no puede ser mayor a 2MB', 'error');
+        this.alertService.show('El archivo no puede ser mayor a 2MB', 'error');
         return;
       }
       
@@ -222,37 +215,19 @@ export class CrearMedicoComponent implements OnInit {
     
     this.firmaService.subirFirma(medicoId, this.firmaFile).subscribe({
       next: (response) => {
-        if (response.success) {
-          this.showSnackbarMessage(
-            `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} creado exitosamente con firma digital. Email enviado.`,
-            'success'
-          );
-        } else {
-          this.showSnackbarMessage(
-            `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} creado exitosamente. Error al subir firma digital.`,
-            'success'
-          );
-        }
-        
-        // Redirigir después de 2 segundos
-        setTimeout(() => {
-          this.router.navigate(['/admin/medicos']);
-        }, 2000);
-        
+        const msg = response.success
+          ? `Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} creado exitosamente con firma digital. Se ha enviado el email.`
+          : `Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} creado exitosamente. No se pudo subir la firma digital.`;
+        this.alertService.show(msg, 'success', { navigateTo: '/admin/medicos' });
         this.uploadingFirma = false;
       },
       error: (error) => {
         this.errorHandler.logError(error, 'subir firma digital después de crear');
-        this.showSnackbarMessage(
-          `✅ Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} creado exitosamente. Error al subir firma digital.`,
-          'success'
+        this.alertService.show(
+          `Médico ${this.medicoData.nombres} ${this.medicoData.apellidos} creado exitosamente. No se pudo subir la firma digital.`,
+          'success',
+          { navigateTo: '/admin/medicos' }
         );
-        
-        // Redirigir después de 2 segundos
-        setTimeout(() => {
-          this.router.navigate(['/admin/medicos']);
-        }, 2000);
-        
         this.uploadingFirma = false;
       }
     });
@@ -260,20 +235,6 @@ export class CrearMedicoComponent implements OnInit {
 
   volver() {
     this.router.navigate(['/admin/medicos']);
-  }
-
-  showSnackbarMessage(message: string, type: 'success' | 'error') {
-    this.snackbarMessage = message;
-    this.snackbarType = type;
-    this.showSnackbar = true;
-    
-    setTimeout(() => {
-      this.hideSnackbar();
-    }, 5000);
-  }
-
-  hideSnackbar() {
-    this.showSnackbar = false;
   }
 
   // Validación de email

@@ -7,6 +7,7 @@ import { PatientService } from '../../../services/patient.service';
 import { MedicoService } from '../../../services/medico.service';
 import { AuthService } from '../../../services/auth.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
+import { AlertService } from '../../../services/alert.service';
 import { ConsultaFormData, ConsultaWithDetails } from '../../../models/consulta.model';
 import { Patient } from '../../../models/patient.model';
 import { Medico } from '../../../services/medico.service';
@@ -568,7 +569,8 @@ export class EditarConsultaComponent implements OnInit {
     private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit(): void {
@@ -683,28 +685,28 @@ export class EditarConsultaComponent implements OnInit {
 
     // Validaciones básicas
     if (!this.consultaForm.paciente_id || this.consultaForm.paciente_id === 0) {
-      alert('⚠️ Paciente requerido\n\nPor favor, seleccione un paciente de la lista antes de continuar.');
+      this.alertService.showWarning('Paciente requerido. Por favor, seleccione un paciente de la lista antes de continuar.');
       return;
     }
     
     // Solo validar selección de médico si es administrador
     if (this.currentUser?.rol === 'administrador' && (!this.consultaForm.medico_id || this.consultaForm.medico_id === 0)) {
-      alert('⚠️ Médico requerido\n\nPor favor, seleccione un médico de la lista antes de continuar.');
+      this.alertService.showWarning('Médico requerido. Por favor, seleccione un médico de la lista antes de continuar.');
       return;
     }
     
     if (!this.consultaForm.motivo_consulta.trim()) {
-      alert('⚠️ Motivo de consulta requerido\n\nPor favor, ingrese el motivo de la consulta para continuar.');
+      this.alertService.showWarning('Motivo de consulta requerido. Por favor, ingrese el motivo de la consulta para continuar.');
       return;
     }
     
     if (!this.consultaForm.fecha_pautada) {
-      alert('⚠️ Fecha requerida\n\nPor favor, seleccione una fecha para la consulta.');
+      this.alertService.showWarning('Fecha requerida. Por favor, seleccione una fecha para la consulta.');
       return;
     }
     
     if (!this.consultaForm.hora_pautada) {
-      alert('⚠️ Hora requerida\n\nPor favor, seleccione una hora para la consulta.');
+      this.alertService.showWarning('Hora requerida. Por favor, seleccione una hora para la consulta.');
       return;
     }
 
@@ -713,18 +715,15 @@ export class EditarConsultaComponent implements OnInit {
     this.consultaService.updateConsulta(this.consultaId, this.consultaForm).subscribe({
       next: (response) => {
         if (response.success) {
-          alert('✅ Consulta actualizada exitosamente\n\nLos cambios han sido guardados correctamente.');
-          this.router.navigate(['/admin/consultas']);
+          this.alertService.show('Los cambios han sido guardados correctamente.', 'success', { navigateTo: '/admin/consultas' });
         } else {
-          const errorMessage = this.errorHandler.getSafeErrorMessage(response, 'actualizar consulta');
-          alert(errorMessage);
+          this.alertService.showError(this.errorHandler.getSafeErrorMessage(response, 'actualizar consulta'));
         }
         this.isSubmitting = false;
       },
       error: (error) => {
         this.errorHandler.logError(error, 'actualizar consulta');
-        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar consulta');
-        alert(errorMessage);
+        this.alertService.showError(this.errorHandler.getSafeErrorMessage(error, 'actualizar consulta'));
         this.isSubmitting = false;
       }
     });

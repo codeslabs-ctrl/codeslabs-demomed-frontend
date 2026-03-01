@@ -21,7 +21,8 @@ export class HomePreferencesService {
       { label: 'Dashboard', route: '/dashboard' },
       { label: 'Gestión de Pacientes', route: '/patients' },
       { label: 'Gestión de Consultas', route: '/admin/consultas' },
-      { label: 'Informes Médicos', route: '/admin/informes-medicos' }
+      { label: 'Informes Médicos', route: '/admin/informes-medicos' },
+      { label: 'Panel de Finanzas', route: '/admin/finanzas' }
     ],
     secretaria: [
       { label: 'Dashboard', route: '/dashboard' },

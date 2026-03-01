@@ -6,6 +6,7 @@ import { PatientService } from '../../services/patient.service';
 import { HistoricoService } from '../../services/historico.service';
 import { AuthService } from '../../services/auth.service';
 import { ErrorHandlerService } from '../../services/error-handler.service';
+import { AlertService } from '../../services/alert.service';
 import { User } from '../../models/user.model';
 import { Patient, PatientFilters } from '../../models/patient.model';
 import { APP_CONFIG } from '../../config/app.config';
@@ -859,7 +860,8 @@ export class PatientsComponent implements OnInit {
     private historicoService: HistoricoService,
     private authService: AuthService,
     private router: Router,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit() {
@@ -1054,7 +1056,7 @@ export class PatientsComponent implements OnInit {
         error: (error) => {
           this.errorHandler.logError(error, 'verificar estado del paciente');
           const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'verificar estado del paciente');
-          alert(errorMessage);
+          this.alertService.showError(errorMessage);
         }
       });
     }
@@ -1063,27 +1065,25 @@ export class PatientsComponent implements OnInit {
   togglePatientStatus(patient: Patient) {
     const newStatus = !patient.activo;
     const action = newStatus ? 'activar' : 'desactivar';
-    
-    if (confirm(`¿Estás seguro de que quieres ${action} a ${patient.nombres} ${patient.apellidos}?`)) {
+    this.alertService.confirm(`¿Estás seguro de que quieres ${action} a ${patient.nombres} ${patient.apellidos}?`, `¿${action} paciente?`).then((ok) => {
+      if (!ok) return;
       this.patientService.togglePatientStatus(patient.id!, newStatus).subscribe({
         next: (response) => {
           if (response.success) {
             patient.activo = newStatus;
             this.errorHandler.logInfo(`Paciente ${action}do exitosamente`, response);
-            alert(`✅ Paciente ${action}do exitosamente`);
-            this.loadPatients(); // Recargar la lista
+            this.alertService.showSuccess(`Paciente ${action}do exitosamente`);
+            this.loadPatients();
           } else {
-            const errorMessage = this.errorHandler.getSafeErrorMessage(response, `${action} paciente`);
-            alert(errorMessage);
+            this.alertService.showError(this.errorHandler.getSafeErrorMessage(response, `${action} paciente`));
           }
         },
         error: (error) => {
           this.errorHandler.logError(error, `${action} paciente`);
-          const errorMessage = this.errorHandler.getSafeErrorMessage(error, `${action} paciente`);
-          alert(errorMessage);
+          this.alertService.showError(this.errorHandler.getSafeErrorMessage(error, `${action} paciente`));
         }
       });
-    }
+    });
   }
 
   onConfirmDelete() {
@@ -1092,18 +1092,16 @@ export class PatientsComponent implements OnInit {
         next: (response) => {
           if (response.success) {
             this.errorHandler.logInfo('Paciente eliminado exitosamente', response);
-            alert('✅ Paciente eliminado exitosamente');
+            this.alertService.showSuccess('Paciente eliminado exitosamente');
             this.loadPatients();
             this.closeConfirmModal();
           } else {
-            const errorMessage = this.errorHandler.getSafeErrorMessage(response, 'eliminar paciente');
-            alert(errorMessage);
+            this.alertService.showError(this.errorHandler.getSafeErrorMessage(response, 'eliminar paciente'));
           }
         },
         error: (error) => {
           this.errorHandler.logError(error, 'eliminar paciente');
-          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'eliminar paciente');
-          alert(errorMessage);
+          this.alertService.showError(this.errorHandler.getSafeErrorMessage(error, 'eliminar paciente'));
         }
       });
     }

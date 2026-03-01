@@ -11,6 +11,7 @@ import { EspecialidadService } from '../../../../services/especialidad.service';
 import { ContextualDataService, DatosContextuales } from '../../../../services/contextual-data.service';
 import { AuthService } from '../../../../services/auth.service';
 import { ErrorHandlerService } from '../../../../services/error-handler.service';
+import { AlertService } from '../../../../services/alert.service';
 import { HistoricoService } from '../../../../services/historico.service';
 import { HistoricoAntecedenteService } from '../../../../services/historico-antecedente.service';
 import { AntecedenteTipoService } from '../../../../services/antecedente-tipo.service';
@@ -92,7 +93,8 @@ export class InformeMedicoFormComponent implements OnInit {
     private historicoService: HistoricoService,
     private historicoAntecedenteService: HistoricoAntecedenteService,
     private antecedenteTipoService: AntecedenteTipoService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private alertService: AlertService
   ) {
     this.informeForm = this.fb.group({
       titulo: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
@@ -289,7 +291,7 @@ export class InformeMedicoFormComponent implements OnInit {
 
     // Validación adicional para admin/secretaria: debe seleccionar especialidad
     if (!this.esUsuarioMedico && !this.especialidadSeleccionada) {
-      alert('❌ Error: Debe seleccionar una especialidad antes de crear el informe.');
+      this.alertService.showError('Debe seleccionar una especialidad antes de crear el informe.');
       return;
     }
 
@@ -297,14 +299,14 @@ export class InformeMedicoFormComponent implements OnInit {
     if (!this.esUsuarioMedico && this.especialidadSeleccionada) {
       const pacienteId = this.informeForm.get('paciente_id')?.value;
       if (pacienteId && !this.tieneHistoriaMedica) {
-        alert('❌ Error: El paciente no tiene historia médica registrada para esta especialidad. Debe crear primero una historia médica antes de poder generar un informe.');
+        this.alertService.showError('El paciente no tiene historia médica registrada para esta especialidad. Debe crear primero una historia médica antes de poder generar un informe.');
         return;
       }
     }
 
     // Validación adicional: debe seleccionar médico
     if (!this.informeForm.get('medico_id')?.value) {
-      alert('❌ Error: Debe seleccionar un médico antes de crear el informe.');
+      this.alertService.showError('Debe seleccionar un médico antes de crear el informe.');
       return;
     }
 
@@ -411,26 +413,18 @@ export class InformeMedicoFormComponent implements OnInit {
         const informeId = response?.id || response?.data?.id;
         if (response && informeId) {
           console.log('✅ ID del informe encontrado:', informeId);
-          alert('✅ Informe médico creado exitosamente');
-          this.router.navigate(['/admin/informes-medicos', informeId, 'resumen']);
+          this.alertService.showSuccess('Informe médico creado exitosamente', { navigateTo: `/admin/informes-medicos/${informeId}/resumen` });
         } else {
           console.error('❌ Error: No se recibió ID del informe creado');
-          console.error('❌ Respuesta completa:', response);
-          alert('✅ Informe creado exitosamente, pero hubo un problema con la navegación. Por favor, ve a la lista de informes.');
-          this.router.navigate(['/admin/informes-medicos/lista']);
+          this.alertService.showSuccess('Informe creado exitosamente, pero hubo un problema con la navegación. Por favor, ve a la lista de informes.', { navigateTo: '/admin/informes-medicos/lista' });
         }
       },
       error: (error) => {
         this.errorHandler.logError(error, 'crear informe médico');
         this.error = 'Error creando el informe médico';
         this.guardando = false;
-        
-        console.log('❌ Error completo del backend:', error);
-        console.log('❌ Error body:', error.error);
-        console.log('❌ Error message:', error.message);
-        
         const safeMessage = this.errorHandler.getSafeErrorMessage(error, 'crear informe médico');
-        alert(safeMessage);
+        this.alertService.showError(safeMessage);
       }
     });
   }
@@ -445,8 +439,7 @@ export class InformeMedicoFormComponent implements OnInit {
 
     this.informeMedicoService.actualizarInforme(this.informeId, informeRequest).subscribe({
       next: (response) => {
-        alert('Informe médico actualizado exitosamente');
-        this.router.navigate(['/admin/informes-medicos']);
+        this.alertService.showSuccess('Informe médico actualizado exitosamente', { navigateTo: '/admin/informes-medicos' });
       },
       error: (error) => {
         console.error('Error actualizando informe:', error);
@@ -457,9 +450,9 @@ export class InformeMedicoFormComponent implements OnInit {
   }
 
   cancelar(): void {
-    if (confirm('¿Está seguro de que desea cancelar? Los cambios no guardados se perderán.')) {
-      this.router.navigate(['/admin/informes-medicos']);
-    }
+    this.alertService.confirm('¿Está seguro de que desea cancelar? Los cambios no guardados se perderán.', 'Cancelar').then((ok) => {
+      if (ok) this.router.navigate(['/admin/informes-medicos']);
+    });
   }
 
 

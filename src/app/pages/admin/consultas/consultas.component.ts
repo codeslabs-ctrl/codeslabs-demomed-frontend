@@ -8,6 +8,7 @@ import { MedicoService } from '../../../services/medico.service';
 import { DateService } from '../../../services/date.service';
 import { AuthService } from '../../../services/auth.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
+import { AlertService } from '../../../services/alert.service';
 import { ServiciosService, FinalizarConsultaRequest } from '../../../services/servicios.service';
 import { ConsultaWithDetails, ConsultaFilters } from '../../../models/consulta.model';
 import { Medico } from '../../../services/medico.service';
@@ -1607,7 +1608,8 @@ export class ConsultasComponent implements OnInit {
     private router: Router,
     private cdr: ChangeDetectorRef,
     private http: HttpClient,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   // Propiedades para modales
@@ -1684,8 +1686,7 @@ export class ConsultasComponent implements OnInit {
         error: (error) => {
           this.errorHandler.logError(error, 'cargar consultas');
           this.loading = false;
-          const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'cargar consultas');
-          alert(errorMessage);
+          this.alertService.showError(this.errorHandler.getSafeErrorMessage(error, 'cargar consultas'));
         }
       });
   }
@@ -1803,7 +1804,7 @@ export class ConsultasComponent implements OnInit {
   editarConsulta(consulta: ConsultaWithDetails): void {
     // Verificar si la consulta está expirada
     if (this.isConsultaExpirada(consulta)) {
-      alert('⚠️ Consulta expirada\n\nNo se puede editar una consulta que ya pasó. Use la opción "Reagendar" para cambiar la fecha y hora.');
+      this.alertService.showWarning('No se puede editar una consulta que ya pasó. Use la opción "Reagendar" para cambiar la fecha y hora.');
       return;
     }
     
@@ -1929,12 +1930,11 @@ export class ConsultasComponent implements OnInit {
         console.log('✅ Consulta reagendada exitosamente:', response);
         this.closeReagendarModal();
         this.loadConsultas();
-        alert('✅ Consulta reagendada exitosamente\n\nLa consulta ha sido reagendada y se ha enviado una notificación al paciente con la nueva fecha y hora.');
+        this.alertService.showSuccess('La consulta ha sido reagendada y se ha enviado una notificación al paciente con la nueva fecha y hora.');
       },
       error: (error) => {
         this.errorHandler.logError(error, 'reagendar consulta');
-        const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'reagendar consulta');
-        alert(errorMessage);
+        this.alertService.showError(this.errorHandler.getSafeErrorMessage(error, 'reagendar consulta'));
       }
     });
   }

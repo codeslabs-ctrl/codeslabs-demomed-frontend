@@ -11,6 +11,7 @@ import { ArchivoService } from '../../../services/archivo.service';
 import { DateService } from '../../../services/date.service';
 import { AuthService } from '../../../services/auth.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
+import { AlertService } from '../../../services/alert.service';
 import { PlantillaHistoriaService, PlantillaHistoria } from '../../../services/plantilla-historia.service';
 import { AntecedenteTipoService } from '../../../services/antecedente-tipo.service';
 import { HistoricoAntecedenteService } from '../../../services/historico-antecedente.service';
@@ -1265,7 +1266,8 @@ export class HistoriaMedicaComponent implements OnInit {
     private errorHandler: ErrorHandlerService,
     private plantillaService: PlantillaHistoriaService,
     private antecedenteTipoService: AntecedenteTipoService,
-    private historicoAntecedenteService: HistoricoAntecedenteService
+    private historicoAntecedenteService: HistoricoAntecedenteService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit(): void {
@@ -1439,7 +1441,7 @@ export class HistoriaMedicaComponent implements OnInit {
 
     if (!this.historicoId) {
       if (!this.isMedico) {
-        alert('ℹ️ Solo lectura\n\nSolo los médicos pueden crear nuevos controles.');
+        this.alertService.showInfo('Solo los médicos pueden crear nuevos controles.');
         this.router.navigate(['/patients', this.consultaId, 'historia-medica']);
         this.loading = false;
         return;
@@ -1930,7 +1932,7 @@ export class HistoriaMedicaComponent implements OnInit {
 
     // Permisos: secretaria/admin solo lectura
     if (!this.esEditable) {
-      alert('ℹ️ Solo lectura\n\nEste control pertenece a otro médico. Puede visualizarlo, pero no modificarlo.');
+      this.alertService.showInfo('Este control pertenece a otro médico. Puede visualizarlo, pero no modificarlo.');
       return;
     }
 
@@ -1939,12 +1941,12 @@ export class HistoriaMedicaComponent implements OnInit {
     const examenesMedicoText = this.stripHtml(this.historiaForm.examenes_medico).trim();
 
     if (!motivoText) {
-      alert('⚠️ Motivo de consulta requerido\n\nPor favor, ingrese el motivo de la consulta.');
+      this.alertService.showWarning('Por favor, ingrese el motivo de la consulta.');
       return;
     }
 
     if (!examenesMedicoText) {
-      alert('⚠️ Exámenes médicos requeridos\n\nPor favor, ingrese los exámenes médicos.');
+      this.alertService.showWarning('Por favor, ingrese los exámenes médicos.');
       return;
     }
 
@@ -1965,13 +1967,13 @@ export class HistoriaMedicaComponent implements OnInit {
     const rol = currentUser?.rol;
 
     if (rol !== 'medico') {
-      alert('ℹ️ Solo lectura\n\nSolo los médicos pueden crear nuevos controles.');
+      this.alertService.showInfo('Solo los médicos pueden crear nuevos controles.');
       this.isSubmitting = false;
       return;
     }
 
     if (!medicoId) {
-      alert('❌ Error de autenticación\n\nNo se pudo identificar el médico actual.');
+      this.alertService.showError('No se pudo identificar el médico actual.');
       this.isSubmitting = false;
       return;
     }
@@ -1994,17 +1996,17 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaData = response.data;
           this.mode = 'edit';
           this.cargarArchivos();
-          alert('✅ Control creado exitosamente\n\nAhora puede agregar archivos anexos si lo desea.');
+          this.alertService.showSuccess('Control creado exitosamente. Ahora puede agregar archivos anexos si lo desea.');
           this.router.navigate(['/patients', this.consultaId, 'historia-medica']);
         } else {
-          alert('❌ Error al crear la historia médica\n\n' + ((response as any).error?.message || 'Error desconocido'));
+          this.alertService.showError((response as any).error?.message || 'Error al crear la historia médica');
         }
         this.isSubmitting = false;
       },
       error: (error) => {
         this.errorHandler.logError(error, 'crear historia médica');
         const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'crear historia médica');
-        alert(errorMessage);
+        this.alertService.showError(errorMessage);
         this.isSubmitting = false;
       }
     });
@@ -2025,17 +2027,17 @@ export class HistoriaMedicaComponent implements OnInit {
     this.historicoService.updateHistorico(historicoId, updateData).subscribe({
       next: (response) => {
         if (response.success) {
-          alert('✅ Control actualizado exitosamente');
+          this.alertService.showSuccess('Control actualizado exitosamente');
           this.router.navigate(['/patients', this.consultaId, 'historia-medica']);
         } else {
-          alert('❌ Error al actualizar la historia médica\n\n' + ((response as any).error?.message || 'Error desconocido'));
+          this.alertService.showError((response as any).error?.message || 'Error al actualizar la historia médica');
         }
         this.isSubmitting = false;
       },
       error: (error) => {
         this.errorHandler.logError(error, 'actualizar historia médica');
         const errorMessage = this.errorHandler.getSafeErrorMessage(error, 'actualizar historia médica');
-        alert(errorMessage);
+        this.alertService.showError(errorMessage);
         this.isSubmitting = false;
       }
     });
@@ -2157,27 +2159,28 @@ export class HistoriaMedicaComponent implements OnInit {
       },
       error: (error) => {
         this.errorHandler.logError(error, 'descargar archivo');
-        alert('Error al descargar el archivo');
+        this.alertService.showError('Error al descargar el archivo');
       }
     });
   }
 
   eliminarArchivo(archivo: ArchivoAnexo): void {
-    if (confirm('¿Está seguro de que desea eliminar este archivo?')) {
+    this.alertService.confirm('¿Está seguro de que desea eliminar este archivo?', 'Eliminar archivo').then((ok) => {
+      if (!ok) return;
       this.archivoService.deleteArchivo(archivo.id!).subscribe({
         next: (response) => {
           if (response.success) {
-            this.cargarArchivos(); // Recargar la lista
+            this.cargarArchivos();
           } else {
-            alert('Error al eliminar el archivo');
+            this.alertService.showError('Error al eliminar el archivo');
           }
         },
         error: (error) => {
           this.errorHandler.logError(error, 'eliminar archivo');
-          alert('Error al eliminar el archivo');
+          this.alertService.showError('Error al eliminar el archivo');
         }
       });
-    }
+    });
   }
 
   getFileIcon(mimeType: string): string {
@@ -2244,7 +2247,7 @@ export class HistoriaMedicaComponent implements OnInit {
 
     // Verificar que el paciente tenga historia médica con el médico actual
     if (!this.tieneHistoriaMedica()) {
-      alert('El paciente debe tener una historia médica cargada con usted para crear interconsultas. Por favor, cree primero la historia médica.');
+      this.alertService.showWarning('El paciente debe tener una historia médica cargada con usted para crear interconsultas. Por favor, cree primero la historia médica.');
       return;
     }
 
@@ -2308,7 +2311,7 @@ ${this.pacienteData?.sexo ? `⚧️ Sexo: ${this.pacienteData.sexo}` : ''}
 
 La remisión ha sido procesada y se ha enviado una notificación al médico de destino.`;
 
-    alert(mensaje);
+    this.alertService.showSuccess(mensaje);
     
     // Cerrar el modal
     this.cerrarModalInterconsultas();
@@ -2359,13 +2362,13 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
 
   agendarCita(): void {
     if (!this.consultaData?.paciente_id) {
-      alert('❌ Error: No hay datos del paciente disponibles para agendar la cita.');
+      this.alertService.showError('No hay datos del paciente disponibles para agendar la cita.');
       return;
     }
 
     const medicoId = this.obtenerMedicoId();
     if (!medicoId) {
-      alert('❌ Error: No hay médico seleccionado para agendar la cita.');
+      this.alertService.showError('No hay médico seleccionado para agendar la cita.');
       return;
     }
 
@@ -2387,11 +2390,11 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
         console.log('✅ Navegación exitosa a Nueva Consulta');
       } else {
         console.error('❌ Error en la navegación');
-        alert('❌ Error al navegar a la pantalla de Nueva Consulta. Por favor, intente nuevamente.');
+        this.alertService.showError('Error al navegar a la pantalla de Nueva Consulta. Por favor, intente nuevamente.');
       }
     }).catch(error => {
       console.error('❌ Error de navegación:', error);
-      alert('❌ Error al navegar a la pantalla de Nueva Consulta. Por favor, intente nuevamente.');
+      this.alertService.showError('Error al navegar a la pantalla de Nueva Consulta. Por favor, intente nuevamente.');
     });
   }
 
@@ -2424,7 +2427,7 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
     
     if (!this.plantillaSeleccionada) {
       console.warn('⚠️ No hay plantilla seleccionada');
-      alert('Por favor, seleccione una plantilla');
+      this.alertService.showWarning('Por favor, seleccione una plantilla');
       return;
     }
     
@@ -2437,7 +2440,7 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
     
     if (!plantilla) {
       console.error('❌ Plantilla no encontrada con ID:', plantillaId);
-      alert('Error: No se encontró la plantilla seleccionada');
+      this.alertService.showError('No se encontró la plantilla seleccionada');
       return;
     }
 
@@ -2458,7 +2461,7 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
     this.plantillaSeleccionada = null;
     
     // Mostrar mensaje de confirmación
-    alert('✅ Plantilla aplicada exitosamente');
+    this.alertService.showSuccess('Plantilla aplicada exitosamente');
   }
 
   abrirModalGuardarPlantilla(): void {
@@ -2491,7 +2494,7 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
 
   guardarPlantilla(): void {
     if (!this.plantillaForm.nombre.trim()) {
-      alert('Por favor, ingrese un nombre para la plantilla');
+      this.alertService.showWarning('Por favor, ingrese un nombre para la plantilla');
       return;
     }
 
@@ -2499,7 +2502,7 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
     const medicoId = currentUser?.medico_id;
     
     if (!medicoId) {
-      alert('No se pudo identificar al médico');
+      this.alertService.showError('No se pudo identificar al médico');
       return;
     }
 
@@ -2517,14 +2520,14 @@ La remisión ha sido procesada y se ha enviado una notificación al médico de d
     this.plantillaService.crearPlantilla(plantillaData).subscribe({
       next: (response) => {
         if (response.success) {
-          alert('Plantilla guardada exitosamente');
+          this.alertService.showSuccess('Plantilla guardada exitosamente');
           this.cargarPlantillas();
           this.cerrarModalPlantilla();
         }
       },
       error: (error) => {
         console.error('Error guardando plantilla:', error);
-        alert('Error al guardar la plantilla');
+        this.alertService.showError('Error al guardar la plantilla');
       }
     });
   }

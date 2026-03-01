@@ -7,6 +7,7 @@ import { ArchivoService } from '../../services/archivo.service';
 import { Patient } from '../../models/patient.model';
 import { ArchivoAnexo } from '../../models/archivo.model';
 import { RemitirPacienteModalComponent } from '../../components/remitir-paciente-modal/remitir-paciente-modal.component';
+import { AlertService } from '../../services/alert.service';
 
 @Component({
   selector: 'app-patient-detail',
@@ -651,7 +652,8 @@ export class PatientDetailComponent implements OnInit {
     private historicoService: HistoricoService,
     private archivoService: ArchivoService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private alertService: AlertService
   ) {}
 
   ngOnInit() {
@@ -765,7 +767,9 @@ export class PatientDetailComponent implements OnInit {
 
   onRemisionCreated(remision: any) {
     console.log('Remisión creada:', remision);
-    alert(`✅ Paciente remitido exitosamente\n\n${this.patient?.nombres} ${this.patient?.apellidos} ha sido remitido correctamente. Se ha enviado una notificación al médico especialista.`);
+    this.alertService.showSuccess(
+      `${this.patient?.nombres} ${this.patient?.apellidos} ha sido remitido correctamente. Se ha enviado una notificación al médico especialista.`
+    );
     this.showRemitirModal = false;
   }
 
@@ -939,7 +943,7 @@ export class PatientDetailComponent implements OnInit {
         },
         error: (error) => {
         console.error('Error downloading file:', error);
-        alert('❌ Error al descargar el archivo\n\nNo se pudo descargar el archivo. Por favor, verifique su conexión e intente nuevamente.');
+        this.alertService.showError('No se pudo descargar el archivo. Por favor, verifique su conexión e intente nuevamente.');
         }
       });
   }
