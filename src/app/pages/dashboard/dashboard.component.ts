@@ -17,6 +17,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, FinalizarConsultaModalComponent],
+  styleUrls: ['./dashboard.component.css'],
   template: `
     <div class="dashboard">
       <div class="dashboard-header">

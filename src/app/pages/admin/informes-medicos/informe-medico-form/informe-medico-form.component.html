@@ -161,6 +161,51 @@
         </div>
       </div>
 
+      <!-- Incluir en el informe (solo cuando hay paciente y médico) -->
+      <div *ngIf="(paciente_id?.value && medico_id?.value) && datosContextuales" class="form-section seccion-incluir">
+        <div class="section-header">
+          <h3>
+            <i class="fas fa-check-double"></i>
+            Incluir en el informe
+          </h3>
+          <p class="section-description">Marque las secciones que desea anadir al contenido del informe y pulse el boton.</p>
+        </div>
+        <div class="section-content">
+          <div class="incluir-checks">
+            <label class="incluir-check" [class.disabled]="!tieneAntecedentes">
+              <input type="checkbox" [(ngModel)]="incluirAntecedentes" [ngModelOptions]="{standalone: true}" [disabled]="!tieneAntecedentes">
+              <span>Antecedentes del paciente</span>
+              <span *ngIf="!tieneAntecedentes" class="check-hint">(sin datos)</span>
+            </label>
+            <label class="incluir-check" [class.disabled]="!tieneMotivoConsulta">
+              <input type="checkbox" [(ngModel)]="incluirMotivoConsulta" [ngModelOptions]="{standalone: true}" [disabled]="!tieneMotivoConsulta">
+              <span>Motivo de consulta</span>
+              <span *ngIf="!tieneMotivoConsulta" class="check-hint">(sin datos)</span>
+            </label>
+            <label class="incluir-check" [class.disabled]="!tienePlanTratamiento">
+              <input type="checkbox" [(ngModel)]="incluirPlanTratamiento" [ngModelOptions]="{standalone: true}" [disabled]="!tienePlanTratamiento">
+              <span>Plan de tratamiento</span>
+              <span *ngIf="!tienePlanTratamiento" class="check-hint">(sin datos)</span>
+            </label>
+            <label class="incluir-check" [class.disabled]="!tieneDiagnostico">
+              <input type="checkbox" [(ngModel)]="incluirDiagnostico" [ngModelOptions]="{standalone: true}" [disabled]="!tieneDiagnostico">
+              <span>Diagnóstico</span>
+              <span *ngIf="!tieneDiagnostico" class="check-hint">(sin datos)</span>
+            </label>
+            <label class="incluir-check" [class.disabled]="!tieneHistorialConsultas">
+              <input type="checkbox" [(ngModel)]="incluirHistorialConsultas" [ngModelOptions]="{standalone: true}" [disabled]="!tieneHistorialConsultas">
+              <span>Historial de consultas</span>
+              <span *ngIf="!tieneHistorialConsultas" class="check-hint">(sin datos)</span>
+            </label>
+          </div>
+          <div class="incluir-actions">
+            <button type="button" class="btn btn-secondary" (click)="anadirSeccionesSeleccionadas()" [disabled]="!haySeccionSeleccionada()">
+              <i class="fas fa-plus-circle"></i> Anadir secciones seleccionadas al contenido
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Contenido del Informe -->
       <div class="form-section">
         <div class="section-header">

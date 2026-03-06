@@ -111,7 +111,7 @@ import { Patient } from '../../../models/patient.model';
                     <strong>Médicos:</strong>
                     <ul>
                       <li *ngFor="let a of getAntecedentesPresentesCategoria('medicos')">
-                        {{ getTipoNombre(a.antecedente_tipo_id) }}<span *ngIf="a.detalle"> — {{ a.detalle }}</span>
+                        {{ getTipoNombre(a.antecedente_tipo_id) }}<span *ngIf="a.detalle"> — {{ formatDetalleAntecedente(a.detalle) }}</span>
                       </li>
                     </ul>
                   </div>
@@ -119,7 +119,7 @@ import { Patient } from '../../../models/patient.model';
                     <strong>Quirúrgicos:</strong>
                     <ul>
                       <li *ngFor="let a of getAntecedentesPresentesCategoria('quirurgicos')">
-                        {{ getTipoNombre(a.antecedente_tipo_id) }}<span *ngIf="a.detalle"> — {{ a.detalle }}</span>
+                        {{ getTipoNombre(a.antecedente_tipo_id) }}<span *ngIf="a.detalle"> — {{ formatDetalleAntecedente(a.detalle) }}</span>
                       </li>
                     </ul>
                   </div>
@@ -127,7 +127,7 @@ import { Patient } from '../../../models/patient.model';
                     <strong>Hábitos:</strong>
                     <ul>
                       <li *ngFor="let a of getAntecedentesPresentesCategoria('habitos')">
-                        {{ getTipoNombre(a.antecedente_tipo_id) }}<span *ngIf="a.detalle"> — {{ a.detalle }}</span>
+                        {{ getTipoNombre(a.antecedente_tipo_id) }}<span *ngIf="a.detalle"> — {{ formatDetalleAntecedente(a.detalle) }}</span>
                       </li>
                     </ul>
                   </div>
@@ -454,6 +454,8 @@ import { Patient } from '../../../models/patient.model';
       padding: 2rem;
       max-width: 1200px;
       margin: 0 auto;
+      background: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 100%);
+      min-height: 100vh;
     }
 
     .page-header {
@@ -461,17 +463,23 @@ import { Patient } from '../../../models/patient.model';
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 2rem;
+      padding: 1.75rem 2rem;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.05);
       gap: 1rem;
     }
 
     .page-header h1 {
       margin: 0 0 0.5rem 0;
-      color: #1e293b;
-      font-size: 2rem;
+      color: #0f172a;
+      font-size: 1.5rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       gap: 0.75rem;
+      letter-spacing: -0.02em;
     }
 
     .page-header h1 i {
@@ -547,18 +555,19 @@ import { Patient } from '../../../models/patient.model';
     }
 
     .info-section {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 1.5rem;
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 16px;
+      padding: 1.75rem;
       margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     }
 
     .info-section h3 {
       margin: 0 0 1rem 0;
-      color: #1e293b;
-      font-size: 1.125rem;
-      font-weight: 600;
+      color: #0f172a;
+      font-size: 1.15rem;
+      font-weight: 700;
     }
 
     .info-grid {
@@ -1804,6 +1813,33 @@ export class HistoriaMedicaComponent implements OnInit {
   getTipoNombre(tipoId: number): string {
     const t = [...this.antecedentesTiposMedicos, ...this.antecedentesTiposQuirurgicos, ...this.antecedentesTiposHabitos].find(x => x.id === tipoId);
     return t?.nombre ?? `Tipo ${tipoId}`;
+  }
+
+  /** Formatea detalle para mostrar. Si es JSON de cirugías [{ tipo_cirugia, ano }, ...], devuelve texto legible. */
+  formatDetalleAntecedente(detalle: string | null | undefined): string {
+    if (detalle == null || String(detalle).trim() === '') return '';
+    const s = String(detalle).trim();
+    try {
+      const parsed = JSON.parse(s);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((o: { tipo_cirugia?: string; ano?: string }) => {
+            const tipo = (o.tipo_cirugia ?? '').trim();
+            const ano = (o.ano ?? '').trim();
+            return tipo ? (ano ? `${tipo} (${ano})` : tipo) : (ano ? ano : '');
+          })
+          .filter((x: string) => x)
+          .join(', ');
+      }
+      if (parsed && typeof parsed === 'object' && (parsed.tipo_cirugia != null || parsed.ano != null)) {
+        const tipo = (parsed.tipo_cirugia ?? '').trim();
+        const ano = (parsed.ano ?? '').trim();
+        return tipo ? (ano ? `${tipo} (${ano})` : tipo) : (ano ? ano : '');
+      }
+    } catch {
+      /* no es JSON, se devuelve tal cual */
+    }
+    return s;
   }
 
   getAntecedentesPresentesCategoria(categoria: 'medicos' | 'quirurgicos' | 'habitos'): HistoricoAntecedente[] {

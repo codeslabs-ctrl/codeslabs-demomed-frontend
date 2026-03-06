@@ -105,6 +105,60 @@
   padding: 1.5rem;
 }
 
+.section-description {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+/* Panel Incluir en el informe */
+.seccion-incluir .section-header {
+  background: #eff6ff;
+  border-bottom-color: #bfdbfe;
+}
+
+.incluir-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  margin-bottom: 1rem;
+}
+
+.incluir-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: #374151;
+}
+
+.incluir-check input[type="checkbox"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  cursor: pointer;
+}
+
+.incluir-check.disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.incluir-check.disabled input {
+  cursor: not-allowed;
+}
+
+.check-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.incluir-actions {
+  margin-top: 0.5rem;
+}
+
 /* Form Grid */
 .form-grid {
   display: grid;

@@ -17,6 +17,7 @@ import { Medico } from '../../../services/medico.service';
   selector: 'app-consultas',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  styleUrls: ['./consultas.component.css'],
   template: `
     <div class="consultas-page">
       <!-- Header -->

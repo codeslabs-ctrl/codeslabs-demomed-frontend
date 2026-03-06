@@ -1,9 +1,9 @@
-/* Estilos completos para el componente de consultas */
+/* Gestión de Consultas - mismo criterio visual que dashboard */
 .consultas-page {
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
-  background: #f8fafc;
+  background: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 100%);
   min-height: 100vh;
 }
 
@@ -12,10 +12,19 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1.75rem 2rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.page-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
 }
 
 .page-title {
@@ -25,20 +34,23 @@
   margin: 0;
 }
 
-.btn-primary {
-  background: #3b82f6;
+.btn-primary,
+.btn-new {
+  background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
+  border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.btn-primary:hover {
-  background: #2563eb;
+.btn-primary:hover,
+.btn-new:hover {
+  filter: brightness(1.08);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(122, 156, 198, 0.35);
 }
 
 .btn-secondary {
@@ -117,11 +129,12 @@
 }
 
 .filters-section {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 1rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 1.75rem;
   margin-bottom: 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .filters-grid {

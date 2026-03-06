@@ -1,6 +1,9 @@
 .patient-form-page {
   max-width: 800px;
   margin: 0 auto;
+  padding: 2rem;
+  background: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 100%);
+  min-height: 100vh;
 }
 
 .page-header {
@@ -8,13 +11,19 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  padding: 1.75rem 2rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .page-header h1 {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #0f172a;
   margin: 0;
+  letter-spacing: -0.02em;
 }
 
 .mode-indicator {
@@ -36,10 +45,11 @@
 }
 
 .patient-form {
-  background: white;
-  border-radius: 0.75rem;
+  background: #ffffff;
+  border-radius: 16px;
   padding: 2rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .form-section {
@@ -115,14 +125,14 @@
 }
 
 .action-buttons .btn-primary {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
   color: white;
   border: none;
 }
 
 .action-buttons .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(122, 156, 198, 0.35);
 }
 
 .form-grid {

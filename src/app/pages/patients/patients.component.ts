@@ -318,6 +318,9 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
     .patients-page {
       max-width: 1400px;
       margin: 0 auto;
+      padding: 2rem;
+      background: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 100%);
+      min-height: 100vh;
     }
 
     .page-header {
@@ -325,21 +328,28 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
       justify-content: space-between;
       align-items: center;
       margin-bottom: 2rem;
+      padding: 1.75rem 2rem;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     .page-header h1 {
-      font-size: 2rem;
+      font-size: 1.5rem;
       font-weight: 700;
-      color: #1e293b;
+      color: #0f172a;
       margin: 0;
+      letter-spacing: -0.02em;
     }
 
     .filters-section {
-      background: white;
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 1.75rem;
       margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     .filters-grid {
@@ -372,10 +382,11 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
     }
 
     .patients-table {
-      background: white;
-      border-radius: 0.75rem;
+      background: #ffffff;
+      border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.05);
     }
 
     .table {
@@ -386,13 +397,13 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
     .table th {
       background-color: #f8fafc;
       font-weight: 600;
-      color: #374151;
-      padding: 0.75rem 0.5rem;
+      color: #334155;
+      padding: 0.875rem 0.75rem;
       text-align: left;
-      border-bottom: 1px solid #e5e7eb;
-      font-size: 0.75rem;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 0.72rem;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
     }
 
     .table td {
@@ -552,8 +563,9 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
       min-height: 400px;
       padding: 3rem;
       background: #f8fafc;
-      border-radius: 1rem;
+      border-radius: 16px;
       margin: 2rem;
+      border: 1px dashed #e2e8f0;
     }
 
     .empty-state-icon {
@@ -679,9 +691,10 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
 
     /* Estilos para las tarjetas móviles */
     .patient-card {
-      background: white;
-      border-radius: 0.75rem;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.05);
       margin-bottom: 1rem;
       overflow: hidden;
     }

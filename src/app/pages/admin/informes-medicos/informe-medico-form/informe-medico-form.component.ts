@@ -62,10 +62,43 @@ export class InformeMedicoFormComponent implements OnInit {
   sugerenciasDisponibles = false;
   historialDisponible = false;
 
+  // Checkboxes "Incluir en el informe" (origen: antecedente_paciente e historico_pacientes)
+  incluirAntecedentes = false;
+  incluirMotivoConsulta = false;
+  incluirPlanTratamiento = false;
+  incluirDiagnostico = false;
+  incluirHistorialConsultas = false;
+  historicoParaSecciones: any = null;
+
   // Usuario actual
   usuarioActual: any = null;
   esUsuarioMedico = false;
   medicoActual: any = null;
+
+  get paciente_id() { return this.informeForm?.get('paciente_id'); }
+  get medico_id() { return this.informeForm?.get('medico_id'); }
+  get contenido() { return this.informeForm?.get('contenido'); }
+  get titulo() { return this.informeForm?.get('titulo'); }
+  get tipo_informe() { return this.informeForm?.get('tipo_informe'); }
+  get fecha_emision() { return this.informeForm?.get('fecha_emision'); }
+  get observaciones() { return this.informeForm?.get('observaciones'); }
+  get tieneAntecedentes(): boolean { return !!this.historicoParaSecciones?.id; }
+  get tieneMotivoConsulta(): boolean {
+    const v = this.datosContextuales?.ultimoInforme?.motivo_consulta;
+    return !!v && String(v).trim() !== '' && String(v).trim() !== '<p></p>';
+  }
+  get tienePlanTratamiento(): boolean {
+    const v = this.datosContextuales?.ultimoInforme?.tratamiento;
+    return !!v && String(v).trim() !== '' && String(v).trim() !== '<p></p>';
+  }
+  get tieneDiagnostico(): boolean {
+    const v = this.datosContextuales?.ultimoInforme?.diagnostico;
+    return !!v && String(v).trim() !== '' && String(v).trim() !== '<p></p>';
+  }
+  get tieneHistorialConsultas(): boolean {
+    const list = this.datosContextuales?.historialConsultas;
+    return !!list && Array.isArray(list) && list.length > 0;
+  }
 
   // Tipos de informe
   tiposInforme = [
@@ -259,6 +292,12 @@ export class InformeMedicoFormComponent implements OnInit {
     // Inicializar valores de rich text editors
     this.contenidoValue = this.informe.contenido || '';
     this.observacionesValue = this.informe.observaciones || '';
+    const medicoInforme = (this.informe as any).medicos;
+    if (medicoInforme && !this.medicos.find((m: any) => m.id === medicoInforme.id)) {
+      this.medicos = [...this.medicos, medicoInforme];
+      this.medicosFiltrados = [...this.medicosFiltrados, medicoInforme];
+    }
+    this.cargarDatosContextuales();
   }
 
 
@@ -432,10 +471,14 @@ export class InformeMedicoFormComponent implements OnInit {
   actualizarInforme(datos: any): void {
     if (!this.informeId) return;
 
-    // Solo permitir actualizar observaciones, no contenido ni antecedentes
     const informeRequest: ActualizarInformeRequest = {
       observaciones: datos.observaciones
     };
+    if (this.informe && this.informe.estado !== 'firmado' && this.informe.estado !== 'enviado') {
+      if (datos.titulo !== undefined) informeRequest.titulo = datos.titulo;
+      if (datos.tipo_informe !== undefined) informeRequest.tipo_informe = datos.tipo_informe;
+      if (datos.contenido !== undefined) informeRequest.contenido = datos.contenido;
+    }
 
     this.informeMedicoService.actualizarInforme(this.informeId, informeRequest).subscribe({
       next: (response) => {
@@ -534,22 +577,82 @@ export class InformeMedicoFormComponent implements OnInit {
           this.historialDisponible = this.contextualDataService.tieneHistorial(this.datosContextuales);
           console.log('✅ Sugerencias disponibles:', this.sugerenciasDisponibles);
           console.log('✅ Historial disponible:', this.historialDisponible);
-          
-          // Aplicar automáticamente las sugerencias al campo contenido
-          await this.aplicarSugerenciasAutomaticamente();
+          try {
+            const historicoRes = await firstValueFrom(
+              this.historicoService.getHistoricoByPacienteAndMedico(parseInt(pacienteId), parseInt(medicoId))
+            );
+            this.historicoParaSecciones = historicoRes?.data ?? null;
+          } catch {
+            this.historicoParaSecciones = null;
+          }
+          this.cdr.detectChanges();
         }
       } catch (error) {
         console.error('❌ Error cargando datos contextuales:', error);
         this.datosContextuales = null;
         this.sugerenciasDisponibles = false;
         this.historialDisponible = false;
+        this.historicoParaSecciones = null;
       }
     } else {
       console.log('⚠️ Faltan datos: pacienteId o medicoId no seleccionados');
       this.datosContextuales = null;
       this.sugerenciasDisponibles = false;
       this.historialDisponible = false;
+      this.historicoParaSecciones = null;
     }
+  }
+
+  haySeccionSeleccionada(): boolean {
+    return !!(
+      (this.incluirAntecedentes && this.tieneAntecedentes) ||
+      (this.incluirMotivoConsulta && this.tieneMotivoConsulta) ||
+      (this.incluirPlanTratamiento && this.tienePlanTratamiento) ||
+      (this.incluirDiagnostico && this.tieneDiagnostico) ||
+      (this.incluirHistorialConsultas && this.tieneHistorialConsultas)
+    );
+  }
+
+  async anadirSeccionesSeleccionadas(): Promise<void> {
+    if (!this.haySeccionSeleccionada()) return;
+    const partes: string[] = [];
+    if (this.incluirAntecedentes && this.historicoParaSecciones?.id) {
+      const { html: antHtml, antecedentes_otros } = await this.buildAntecedentesEstandarizadosHTML(this.historicoParaSecciones.id);
+      if (antHtml) partes.push(antHtml);
+      if (antecedentes_otros && String(antecedentes_otros).trim() !== '' && String(antecedentes_otros).trim() !== '<p></p>') {
+        partes.push(`<h3><strong>Otros antecedentes:</strong></h3><p>${antecedentes_otros}</p>`);
+      }
+    }
+    const ultimo = this.datosContextuales?.ultimoInforme;
+    if (this.incluirMotivoConsulta && ultimo?.motivo_consulta) {
+      partes.push(`<h3><strong>Motivo de Consulta:</strong></h3><p>${ultimo.motivo_consulta}</p>`);
+    }
+    if (this.incluirPlanTratamiento && ultimo?.tratamiento) {
+      partes.push(`<h3><strong>Plan de Tratamiento:</strong></h3><p>${ultimo.tratamiento}</p>`);
+    }
+    if (this.incluirDiagnostico && ultimo?.diagnostico) {
+      partes.push(`<h3><strong>Diagnóstico:</strong></h3><p>${ultimo.diagnostico}</p>`);
+    }
+    if (this.incluirHistorialConsultas && this.datosContextuales?.historialConsultas?.length) {
+      partes.push('<h3><strong>Historial de consultas:</strong></h3>');
+      this.datosContextuales.historialConsultas.forEach((c: any) => {
+        const fecha = c.fecha_consulta ? this.contextualDataService.formatearFecha(c.fecha_consulta) : '';
+        partes.push(`<div class="consulta-item" style="margin-bottom: 1rem;">`);
+        if (fecha) partes.push(`<p><strong>${fecha}</strong></p>`);
+        if (c.motivo_consulta) partes.push(`<p><strong>Motivo:</strong> ${c.motivo_consulta}</p>`);
+        if (c.diagnostico) partes.push(`<p><strong>Diagnóstico:</strong> ${c.diagnostico}</p>`);
+        if (c.tratamiento) partes.push(`<p><strong>Tratamiento:</strong> ${c.tratamiento}</p>`);
+        if (c.conclusiones) partes.push(`<p><strong>Conclusiones:</strong> ${c.conclusiones}</p>`);
+        partes.push(`</div>`);
+      });
+    }
+    if (partes.length === 0) return;
+    const html = partes.join('<hr>');
+    const contenidoActual = this.informeForm.get('contenido')?.value || '';
+    const nuevoContenido = contenidoActual ? contenidoActual + '<hr>' + html : html;
+    this.informeForm.patchValue({ contenido: nuevoContenido });
+    this.contenidoValue = nuevoContenido;
+    this.cdr.detectChanges();
   }
 
   /**
@@ -1189,13 +1292,5 @@ export class InformeMedicoFormComponent implements OnInit {
     return contenidoLimpio;
   }
 
-  // Getters para validación (con verificación null-safe)
-  get titulo() { return this.informeForm?.get('titulo'); }
-  get tipo_informe() { return this.informeForm?.get('tipo_informe'); }
-  get contenido() { return this.informeForm?.get('contenido'); }
-  get paciente_id() { return this.informeForm?.get('paciente_id'); }
-  get medico_id() { return this.informeForm?.get('medico_id'); }
   get estado() { return this.informeForm?.get('estado'); }
-  get fecha_emision() { return this.informeForm?.get('fecha_emision'); }
-  get observaciones() { return this.informeForm?.get('observaciones'); }
 }

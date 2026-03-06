@@ -14,6 +14,14 @@
       <span class="user-name">{{ getDoctorFullName() }}</span>
       <span class="user-role">{{ currentUser.rol }}</span>
     </div>
+
+    <!-- Botón Chat (visible solo si chatMenuEnabled está en 1 / true) -->
+    <a *ngIf="chatMenuEnabled" routerLink="/chat" class="navbar-chat-btn" title="Abrir asistente de chat">
+      <svg viewBox="0 0 24 24" fill="currentColor" class="chat-icon">
+        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+      </svg>
+      <span class="chat-label">Chat</span>
+    </a>
     
     <!-- Menú de Configuración (Settings) -->
     <div class="settings-menu">
@@ -117,6 +125,12 @@
         <!-- Opciones de Usuario -->
         <div class="settings-section">
           <div class="settings-section-title">Usuario</div>
+          <a *ngIf="chatMenuEnabled" routerLink="/chat" class="settings-item" (click)="closeSettingsMenu()">
+            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+            </svg>
+            <span>Asistente (chat)</span>
+          </a>
           <a routerLink="/settings/home" class="settings-item" (click)="closeSettingsMenu()">
             <svg class="settings-item-icon" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 17h-2v-2h2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26A1.99 1.99 0 0 0 15 9a2 2 0 0 0-4 0H9a4 4 0 0 1 8 0c0 .88-.36 1.68-.93 2.25z"/>
