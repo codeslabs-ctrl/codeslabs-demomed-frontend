@@ -14,6 +14,7 @@
   width: 100%;
   max-width: 760px;
   min-height: 265px;
+  margin-top: 3rem;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(30, 41, 59, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -133,12 +134,12 @@
 
 .login-navbar {
   position: absolute;
-  top: 2rem;
-  right: 2rem;
+  top: 0.5rem;
+  left: 2rem;
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   z-index: 10;
 }
 
@@ -643,10 +644,10 @@
 
 @media (max-width: 480px) {
   .login-navbar {
-    top: 0.75rem;
-    right: 0.75rem;
+    top: 0.5rem;
     left: 0.75rem;
-    justify-content: center;
+    right: 0.75rem;
+    justify-content: flex-start;
   }
 
   .nav-btn span {
