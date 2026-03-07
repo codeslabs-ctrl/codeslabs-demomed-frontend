@@ -8,6 +8,50 @@
   min-height: 100vh;
 }
 
+/* Pantalla de bienvenida inicial */
+.welcome-banner {
+  margin-bottom: 2rem;
+  padding: 2rem 2.5rem;
+  background: linear-gradient(135deg, #7A9CC6 0%, #5A7A9A 100%);
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(122, 156, 198, 0.25);
+  color: #fff;
+}
+
+.welcome-title {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.welcome-especialidad {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.05rem;
+  font-weight: 500;
+  opacity: 0.95;
+}
+
+.welcome-subtitle {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+  opacity: 0.95;
+}
+
+@media (max-width: 640px) {
+  .welcome-banner {
+    padding: 1.5rem 1.25rem;
+  }
+  .welcome-title {
+    font-size: 1.35rem;
+  }
+  .welcome-subtitle {
+    font-size: 1rem;
+  }
+}
+
 .dashboard-header {
   margin-bottom: 2rem;
   padding: 1.75rem 2rem;

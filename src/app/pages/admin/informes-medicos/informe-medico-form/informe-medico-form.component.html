@@ -40,36 +40,6 @@
         </div>
         <div class="section-content">
           <div class="form-grid">
-            <!-- Título -->
-            <div class="form-group">
-              <label class="form-label">
-                <i class="fas fa-heading"></i> Título del Informe *
-              </label>
-              <input type="text" class="form-input" formControlName="titulo" 
-                     placeholder="Ingrese el título del informe médico">
-              <div *ngIf="titulo && titulo.invalid && titulo.touched" class="error-message">
-                {{ obtenerErrorCampo('titulo') }}
-              </div>
-            </div>
-
-            <!-- Tipo de Informe -->
-            <div class="form-group">
-              <label class="form-label">
-                <i class="fas fa-tags"></i> Tipo de Informe *
-              </label>
-              <select class="form-input" formControlName="tipo_informe">
-                <option value="">Seleccionar tipo</option>
-                <option *ngFor="let tipo of tiposInforme" [value]="tipo.valor">
-                  {{ tipo.texto }}
-                </option>
-              </select>
-              <div *ngIf="tipo_informe && tipo_informe.invalid && tipo_informe.touched" class="error-message">
-                {{ obtenerErrorCampo('tipo_informe') }}
-              </div>
-            </div>
-          </div>
-
-          <div class="form-grid">
             <!-- Paciente -->
             <div class="form-group">
               <label class="form-label">
@@ -200,7 +170,7 @@
           </div>
           <div class="incluir-actions">
             <button type="button" class="btn btn-secondary" (click)="anadirSeccionesSeleccionadas()" [disabled]="!haySeccionSeleccionada()">
-              <i class="fas fa-plus-circle"></i> Anadir secciones seleccionadas al contenido
+              <i class="fas fa-plus-circle"></i> Reemplazar contenido con secciones seleccionadas
             </button>
           </div>
         </div>
@@ -220,6 +190,7 @@
                 <i class="fas fa-edit"></i> Contenido del Informe *
               </label>
               <app-rich-text-editor
+                #editorContenido
                 [placeholder]="'Escriba el contenido del informe médico aquí...'"
                 [height]="300"
                 [value]="contenidoValue"

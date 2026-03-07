@@ -20,26 +20,14 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
   styleUrls: ['./dashboard.component.css'],
   template: `
     <div class="dashboard">
-      <div class="dashboard-header">
-        <p *ngIf="currentUser?.rol === 'administrador'">Panel de administración - Todos los pacientes</p>
-        <p *ngIf="currentUser?.rol === 'medico'">Mis pacientes y consultas médicas</p>
-        <p *ngIf="currentUser?.rol === 'secretaria'">Gestión de consultas y pacientes - Secretaría</p>
-        <p *ngIf="!currentUser">Gestion de pacientes y consultas médicas</p>
-        <p class="doctor-info" *ngIf="currentUser">
-          <span *ngIf="currentUser.rol === 'administrador'">
-            👑 {{ getDoctorFullName() || currentUser.username || 'Administrador' }}
-            <span *ngIf="currentUser.especialidad" class="specialty">- {{ currentUser.especialidad }}</span>
-          </span>
-          <span *ngIf="currentUser.rol === 'medico'">
-            👨‍⚕️ {{ getDoctorFullName() || currentUser.username || 'Médico' }}
-            <span *ngIf="currentUser.especialidad" class="specialty">- {{ currentUser.especialidad }}</span>
-          </span>
-          <span *ngIf="currentUser.rol === 'secretaria'">
-            📋 Secretaría
-          </span>
-        </p>
-        <p class="info-note" *ngIf="currentUser?.rol === 'medico' && !currentUser?.medico_id">
-          ⚠️ ID de médico no disponible - mostrando todos los pacientes
+      <!-- Pantalla de bienvenida -->
+      <div class="welcome-banner" *ngIf="currentUser">
+        <h1 class="welcome-title">Bienvenido{{ currentUser.rol === 'secretaria' ? 'a' : '' }} {{ getWelcomeDisplayName() }}</h1>
+        <p class="welcome-especialidad" *ngIf="currentUser.especialidad">{{ currentUser.especialidad }}</p>
+        <p class="welcome-subtitle">
+          <span *ngIf="consultasDelDia.length > 0">Hoy {{ currentUser.rol === 'secretaria' ? 'hay' : 'tienes' }} {{ consultasDelDia.length }} {{ consultasDelDia.length === 1 ? 'consulta programada' : 'consultas programadas' }}</span>
+          <span *ngIf="consultasDelDia.length === 0 && !loadingConsultas">Hoy no {{ currentUser.rol === 'secretaria' ? 'hay' : 'tienes' }} consultas programadas</span>
+          <span *ngIf="loadingConsultas">Cargando agenda del día...</span>
         </p>
       </div>
 
@@ -147,7 +135,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
                 📝 Historia Paciente
               </button>
               <button class="btn btn-success" (click)="finalizarConsulta(consulta)" 
-                      *ngIf="consulta.estado_consulta === 'completada' && canFinalizarConsulta()">
+                      *ngIf="isEstadoCompletada(consulta) && canFinalizarConsulta()">
                 ✅ Finalizar
               </button>
               <button class="btn btn-warning" (click)="reagendarConsulta(consulta)"
@@ -241,6 +229,24 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
       <div class="quick-actions" *ngIf="currentUser?.rol === 'administrador'">
         <h3>Accesos Directos</h3>
         <div class="actions-grid">
+          <a routerLink="/admin/consultas/nueva" class="action-card action-card-quick">
+            <div class="action-icon consultas">
+              <span class="action-plus">➕</span>
+            </div>
+            <div class="action-content">
+              <div class="action-title">Nueva Consulta</div>
+              <div class="action-description">Agendar una nueva cita</div>
+            </div>
+          </a>
+          <a routerLink="/patients/new" class="action-card action-card-quick">
+            <div class="action-icon pacientes">
+              <span class="action-plus">➕</span>
+            </div>
+            <div class="action-content">
+              <div class="action-title">Nuevo Paciente</div>
+              <div class="action-description">Registrar un nuevo paciente</div>
+            </div>
+          </a>
           <a routerLink="/patients" class="action-card">
             <div class="action-icon pacientes">
               <svg viewBox="0 0 24 24" fill="currentColor">
@@ -1741,7 +1747,9 @@ export class DashboardComponent implements OnInit {
   recentPatientsList: Patient[] = [];
   loading = true;
   currentUser: User | null = null;
-  
+  /** Permiso para finalizar consultas (según Gestión de Perfiles) */
+  puedeFinalizarConsulta = false;
+
   // Propiedades para consultas del día
   consultasDelDia: ConsultaWithDetails[] = [];
   loadingConsultas = false;
@@ -1779,7 +1787,24 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
-      this.loadDashboardData();
+    this.loadPermisoFinalizar();
+    this.loadDashboardData();
+  }
+
+  /** Carga el permiso para finalizar consultas (según Gestión de Perfiles). */
+  loadPermisoFinalizar(): void {
+    this.consultaService.getPermisoFinalizar().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.puedeFinalizarConsulta = res.data.puedeFinalizar;
+        } else {
+          this.puedeFinalizarConsulta = this.currentUser?.rol === 'administrador' || this.currentUser?.rol === 'secretaria';
+        }
+      },
+      error: () => {
+        this.puedeFinalizarConsulta = this.currentUser?.rol === 'administrador' || this.currentUser?.rol === 'secretaria';
+      }
+    });
   }
 
   loadDashboardData(): void {
@@ -1891,6 +1916,23 @@ export class DashboardComponent implements OnInit {
     return fullName || ''; // Retorna string vacío si ambos son undefined/null
   }
 
+  /** Nombre para la bienvenida: "Dr. Anderson Cepeda" / "Dra. ..." / "Secretaría" según rol */
+  getWelcomeDisplayName(): string {
+    if (!this.currentUser) return '';
+    const fullName = this.getDoctorFullName();
+    const rol = this.currentUser.rol || '';
+    if (rol === 'secretaria') {
+      return fullName || 'Secretaría';
+    }
+    if (rol === 'medico' || rol === 'administrador') {
+      if (!fullName) return rol === 'medico' ? 'Médico' : 'Administrador';
+      const sexo = this.currentUser.sexo?.toString().toLowerCase() || '';
+      const titulo = sexo === 'femenino' ? 'Dra.' : 'Dr.';
+      return `${titulo} ${fullName}`;
+    }
+    return fullName || this.currentUser.username || 'Usuario';
+  }
+
   formatTime(timeString: string): string {
     if (!timeString) return '';
     return timeString.substring(0, 5); // HH:MM
@@ -1956,8 +1998,13 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/admin/consultas', consulta.id, 'finalizar']);
   }
 
+  /** True si la consulta está en estado Completada (solo entonces se muestra el botón Finalizar). */
+  isEstadoCompletada(consulta: ConsultaWithDetails): boolean {
+    return (consulta?.estado_consulta || '').toLowerCase() === 'completada';
+  }
+
   canFinalizarConsulta(): boolean {
-    return this.currentUser?.rol === 'secretaria' || this.currentUser?.rol === 'administrador';
+    return this.puedeFinalizarConsulta;
   }
 
   canReagendarConsulta(): boolean {

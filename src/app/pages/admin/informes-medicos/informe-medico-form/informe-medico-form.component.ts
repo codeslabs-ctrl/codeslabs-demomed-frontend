@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -47,6 +47,8 @@ export class InformeMedicoFormComponent implements OnInit {
   // Valores para rich text editors
   contenidoValue = '';
   observacionesValue = '';
+  /** Timestamp del último reemplazo programático; ignoramos valueChange del editor durante 400 ms tras él */
+  private ultimoReemplazoProgramatico = 0;
 
   // Filtros
   especialidadSeleccionada: number | null = null;
@@ -69,6 +71,8 @@ export class InformeMedicoFormComponent implements OnInit {
   incluirDiagnostico = false;
   incluirHistorialConsultas = false;
   historicoParaSecciones: any = null;
+
+  @ViewChild('editorContenido') editorContenido?: RichTextEditorComponent;
 
   // Usuario actual
   usuarioActual: any = null;
@@ -130,9 +134,9 @@ export class InformeMedicoFormComponent implements OnInit {
     private alertService: AlertService
   ) {
     this.informeForm = this.fb.group({
-      titulo: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
-      tipo_informe: ['', Validators.required],
-      contenido: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(10000)]],
+      titulo: [''],
+      tipo_informe: [''],
+      contenido: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(100000)]],
       paciente_id: ['', Validators.required],
       medico_id: ['', Validators.required],
       fecha_emision: [new Date().toISOString().split('T')[0], Validators.required],
@@ -303,6 +307,7 @@ export class InformeMedicoFormComponent implements OnInit {
 
   // Métodos para manejar cambios en rich text editors
   onContenidoChange(value: string): void {
+    if (Date.now() - this.ultimoReemplazoProgramatico < 400) return;
     this.contenidoValue = value;
     this.informeForm.patchValue({ contenido: value });
   }
@@ -354,29 +359,23 @@ export class InformeMedicoFormComponent implements OnInit {
 
     try {
       console.log('🚀 Iniciando proceso de guardado...');
-      
-      // Aplicar firma automáticamente al contenido antes de guardar
-      const contenidoOriginal = this.informeForm.get('contenido')?.value;
+      const contenidoDelEditor = (this.editorContenido?.getValue?.() ?? '').trim();
+      const contenidoParaGuardar = contenidoDelEditor || (this.contenidoValue || this.informeForm.get('contenido')?.value || '').trim();
       const medicoId = this.informeForm.get('medico_id')?.value;
-      
-      console.log('🔍 Datos del formulario:', {
-        contenidoOriginal: contenidoOriginal ? 'Presente' : 'Ausente',
-        medicoId: medicoId,
-        esEdicion: this.esEdicion,
-        informeId: this.informeId
-      });
-      
-      if (medicoId && contenidoOriginal) {
+
+      if (medicoId && contenidoParaGuardar) {
         console.log('🔏 Aplicando firma automáticamente al guardar...');
-        const contenidoConFirma = await this.aplicarFirmaAlInforme(contenidoOriginal, medicoId);
+        const contenidoConFirma = await this.aplicarFirmaAlInforme(contenidoParaGuardar, medicoId);
         this.informeForm.patchValue({ contenido: contenidoConFirma });
+        this.contenidoValue = contenidoConFirma;
         console.log('✅ Firma aplicada automáticamente');
       }
 
-      // Usar getRawValue() para obtener valores incluso de controles deshabilitados
       const datosFormulario = this.informeForm.getRawValue();
-      console.log('📋 Datos del formulario completos:', datosFormulario);
-      
+      const contenidoFinal = (this.contenidoValue || datosFormulario.contenido || '').trim();
+      if (contenidoFinal) datosFormulario.contenido = contenidoFinal;
+      console.log('📋 Contenido a persistir (length):', contenidoFinal.length);
+
       if (this.esEdicion && this.informeId) {
         console.log('📝 Modo edición - actualizando informe');
         this.actualizarInforme(datosFormulario);
@@ -386,10 +385,11 @@ export class InformeMedicoFormComponent implements OnInit {
       }
     } catch (error) {
       console.error('❌ Error aplicando firma automática:', error);
-      // Continuar con el guardado aunque falle la firma
-      // Usar getRawValue() para obtener valores incluso de controles deshabilitados
       const datosFormulario = this.informeForm.getRawValue();
-      
+      const delEditor = (this.editorContenido?.getValue?.() ?? '').trim();
+      const contenidoFinal = (delEditor || this.contenidoValue || datosFormulario.contenido || '').trim();
+      if (contenidoFinal) datosFormulario.contenido = contenidoFinal;
+
       if (this.esEdicion && this.informeId) {
         this.actualizarInforme(datosFormulario);
       } else {
@@ -471,14 +471,21 @@ export class InformeMedicoFormComponent implements OnInit {
   actualizarInforme(datos: any): void {
     if (!this.informeId) return;
 
+    const contenidoDelEditor = (this.editorContenido?.getValue?.() ?? '').trim();
+    const contenidoActual = (datos.contenido ?? contenidoDelEditor ?? this.contenidoValue ?? '') || '';
+    const contenidoStr = typeof contenidoActual === 'string' ? contenidoActual : String(contenidoActual);
+
     const informeRequest: ActualizarInformeRequest = {
-      observaciones: datos.observaciones
+      observaciones: datos.observaciones ?? '',
+      contenido: contenidoStr
     };
-    if (this.informe && this.informe.estado !== 'firmado' && this.informe.estado !== 'enviado') {
-      if (datos.titulo !== undefined) informeRequest.titulo = datos.titulo;
-      if (datos.tipo_informe !== undefined) informeRequest.tipo_informe = datos.tipo_informe;
-      if (datos.contenido !== undefined) informeRequest.contenido = datos.contenido;
+    const puedeEditarContenido = this.informe && this.informe.estado !== 'firmado' && this.informe.estado !== 'enviado';
+    if (puedeEditarContenido) {
+      if (datos.titulo !== undefined && datos.titulo !== null) informeRequest.titulo = String(datos.titulo);
+      if (datos.tipo_informe !== undefined && datos.tipo_informe !== null) informeRequest.tipo_informe = String(datos.tipo_informe);
     }
+
+    console.log('[actualizarInforme] Enviando PUT keys:', Object.keys(informeRequest), 'contenido length:', informeRequest.contenido?.length ?? 0);
 
     this.informeMedicoService.actualizarInforme(this.informeId, informeRequest).subscribe({
       next: (response) => {
@@ -620,39 +627,50 @@ export class InformeMedicoFormComponent implements OnInit {
       const { html: antHtml, antecedentes_otros } = await this.buildAntecedentesEstandarizadosHTML(this.historicoParaSecciones.id);
       if (antHtml) partes.push(antHtml);
       if (antecedentes_otros && String(antecedentes_otros).trim() !== '' && String(antecedentes_otros).trim() !== '<p></p>') {
-        partes.push(`<h3><strong>Otros antecedentes:</strong></h3><p>${antecedentes_otros}</p>`);
+        const otrosTexto = this.stripHtmlTexto(antecedentes_otros);
+        if (otrosTexto) partes.push(`<h3><strong>Otros antecedentes:</strong></h3><p>${this.escapeHtml(otrosTexto)}</p>`);
       }
     }
     const ultimo = this.datosContextuales?.ultimoInforme;
     if (this.incluirMotivoConsulta && ultimo?.motivo_consulta) {
-      partes.push(`<h3><strong>Motivo de Consulta:</strong></h3><p>${ultimo.motivo_consulta}</p>`);
+      const texto = this.stripHtmlTexto(ultimo.motivo_consulta);
+      if (texto) partes.push(`<h3><strong>Motivo de Consulta:</strong></h3><p>${this.escapeHtml(texto)}</p>`);
     }
     if (this.incluirPlanTratamiento && ultimo?.tratamiento) {
-      partes.push(`<h3><strong>Plan de Tratamiento:</strong></h3><p>${ultimo.tratamiento}</p>`);
+      const texto = this.stripHtmlTexto(ultimo.tratamiento);
+      if (texto) partes.push(`<h3><strong>Plan de Tratamiento:</strong></h3><p>${this.escapeHtml(texto)}</p>`);
     }
     if (this.incluirDiagnostico && ultimo?.diagnostico) {
-      partes.push(`<h3><strong>Diagnóstico:</strong></h3><p>${ultimo.diagnostico}</p>`);
+      const texto = this.stripHtmlTexto(ultimo.diagnostico);
+      if (texto) partes.push(`<h3><strong>Diagnóstico:</strong></h3><p>${this.escapeHtml(texto)}</p>`);
     }
     if (this.incluirHistorialConsultas && this.datosContextuales?.historialConsultas?.length) {
       partes.push('<h3><strong>Historial de consultas:</strong></h3>');
       this.datosContextuales.historialConsultas.forEach((c: any) => {
         const fecha = c.fecha_consulta ? this.contextualDataService.formatearFecha(c.fecha_consulta) : '';
-        partes.push(`<div class="consulta-item" style="margin-bottom: 1rem;">`);
-        if (fecha) partes.push(`<p><strong>${fecha}</strong></p>`);
-        if (c.motivo_consulta) partes.push(`<p><strong>Motivo:</strong> ${c.motivo_consulta}</p>`);
-        if (c.diagnostico) partes.push(`<p><strong>Diagnóstico:</strong> ${c.diagnostico}</p>`);
-        if (c.tratamiento) partes.push(`<p><strong>Tratamiento:</strong> ${c.tratamiento}</p>`);
-        if (c.conclusiones) partes.push(`<p><strong>Conclusiones:</strong> ${c.conclusiones}</p>`);
-        partes.push(`</div>`);
+        if (fecha) partes.push(`<p><strong>${this.escapeHtml(fecha)}</strong></p>`);
+        const motivo = this.stripHtmlTexto(c.motivo_consulta);
+        if (motivo) partes.push(`<p><strong>Motivo:</strong> ${this.escapeHtml(motivo)}</p>`);
+        const diag = this.stripHtmlTexto(c.diagnostico);
+        if (diag) partes.push(`<p><strong>Diagnóstico:</strong> ${this.escapeHtml(diag)}</p>`);
+        const trat = this.stripHtmlTexto(c.tratamiento);
+        if (trat) partes.push(`<p><strong>Tratamiento:</strong> ${this.escapeHtml(trat)}</p>`);
+        const concl = this.stripHtmlTexto(c.conclusiones);
+        if (concl) partes.push(`<p><strong>Conclusiones:</strong> ${this.escapeHtml(concl)}</p>`);
+        partes.push('<p><br></p>');
       });
     }
     if (partes.length === 0) return;
     const html = partes.join('<hr>');
-    const contenidoActual = this.informeForm.get('contenido')?.value || '';
-    const nuevoContenido = contenidoActual ? contenidoActual + '<hr>' + html : html;
-    this.informeForm.patchValue({ contenido: nuevoContenido });
-    this.contenidoValue = nuevoContenido;
+    this.ultimoReemplazoProgramatico = Date.now();
+    this.contenidoValue = html;
+    this.informeForm.patchValue({ contenido: html });
     this.cdr.detectChanges();
+    setTimeout(() => {
+      if (this.editorContenido) {
+        this.editorContenido.setValue(html);
+      }
+    }, 0);
   }
 
   /**
@@ -796,6 +814,11 @@ export class InformeMedicoFormComponent implements OnInit {
     } catch {
       return { html: '', antecedentes_otros: null };
     }
+  }
+
+  private stripHtmlTexto(val: string | null | undefined): string {
+    if (val == null || typeof val !== 'string') return '';
+    return val.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
   private escapeHtml(text: string): string {

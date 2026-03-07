@@ -7,7 +7,18 @@
       </span>
     </a>
   </div>
-  
+
+  <!-- Accesos inmediatos (siempre visibles en el navbar) -->
+  <div class="navbar-quick-actions" *ngIf="currentUser">
+    <a routerLink="/admin/consultas/nueva" class="navbar-quick-btn" title="Agendar nueva consulta">
+      <span class="navbar-quick-icon">➕</span>
+      <span class="navbar-quick-label">Nueva Consulta</span>
+    </a>
+    <a routerLink="/patients/new" class="navbar-quick-btn" title="Registrar nuevo paciente">
+      <span class="navbar-quick-icon">➕</span>
+      <span class="navbar-quick-label">Nuevo Paciente</span>
+    </a>
+  </div>
   
   <div class="navbar-user" *ngIf="currentUser">
     <div class="user-info">
