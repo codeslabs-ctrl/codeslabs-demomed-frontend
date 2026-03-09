@@ -43,6 +43,11 @@ export class PatientFormComponent implements OnInit {
   cedulaExists = false;
   cedulaChecked = false;
   cedulaValidationTimeout: any;
+
+  // Variables para validación de teléfono
+  telefonoExists = false;
+  telefonoChecked = false;
+  telefonoValidationTimeout: any;
   
   // Variables para lógica de médico
   currentMedicoId: number | null = null;
@@ -101,11 +106,15 @@ export class PatientFormComponent implements OnInit {
   onSubmit(form: any) {
     // Verificar validaciones adicionales
     if (this.emailExists && this.emailChecked) {
-      this.alertService.show('El email ya está registrado en el sistema.', 'error');
+      this.alertService.show('El correo electrónico ya está siendo usado por otro paciente.', 'error');
       return;
     }
     if (this.cedulaExists && this.cedulaChecked) {
-      this.alertService.show('La cédula ya está registrada en el sistema.', 'error');
+      this.alertService.show('La cédula ya está siendo usada por otro paciente.', 'error');
+      return;
+    }
+    if (this.telefonoExists && this.telefonoChecked) {
+      this.alertService.show('El teléfono ya está siendo usado por otro paciente.', 'error');
       return;
     }
     if (form.valid) {
@@ -187,11 +196,15 @@ export class PatientFormComponent implements OnInit {
           if (errorMessage.includes('email ya está registrado') || errorMessage.includes('Email ya está registrado')) {
             this.emailExists = true;
             this.emailChecked = true;
-            this.alertService.show('El email ya está registrado en el sistema.', 'error');
+            this.alertService.show('El correo electrónico ya está siendo usado por otro paciente.', 'error');
           } else if (errorMessage.includes('cédula ya está registrada') || errorMessage.includes('Cédula ya está registrada')) {
             this.cedulaExists = true;
             this.cedulaChecked = true;
-            this.alertService.show('La cédula ya está registrada en el sistema.', 'error');
+            this.alertService.show('La cédula ya está siendo usada por otro paciente.', 'error');
+          } else if (errorMessage.includes('teléfono') && (errorMessage.includes('ya está') || errorMessage.includes('registrado'))) {
+            this.telefonoExists = true;
+            this.telefonoChecked = true;
+            this.alertService.show('El teléfono ya está siendo usado por otro paciente.', 'error');
           } else {
             this.alertService.show(errorMessage || this.errorHandler.getSafeErrorMessage(error, 'crear paciente'), 'error');
           }
@@ -247,7 +260,20 @@ export class PatientFormComponent implements OnInit {
               this.alertService.show('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 'error');
             }
           } else if (status === 400 || status === 422) {
-            const validationMessage = this.extractValidationMessage(error?.error?.error?.message ?? error?.error?.message ?? error?.message ?? '');
+            const msg = (error?.error?.error?.message ?? error?.error?.message ?? error?.message ?? '') as string;
+            if (msg.includes('teléfono') && (msg.includes('ya está') || msg.includes('registrado'))) {
+              this.telefonoExists = true;
+              this.telefonoChecked = true;
+            }
+            if (msg.includes('email') && (msg.includes('ya está') || msg.includes('registrado'))) {
+              this.emailExists = true;
+              this.emailChecked = true;
+            }
+            if (msg.includes('cédula') && (msg.includes('ya está') || msg.includes('registrada'))) {
+              this.cedulaExists = true;
+              this.cedulaChecked = true;
+            }
+            const validationMessage = this.extractValidationMessage(msg);
             this.alertService.show(`${validationMessage} Por favor, corrige los datos e intenta nuevamente.`, 'error');
           } else if (status >= 500) {
             this.alertService.show('Error del servidor. Por favor, intenta nuevamente en unos momentos. Si el problema persiste, contacta al administrador.', 'error');
@@ -300,8 +326,10 @@ export class PatientFormComponent implements OnInit {
     
     // Mensajes comunes y sus traducciones más claras
     const messageMap: Record<string, string> = {
-      'email': 'El email ya está registrado en el sistema.',
-      'cedula': 'La cédula ya está registrada en el sistema.',
+      'email': 'El correo electrónico ya está siendo usado por otro paciente.',
+      'cedula': 'La cédula ya está siendo usada por otro paciente.',
+      'teléfono': 'El teléfono ya está siendo usado por otro paciente.',
+      'telefono': 'El teléfono ya está siendo usado por otro paciente.',
       'duplicate': 'Ya existe un registro con estos datos.',
       'ya existe': 'Ya existe un registro con estos datos.',
       'requerido': 'Por favor, completa todos los campos requeridos.',
@@ -452,6 +480,34 @@ export class PatientFormComponent implements OnInit {
     } else {
       this.cedulaExists = false;
       this.cedulaChecked = false;
+    }
+  }
+
+  // Validación de teléfono (duplicado)
+  validateTelefono() {
+    const telefono = this.patient.telefono ? String(this.patient.telefono).replace(/\D/g, '').trim() : '';
+    if (telefono.length >= 10) {
+      clearTimeout(this.telefonoValidationTimeout);
+      this.telefonoValidationTimeout = setTimeout(() => {
+        this.patientService.searchPatientsByTelefono(this.patient.telefono!).subscribe({
+          next: (response) => {
+            if (this.isEdit && this.patientId) {
+              const otherPatients = response.data.filter(p => p.id !== this.patientId);
+              this.telefonoExists = otherPatients.length > 0;
+            } else {
+              this.telefonoExists = response.data.length > 0;
+            }
+            this.telefonoChecked = true;
+          },
+          error: () => {
+            this.telefonoExists = false;
+            this.telefonoChecked = true;
+          }
+        });
+      }, 500);
+    } else {
+      this.telefonoExists = false;
+      this.telefonoChecked = telefono.length === 0 ? false : true;
     }
   }
 

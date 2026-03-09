@@ -54,12 +54,12 @@
             placeholder="Ej: V12345678, E1234567"
             (blur)="validateCedula()"
             #cedula="ngModel">
-          <div class="error-message" *ngIf="cedula.invalid && cedula.touched">
+          <div class="error-message" *ngIf="cedula.invalid && cedula.touched && !cedulaExists">
             <span *ngIf="cedula.errors?.['pattern']">Formato inválido. Usa: V12345678, E1234567, J12345678, P12345678, G12345678</span>
             <span *ngIf="cedula.errors?.['cedulaInvalid']">Cédula inválida. Verifica el número</span>
           </div>
-          <div class="error-message" *ngIf="cedulaExists && cedulaChecked">
-            <span>Esta cédula ya está registrada</span>
+          <div class="error-message field-duplicate-error" *ngIf="cedulaExists && cedulaChecked">
+            <span>La cédula ya está siendo usada por otro paciente.</span>
           </div>
         </div>
         <div class="form-group">
@@ -114,24 +114,31 @@
             placeholder="ejemplo@correo.com"
             (blur)="validateEmail()"
             #email="ngModel">
-          <div class="error-message" *ngIf="email.invalid && email.touched">
+          <div class="error-message" *ngIf="email.invalid && email.touched && !emailExists">
             <span *ngIf="email.errors?.['required']">El email es requerido</span>
             <span *ngIf="email.errors?.['email']">Formato de email inválido</span>
-            <span *ngIf="emailExists && emailChecked">Este email ya está registrado</span>
+          </div>
+          <div class="error-message field-duplicate-error" *ngIf="emailExists && emailChecked">
+            <span>El correo electrónico ya está siendo usado por otro paciente.</span>
           </div>
         </div>
-        <div class="form-group">
+        <div class="form-group" [class.has-duplicate-error]="telefonoExists && telefonoChecked">
           <label class="form-label">Teléfono *</label>
           <input 
             type="tel" 
             class="form-input" 
+            [class.duplicate-error]="telefonoExists && telefonoChecked"
             [(ngModel)]="patient.telefono"
             name="telefono"
             required
             placeholder="Ej: 0412-1234567"
+            (blur)="validateTelefono()"
             #telefono="ngModel">
-          <div class="error-message" *ngIf="telefono.invalid && telefono.touched">
+          <div class="error-message" *ngIf="telefono.invalid && telefono.touched && !telefonoExists">
             El teléfono es requerido
+          </div>
+          <div class="error-message field-duplicate-error" *ngIf="telefonoExists && telefonoChecked">
+            <span>El teléfono ya está siendo usado por otro paciente.</span>
           </div>
         </div>
         <div class="form-group" style="grid-column: 1 / -1;">
@@ -161,7 +168,7 @@
       <button 
         type="submit" 
         class="btn btn-primary"
-        [disabled]="loading || emailExists || cedulaExists">
+        [disabled]="loading || emailExists || cedulaExists || telefonoExists">
         <span *ngIf="loading" class="spinner"></span>
         {{ isEdit ? 'Actualizar' : 'Crear' }} Paciente
       </button>

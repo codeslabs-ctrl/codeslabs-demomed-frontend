@@ -69,6 +69,12 @@ export class PatientService {
     });
   }
 
+  searchPatientsByTelefono(telefono: string): Observable<ApiResponse<Patient[]>> {
+    return this.http.get<ApiResponse<Patient[]>>(`${this.baseUrl}/search-telefono`, {
+      params: { telefono }
+    });
+  }
+
   /**
    * Busca pacientes por patología/dolencia (texto en diagnostico, motivo_consulta, antecedentes en historico_pacientes).
    * Para médico: opcional medico_id para restringir a sus pacientes.

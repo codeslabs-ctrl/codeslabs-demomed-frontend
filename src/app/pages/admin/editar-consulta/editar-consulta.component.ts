@@ -120,6 +120,19 @@ import { Medico } from '../../../services/medico.service';
                   name="hora_pautada"
                   required>
               </div>
+
+              <div class="form-group">
+                <label for="duracion_estimada">Duración (minutos) *</label>
+                <input 
+                  type="number" 
+                  id="duracion_estimada" 
+                  class="form-control" 
+                  [(ngModel)]="consultaForm.duracion_estimada" 
+                  name="duracion_estimada"
+                  min="15"
+                  max="120"
+                  required>
+              </div>
             </div>
 
             <div class="form-row">
