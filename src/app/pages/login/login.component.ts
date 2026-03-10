@@ -223,15 +223,23 @@ export class LoginComponent implements OnInit, OnDestroy {
       next: (r) => {
         this.solicitudSending = false;
         if (r.success && r.data?.message) {
-          this.solicitudSuccess = r.data.message;
+          const msg = r.data.message;
+          this.solicitudSuccess = '';
+          this.solicitudError = '';
           this.solicitudForm.reset();
+          this.closeSolicitudModal();
+          alert(msg);
         } else {
-          this.solicitudError = r.error?.message || 'Error al enviar la solicitud.';
+          const msg = r.error?.message || 'Error al enviar la solicitud.';
+          this.solicitudError = msg;
+          alert(msg);
         }
       },
       error: (err) => {
         this.solicitudSending = false;
-        this.solicitudError = err?.error?.error?.message || err?.message || 'Error de conexión. Intenta de nuevo.';
+        const msg = err?.error?.error?.message || err?.message || 'Error de conexión. Intenta de nuevo.';
+        this.solicitudError = msg;
+        alert(msg);
       }
     });
   }
