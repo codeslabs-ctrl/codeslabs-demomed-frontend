@@ -139,7 +139,7 @@ import { Medico } from '../../../services/medico.service';
                 </td>
                 <td>
                   <div class="medico-info">
-                    <div class="medico-nombre">{{ consulta.medico_nombre }}</div>
+                    <div class="medico-nombre">{{ consulta.medico_nombre }} {{ consulta.medico_apellidos }}</div>
                     <div class="especialidad">{{ consulta.especialidad_nombre }}</div>
                   </div>
                 </td>
@@ -371,7 +371,7 @@ import { Medico } from '../../../services/medico.service';
                 <div class="detail-grid">
                   <div class="detail-item">
                     <label>Médico</label>
-                    <span>{{ selectedConsulta.medico_nombre }}</span>
+                    <span>{{ selectedConsulta.medico_nombre }} {{ selectedConsulta.medico_apellidos }}</span>
                   </div>
                   <div class="detail-item">
                     <label>Especialidad</label>
