@@ -24,9 +24,6 @@ import { ErrorHandlerService } from '../../../services/error-handler.service';
           <button class="btn btn-secondary" (click)="volver()">
             ← Volver a Gestión de Pacientes
           </button>
-          <button *ngIf="isMedico" class="btn btn-primary" (click)="nuevoControl()">
-            ➕ Nuevo Control
-          </button>
         </div>
       </div>
 
@@ -77,6 +74,7 @@ import { ErrorHandlerService } from '../../../services/error-handler.service';
               <thead>
                 <tr>
                   <th>Número de Control</th>
+                  <th>Título</th>
                   <th>Fecha</th>
                   <th>Médico</th>
                   <th>Especialidad</th>
@@ -86,6 +84,7 @@ import { ErrorHandlerService } from '../../../services/error-handler.service';
               <tbody>
                 <tr *ngFor="let h of historicos">
                   <td>{{ getNumeroControl(h) }}</td>
+                  <td>{{ getTituloDisplay(h.titulo) }}</td>
                   <td>{{ formatDate(h.fecha_consulta) }}</td>
                   <td>{{ getMedicoTitulo(h) }} {{ h.medico_nombre }} {{ h.medico_apellidos }}</td>
                   <td>{{ h.especialidad_nombre || '-' }}</td>
@@ -190,10 +189,6 @@ export class HistoriaMedicaListComponent implements OnInit {
     this.router.navigate(['/patients', this.patientId, 'historia-medica', String(h.id)]);
   }
 
-  nuevoControl(): void {
-    this.router.navigate(['/patients', this.patientId, 'historia-medica', 'nuevo']);
-  }
-
   volver(): void {
     this.router.navigate(['/patients']);
   }
@@ -231,6 +226,17 @@ export class HistoriaMedicaListComponent implements OnInit {
   /**
    * Número de control: YYYYMMDD-id (ej. 20251202-1)
    */
+  /** Muestra el título/tipo de consulta (ej. primera_vez → "Primera vez", control → "Control"). */
+  getTituloDisplay(titulo: string | null | undefined): string {
+    if (!titulo || !titulo.trim()) return '—';
+    const t = titulo.trim().toLowerCase();
+    if (t === 'primera_vez') return 'Primera vez';
+    if (t === 'control') return 'Control';
+    if (t === 'seguimiento') return 'Seguimiento';
+    if (t === 'registro_inicial') return 'Registro inicial';
+    return titulo.trim();
+  }
+
   getNumeroControl(h: HistoricoWithDetails): string {
     const d = h.fecha_consulta ? new Date(h.fecha_consulta) : new Date();
     const y = d.getFullYear();

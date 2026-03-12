@@ -18,6 +18,7 @@ export interface Patient {
   fecha_actualizacion: string;
   historico_id?: number; // ID del historial médico asociado
   activo: boolean; // Estado activo/inactivo del paciente
+  tiene_consulta?: boolean; // true si tiene al menos una consulta (para mostrar Historial vs Agendar una Consulta)
 }
 
 export interface ApiResponse<T> {

@@ -148,15 +148,18 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
                   </a>
                   <button 
                     *ngIf="currentUser?.rol === 'medico' || currentUser?.rol === 'secretaria' || currentUser?.rol === 'administrador' || currentUser?.rol === 'admin'"
-                    class="action-btn history-btn" 
-                    [class.has-history]="tieneHistoriaMedica(patient)"
-                    (click)="gestionarHistoriaMedica(patient)" 
-                    [title]="getHistoriaTooltip(patient)">
+                    [class.action-btn]="true"
+                    [class.history-btn]="patient.tiene_consulta"
+                    [class.agendar-btn]="!patient.tiene_consulta"
+                    [class.has-history]="patient.tiene_consulta"
+                    (click)="patient.tiene_consulta ? gestionarHistoriaMedica(patient) : irANuevaConsulta(patient)" 
+                    [title]="patient.tiene_consulta ? getHistoriaTooltip(patient) : 'Ir a Nueva Consulta con este paciente preseleccionado'">
                     <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
                     </svg>
-                    {{ currentUser?.rol === 'medico' ? 'Historial' : 'Ver Historial' }}
-                    <span *ngIf="tieneHistoriaMedica(patient)" class="history-indicator">✓</span>
+                    <span *ngIf="patient.tiene_consulta">{{ currentUser?.rol === 'medico' ? 'Historial' : 'Ver Historial' }}</span>
+                    <span *ngIf="!patient.tiene_consulta">Agendar una Consulta</span>
+                    <span *ngIf="patient.tiene_consulta" class="history-indicator">✓</span>
                   </button>
                   <button 
                     class="action-btn" 
@@ -235,15 +238,18 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
               </a>
               <button 
                 *ngIf="currentUser?.rol === 'medico' || currentUser?.rol === 'secretaria' || currentUser?.rol === 'administrador' || currentUser?.rol === 'admin'"
-                class="action-btn history-btn" 
-                [class.has-history]="tieneHistoriaMedica(patient)"
-                (click)="gestionarHistoriaMedica(patient)" 
-                [title]="getHistoriaTooltip(patient)">
+                [class.action-btn]="true"
+                [class.history-btn]="patient.tiene_consulta"
+                [class.agendar-btn]="!patient.tiene_consulta"
+                [class.has-history]="patient.tiene_consulta"
+                (click)="patient.tiene_consulta ? gestionarHistoriaMedica(patient) : irANuevaConsulta(patient)" 
+                [title]="patient.tiene_consulta ? getHistoriaTooltip(patient) : 'Ir a Nueva Consulta con este paciente preseleccionado'">
                 <svg class="action-icon" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
                 </svg>
-                {{ currentUser?.rol === 'medico' ? 'Historial' : 'Ver Historial' }}
-                <span *ngIf="tieneHistoriaMedica(patient)" class="history-indicator">✓</span>
+                <span *ngIf="patient.tiene_consulta">{{ currentUser?.rol === 'medico' ? 'Historial' : 'Ver Historial' }}</span>
+                <span *ngIf="!patient.tiene_consulta">Agendar una Consulta</span>
+                <span *ngIf="patient.tiene_consulta" class="history-indicator">✓</span>
               </button>
               <button 
                 class="action-btn" 
@@ -530,6 +536,17 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
     .history-btn.has-history {
       background: #059669;
       border-left: 4px solid #34d399;
+    }
+
+    .agendar-btn {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .agendar-btn:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
     }
 
     .history-indicator {
@@ -1169,7 +1186,13 @@ export class PatientsComponent implements OnInit {
 
   // Método para gestionar la historia médica
   gestionarHistoriaMedica(patient: Patient): void {
-    // Navegar al componente de historia médica
     this.router.navigate(['/patients', patient.id, 'historia-medica']);
+  }
+
+  // Navegar a Nueva Consulta con el paciente preseleccionado
+  irANuevaConsulta(patient: Patient): void {
+    this.router.navigate(['/admin/consultas/nueva'], {
+      queryParams: { paciente_id: patient.id }
+    });
   }
 }

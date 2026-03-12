@@ -94,6 +94,11 @@ export const routes: Routes = [
     canActivate: [adminMedicoGuard]
   },
   {
+    path: 'admin/clinica-atencion',
+    loadComponent: () => import('./pages/admin/clinica-atencion/clinica-atencion.component').then(m => m.ClinicaAtencionComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'admin/consultas/nueva',
     loadComponent: () => import('./pages/admin/nueva-consulta/nueva-consulta.component').then(m => m.NuevaConsultaComponent),
     canActivate: [authGuard]

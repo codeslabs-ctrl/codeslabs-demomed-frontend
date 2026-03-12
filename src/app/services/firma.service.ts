@@ -6,7 +6,8 @@ import { environment } from '../../environments/environment';
 export interface FirmaResponse {
   success: boolean;
   data?: {
-    firma_digital: string;
+    firma_digital?: string;
+    sello_humedo?: string;
   };
   error?: {
     message: string;
@@ -41,5 +42,11 @@ export class FirmaService {
    */
   obtenerFirma(medicoId: number): Observable<FirmaResponse> {
     return this.http.get<FirmaResponse>(`${this.apiUrl}/${medicoId}`);
+  }
+
+  subirSello(medicoId: number, selloFile: File): Observable<FirmaResponse> {
+    const formData = new FormData();
+    formData.append('sello', selloFile);
+    return this.http.post<FirmaResponse>(`${this.apiUrl}/${medicoId}/sello/subir`, formData);
   }
 }

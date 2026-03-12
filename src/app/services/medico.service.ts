@@ -20,6 +20,7 @@ export interface Medico {
   fecha_creacion?: string;
   fecha_actualizacion?: string;
   firma_digital?: string;
+  sello_humedo?: string;
 }
 
 @Injectable({

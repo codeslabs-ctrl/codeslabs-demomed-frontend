@@ -12,6 +12,7 @@ import { AlertService } from '../../../services/alert.service';
 import { ConsultaFormData } from '../../../models/consulta.model';
 import { Patient } from '../../../models/patient.model';
 import { Medico } from '../../../services/medico.service';
+import { ClinicaAtencionService, ClinicaAtencion } from '../../../services/clinica-atencion.service';
 
 @Component({
   selector: 'app-nueva-consulta',
@@ -175,6 +176,18 @@ import { Medico } from '../../../services/medico.service';
                   <option value="normal">Normal</option>
                   <option value="alta">Alta</option>
                   <option value="urgente">Urgente</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="clinica_atencion_id">Clínica de atención</label>
+                <select 
+                  id="clinica_atencion_id" 
+                  class="form-control" 
+                  [(ngModel)]="consultaForm.clinica_atencion_id" 
+                  name="clinica_atencion_id">
+                  <option [ngValue]="null">Sin especificar</option>
+                  <option *ngFor="let c of clinicasAtencion" [ngValue]="c.id">{{ c.nombre_clinica }}</option>
                 </select>
               </div>
             </div>
@@ -517,12 +530,14 @@ export class NuevaConsultaComponent implements OnInit {
   medicosFiltrados: Medico[] = [];
   especialidades: Especialidad[] = [];
   selectedEspecialidadId: number = 0;
+  clinicasAtencion: ClinicaAtencion[] = [];
   isSubmitting = false;
   currentUser: any = null;
   pendingMedicoId: number | null = null; // Para médico preseleccionado desde queryParams
 
   constructor(
     private consultaService: ConsultaService,
+    private clinicaAtencionService: ClinicaAtencionService,
     private patientService: PatientService,
     private medicoService: MedicoService,
     private especialidadService: EspecialidadService,
@@ -569,6 +584,16 @@ export class NuevaConsultaComponent implements OnInit {
     this.loadPacientes();
     this.loadMedicos();
     this.loadEspecialidades();
+    this.loadClinicasAtencion();
+  }
+
+  loadClinicasAtencion(): void {
+    this.clinicaAtencionService.list(true).subscribe({
+      next: (res) => {
+        this.clinicasAtencion = res.data || [];
+      },
+      error: (err) => this.errorHandler.logError(err, 'cargar clínicas de atención')
+    });
   }
 
   loadPacientes(): void {

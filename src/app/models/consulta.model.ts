@@ -52,6 +52,7 @@ export interface ConsultaFormData {
   paciente_id: number;
   medico_id: number;
   medico_remitente_id?: number;
+  clinica_atencion_id?: number | null;
   motivo_consulta: string;
   tipo_consulta: 'primera_vez' | 'control' | 'seguimiento' | 'urgencia';
   fecha_pautada: string;

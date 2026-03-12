@@ -44,9 +44,6 @@ import { Patient } from '../../../models/patient.model';
           </p>
         </div>
         <div class="header-actions">
-          <button *ngIf="isMedico" class="btn btn-primary" (click)="nuevoControl()">
-            ➕ Nuevo Control
-          </button>
           <button class="btn btn-secondary" (click)="volver()">
             ← Volver al Historial
           </button>
@@ -201,10 +198,42 @@ import { Patient } from '../../../models/patient.model';
               </app-rich-text-editor>
             </div>
 
-            <!-- Los antecedentes del paciente se cargan al crear/editar el paciente, no en el control. Ver: Pacientes > [paciente] > Antecedentes -->
+            <!-- Solo cuando NO es primera vez: Tratamiento cumplido, Evaluaciones, luego Examen Físico y Plan -->
+            <ng-container *ngIf="!esPrimeraVez">
+              <div class="form-group">
+                <label for="tratamiento_cumplido">Tratamiento Cumplido</label>
+                <app-rich-text-editor
+                  [value]="historiaForm.tratamiento_cumplido"
+                  [placeholder]="'Describa el cumplimiento del tratamiento...'"
+                  [height]="90"
+                  (valueChange)="historiaForm.tratamiento_cumplido = $event"
+                  [class.readonly]="!esEditable">
+                </app-rich-text-editor>
+              </div>
+              <div class="form-group">
+                <label for="evaluacion_subjetiva">Evaluación Subjetiva</label>
+                <app-rich-text-editor
+                  [value]="historiaForm.evaluacion_subjetiva"
+                  [placeholder]="'Evaluación subjetiva del paciente...'"
+                  [height]="90"
+                  (valueChange)="historiaForm.evaluacion_subjetiva = $event"
+                  [class.readonly]="!esEditable">
+                </app-rich-text-editor>
+              </div>
+              <div class="form-group">
+                <label for="evaluacion_complementaria">Evaluación Complementaria</label>
+                <app-rich-text-editor
+                  [value]="historiaForm.evaluacion_complementaria"
+                  [placeholder]="'Evaluación complementaria...'"
+                  [height]="90"
+                  (valueChange)="historiaForm.evaluacion_complementaria = $event"
+                  [class.readonly]="!esEditable">
+                </app-rich-text-editor>
+              </div>
+            </ng-container>
 
             <div class="form-group">
-              <label for="examenes_medico">Examenes Fisicos *</label>
+              <label for="examenes_medico">Examen Físico *</label>
               <app-rich-text-editor
                 [value]="historiaForm.examenes_medico"
                 [placeholder]="'Ingrese los exámenes físicos del paciente...'"
@@ -215,7 +244,7 @@ import { Patient } from '../../../models/patient.model';
             </div>
 
             <div class="form-group">
-              <label for="examenes_paraclinicos">Examenes Paraclínicos</label>
+              <label for="examenes_paraclinicos">Exámenes Paraclínicos</label>
               <app-rich-text-editor
                 [value]="historiaForm.examenes_paraclinicos"
                 [placeholder]="'Ingrese los exámenes paraclínicos del paciente...'"
@@ -1198,12 +1227,21 @@ export class HistoriaMedicaComponent implements OnInit {
 
   historiaForm = {
     motivo_consulta: '',
+    tratamiento_cumplido: '',
+    evaluacion_subjetiva: '',
+    evaluacion_complementaria: '',
     examenes_medico: '',
     examenes_paraclinicos: '',
     diagnostico: '',
     plan: '',
     antecedentes_otros: ''
   };
+
+  /** True cuando el control es "primera vez" (no se muestran Tratamiento cumplido / Evaluaciones). */
+  get esPrimeraVez(): boolean {
+    const t = (this.historiaData?.titulo || '').toString().trim().toLowerCase();
+    return t === 'primera_vez';
+  }
 
   historiaOriginal: any = null;
 
@@ -1462,6 +1500,9 @@ export class HistoriaMedicaComponent implements OnInit {
       this.modoVisualizacion = 'edicion';
       this.historiaForm = { 
         motivo_consulta: '', 
+        tratamiento_cumplido: '',
+        evaluacion_subjetiva: '',
+        evaluacion_complementaria: '',
         examenes_medico: '',
         examenes_paraclinicos: '',
         diagnostico: '', 
@@ -1486,6 +1527,9 @@ export class HistoriaMedicaComponent implements OnInit {
           this.modoVisualizacion = this.esEditable ? 'edicion' : 'lectura';
           this.historiaForm = {
             motivo_consulta: this.historiaData!.motivo_consulta || '',
+            tratamiento_cumplido: (this.historiaData as any).tratamiento_cumplido || '',
+            evaluacion_subjetiva: (this.historiaData as any).evaluacion_subjetiva || '',
+            evaluacion_complementaria: (this.historiaData as any).evaluacion_complementaria || '',
             examenes_medico: this.historiaData!.examenes_medico || '',
             examenes_paraclinicos: (this.historiaData as any).examenes_paraclinicos || '',
             diagnostico: this.historiaData!.diagnostico || '',
@@ -1522,6 +1566,9 @@ export class HistoriaMedicaComponent implements OnInit {
               this.modoVisualizacion = this.esEditable ? 'edicion' : 'lectura';
               this.historiaForm = {
                 motivo_consulta: this.historiaData.motivo_consulta || '',
+                tratamiento_cumplido: (this.historiaData as any).tratamiento_cumplido || '',
+                evaluacion_subjetiva: (this.historiaData as any).evaluacion_subjetiva || '',
+                evaluacion_complementaria: (this.historiaData as any).evaluacion_complementaria || '',
                 examenes_medico: this.historiaData.examenes_medico || '',
                 examenes_paraclinicos: (this.historiaData as any).examenes_paraclinicos || '',
                 diagnostico: this.historiaData.diagnostico || '',
@@ -1673,6 +1720,9 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaData = response.data;
           this.historiaForm = {
             motivo_consulta: this.historiaData.motivo_consulta || '',
+            tratamiento_cumplido: (this.historiaData as any).tratamiento_cumplido || '',
+            evaluacion_subjetiva: (this.historiaData as any).evaluacion_subjetiva || '',
+            evaluacion_complementaria: (this.historiaData as any).evaluacion_complementaria || '',
             examenes_medico: this.historiaData.examenes_medico || '',
             examenes_paraclinicos: (this.historiaData as any).examenes_paraclinicos || '',
             diagnostico: this.historiaData.diagnostico || '',
@@ -1688,6 +1738,9 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaData = null;
           this.historiaForm = {
             motivo_consulta: '',
+            tratamiento_cumplido: '',
+            evaluacion_subjetiva: '',
+            evaluacion_complementaria: '',
             examenes_medico: '',
             examenes_paraclinicos: '',
             diagnostico: '',
@@ -1737,6 +1790,9 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaData = response.data;
           this.historiaForm = {
             motivo_consulta: this.historiaData.motivo_consulta || '',
+            tratamiento_cumplido: (this.historiaData as any).tratamiento_cumplido || '',
+            evaluacion_subjetiva: (this.historiaData as any).evaluacion_subjetiva || '',
+            evaluacion_complementaria: (this.historiaData as any).evaluacion_complementaria || '',
             examenes_medico: this.historiaData.examenes_medico || '',
             examenes_paraclinicos: (this.historiaData as any).examenes_paraclinicos || '',
             diagnostico: this.historiaData.diagnostico || '',
@@ -1752,6 +1808,9 @@ export class HistoriaMedicaComponent implements OnInit {
           this.historiaData = null;
           this.historiaForm = {
             motivo_consulta: '',
+            tratamiento_cumplido: '',
+            evaluacion_subjetiva: '',
+            evaluacion_complementaria: '',
             examenes_medico: '',
             examenes_paraclinicos: '',
             diagnostico: '',
@@ -1981,7 +2040,8 @@ export class HistoriaMedicaComponent implements OnInit {
       return;
     }
 
-    if (!examenesMedicoText) {
+    // Exámenes médicos solo obligatorios en consulta "primera_vez"
+    if (this.esPrimeraVez && !examenesMedicoText) {
       this.alertService.showWarning('Por favor, ingrese los exámenes médicos.');
       return;
     }
@@ -2018,6 +2078,9 @@ export class HistoriaMedicaComponent implements OnInit {
       paciente_id: this.consultaData.paciente_id,
       medico_id: medicoId,
       motivo_consulta: this.historiaForm.motivo_consulta,
+      tratamiento_cumplido: this.historiaForm.tratamiento_cumplido,
+      evaluacion_subjetiva: this.historiaForm.evaluacion_subjetiva,
+      evaluacion_complementaria: this.historiaForm.evaluacion_complementaria,
       examenes_medico: this.historiaForm.examenes_medico,
       examenes_paraclinicos: this.historiaForm.examenes_paraclinicos,
       diagnostico: this.historiaForm.diagnostico,
@@ -2053,6 +2116,9 @@ export class HistoriaMedicaComponent implements OnInit {
 
     const updateData = {
       motivo_consulta: this.historiaForm.motivo_consulta,
+      tratamiento_cumplido: this.historiaForm.tratamiento_cumplido,
+      evaluacion_subjetiva: this.historiaForm.evaluacion_subjetiva,
+      evaluacion_complementaria: this.historiaForm.evaluacion_complementaria,
       examenes_medico: this.historiaForm.examenes_medico,
       examenes_paraclinicos: this.historiaForm.examenes_paraclinicos,
       diagnostico: this.historiaForm.diagnostico,
@@ -2087,6 +2153,9 @@ export class HistoriaMedicaComponent implements OnInit {
     } else {
       this.historiaForm = {
         motivo_consulta: '',
+        tratamiento_cumplido: '',
+        evaluacion_subjetiva: '',
+        evaluacion_complementaria: '',
         examenes_medico: '',
         examenes_paraclinicos: '',
         diagnostico: '',
