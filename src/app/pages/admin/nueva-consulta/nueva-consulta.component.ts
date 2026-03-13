@@ -58,6 +58,7 @@ import { ClinicaAtencionService, ClinicaAtencion } from '../../../services/clini
                   class="form-control" 
                   [(ngModel)]="consultaForm.paciente_id" 
                   name="paciente_id"
+                  (ngModelChange)="onPacienteChange($event)"
                   required>
                   <option value="0">Seleccionar paciente</option>
                   <option *ngFor="let paciente of pacientes" [value]="paciente.id">
@@ -158,12 +159,14 @@ import { ClinicaAtencionService, ClinicaAtencion } from '../../../services/clini
                   id="tipo_consulta" 
                   class="form-control" 
                   [(ngModel)]="consultaForm.tipo_consulta" 
-                  name="tipo_consulta">
+                  name="tipo_consulta"
+                  [disabled]="esPrimeraConsultaPaciente">
                   <option value="primera_vez">Primera Vez</option>
                   <option value="control">Control</option>
                   <option value="seguimiento">Seguimiento</option>
                   <option value="urgencia">Urgencia</option>
                 </select>
+                <small *ngIf="esPrimeraConsultaPaciente" class="form-text text-muted">Es la primera consulta de este paciente; el tipo queda fijado en Primera Vez.</small>
               </div>
 
               <div class="form-group">
@@ -535,6 +538,14 @@ export class NuevaConsultaComponent implements OnInit {
   currentUser: any = null;
   pendingMedicoId: number | null = null; // Para médico preseleccionado desde queryParams
 
+  /** True si el paciente seleccionado no tiene consultas previas: tipo queda "Primera Vez" y el dropdown se deshabilita. */
+  get esPrimeraConsultaPaciente(): boolean {
+    const id = Number(this.consultaForm.paciente_id);
+    if (!id) return false;
+    const paciente = this.pacientes.find(p => Number(p.id) === id);
+    return !!paciente && !paciente.tiene_consulta;
+  }
+
   constructor(
     private consultaService: ConsultaService,
     private clinicaAtencionService: ClinicaAtencionService,
@@ -607,6 +618,7 @@ export class NuevaConsultaComponent implements OnInit {
         if (this.consultaForm.paciente_id && this.consultaForm.paciente_id !== 0) {
           console.log('🔍 Verificando paciente preseleccionado después de cargar pacientes...');
           this.getPreselectedPatientName();
+          this.onPacienteChange(this.consultaForm.paciente_id);
         }
       },
       error: (error: any) => {
@@ -685,6 +697,15 @@ export class NuevaConsultaComponent implements OnInit {
     if (!this.currentUser?.medico_id) return 'Dr.';
     const medico = this.medicos.find(m => m.id === this.currentUser!.medico_id);
     return medico?.sexo === 'Femenino' ? 'Dra.' : 'Dr.';
+  }
+
+  onPacienteChange(pacienteId: number | string): void {
+    const id = typeof pacienteId === 'string' ? parseInt(pacienteId, 10) : pacienteId;
+    if (!id) return;
+    const paciente = this.pacientes.find(p => Number(p.id) === id);
+    if (paciente && !paciente.tiene_consulta) {
+      this.consultaForm.tipo_consulta = 'primera_vez';
+    }
   }
 
   getPreselectedPatientName(): string {
