@@ -161,7 +161,7 @@ import { ClinicaAtencionService, ClinicaAtencion } from '../../../services/clini
                   [(ngModel)]="consultaForm.tipo_consulta" 
                   name="tipo_consulta"
                   [disabled]="esPrimeraConsultaPaciente">
-                  <option value="primera_vez">Primera Vez</option>
+                  <option *ngIf="!pacienteYaTieneConsultas" value="primera_vez">Primera Vez</option>
                   <option value="control">Control</option>
                   <option value="seguimiento">Seguimiento</option>
                   <option value="urgencia">Urgencia</option>
@@ -546,6 +546,14 @@ export class NuevaConsultaComponent implements OnInit {
     return !!paciente && !paciente.tiene_consulta;
   }
 
+  /** True si el paciente seleccionado ya tiene consultas: la opción "Primera Vez" no se muestra. */
+  get pacienteYaTieneConsultas(): boolean {
+    const id = Number(this.consultaForm.paciente_id);
+    if (!id) return false;
+    const paciente = this.pacientes.find(p => Number(p.id) === id);
+    return !!paciente && !!paciente.tiene_consulta;
+  }
+
   constructor(
     private consultaService: ConsultaService,
     private clinicaAtencionService: ClinicaAtencionService,
@@ -705,6 +713,8 @@ export class NuevaConsultaComponent implements OnInit {
     const paciente = this.pacientes.find(p => Number(p.id) === id);
     if (paciente && !paciente.tiene_consulta) {
       this.consultaForm.tipo_consulta = 'primera_vez';
+    } else if (paciente && paciente.tiene_consulta && this.consultaForm.tipo_consulta === 'primera_vez') {
+      this.consultaForm.tipo_consulta = 'control';
     }
   }
 
