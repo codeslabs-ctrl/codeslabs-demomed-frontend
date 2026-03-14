@@ -22,7 +22,8 @@ import { RichTextEditorComponent } from '../../components/rich-text-editor/rich-
         <h1>Antecedentes del paciente</h1>
         <p class="patient-name" *ngIf="patient">{{ patient.nombres }} {{ patient.apellidos }}</p>
         <div class="header-actions">
-          <a [routerLink]="['/patients']" class="btn btn-secondary">← Gestión de Pacientes</a>
+          <button *ngIf="returnUrl" type="button" class="btn btn-secondary" (click)="volver()">← Volver</button>
+          <a *ngIf="!returnUrl" [routerLink]="['/patients']" class="btn btn-secondary">← Gestión de Pacientes</a>
           <a [routerLink]="['/patients', pacienteId, 'edit']" class="btn btn-outline">Editar datos</a>
         </div>
       </div>
@@ -151,6 +152,8 @@ export class PatientAntecedentesComponent implements OnInit {
   form: Record<number, { presente: boolean; detalle: string }> = {};
   antecedentesOtros = '';
   private cirugiaCache: Record<number, { key: string; list: { tipo_cirugia: string; ano: string }[] }> = {};
+  /** Si se llegó desde otra página (ej. historia médica), volver allí tras guardar/cancelar */
+  returnUrl: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -164,6 +167,7 @@ export class PatientAntecedentesComponent implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
+    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
     if (id) {
       this.pacienteId = +id;
       this.loadPatient();
@@ -287,7 +291,12 @@ export class PatientAntecedentesComponent implements OnInit {
     this.antecedenteService.saveByPacienteId(this.pacienteId, items, this.antecedentesOtros || null).subscribe({
       next: () => {
         this.saving = false;
-        this.alertService.showSuccess('Antecedentes guardados correctamente.', { navigateTo: '/patients' });
+        this.alertService.showSuccess('Antecedentes guardados correctamente.');
+        if (this.returnUrl && this.returnUrl.startsWith('/') && !this.returnUrl.startsWith('//')) {
+          this.router.navigateByUrl(this.returnUrl);
+        } else {
+          this.router.navigate(['/patients']);
+        }
       },
       error: (err) => {
         this.saving = false;
@@ -298,6 +307,10 @@ export class PatientAntecedentesComponent implements OnInit {
   }
 
   volver(): void {
-    this.router.navigate(['/patients']);
+    if (this.returnUrl && this.returnUrl.startsWith('/') && !this.returnUrl.startsWith('//')) {
+      this.router.navigateByUrl(this.returnUrl);
+    } else {
+      this.router.navigate(['/patients']);
+    }
   }
 }

@@ -89,21 +89,25 @@ import { Patient } from '../../../models/patient.model';
               </div>
             </div>
           </div>
-          <!-- Antecedentes del paciente (solo lectura, colapsable) -->
+          <!-- Antecedentes del paciente: Ver (si ya tiene) o Añadir (si no tiene) -->
           <div class="antecedentes-paciente-block" *ngIf="consultaData?.paciente_id">
-            <button type="button" class="antecedentes-paciente-toggle" (click)="antecedentesPacienteExpanded = !antecedentesPacienteExpanded">
-              {{ antecedentesPacienteExpanded ? '▲ Ocultar antecedentes' : '▼ Ver antecedentes del paciente' }}
+            <!-- Cargando: mostrar estado de carga -->
+            <div *ngIf="antecedentesPacienteLoading" class="antecedentes-paciente-loading-inline">
+              <i class="fas fa-spinner fa-spin"></i> Cargando antecedentes...
+            </div>
+            <!-- Paciente SIN antecedentes cargados: botón para añadirlos -->
+            <button *ngIf="!antecedentesPacienteLoading && !tieneAntecedentesPacienteParaMostrar()"
+              type="button" class="btn btn-sm btn-primary antecedentes-paciente-add"
+              (click)="irAAnadirAntecedentes()">
+              <i class="fas fa-plus"></i> Añadir antecedentes del paciente
             </button>
-            <div class="antecedentes-paciente-content" *ngIf="antecedentesPacienteExpanded">
-              <div *ngIf="antecedentesPacienteLoading" class="antecedentes-paciente-loading">
-                <i class="fas fa-spinner fa-spin"></i> Cargando antecedentes...
-              </div>
-              <ng-container *ngIf="!antecedentesPacienteLoading && antecedentesPacienteData">
-                <div *ngIf="!tieneAntecedentesPacienteParaMostrar()" class="antecedentes-paciente-empty">
-                  Sin antecedentes registrados.
-                  <a [routerLink]="['/patients', consultaData!.paciente_id, 'antecedentes']" target="_blank">Editar antecedentes</a>
-                </div>
-                <ng-container *ngIf="tieneAntecedentesPacienteParaMostrar()">
+            <!-- Paciente CON antecedentes: toggle Ver / Ocultar -->
+            <ng-container *ngIf="!antecedentesPacienteLoading && tieneAntecedentesPacienteParaMostrar()">
+              <button type="button" class="antecedentes-paciente-toggle" (click)="antecedentesPacienteExpanded = !antecedentesPacienteExpanded">
+                {{ antecedentesPacienteExpanded ? '▲ Ocultar antecedentes' : '▼ Ver antecedentes del paciente' }}
+              </button>
+              <div class="antecedentes-paciente-content" *ngIf="antecedentesPacienteExpanded">
+                <ng-container *ngIf="antecedentesPacienteData">
                   <div class="antecedentes-paciente-cat" *ngIf="getAntecedentesPresentesCategoria('medicos').length">
                     <strong>Médicos:</strong>
                     <ul>
@@ -134,8 +138,8 @@ import { Patient } from '../../../models/patient.model';
                   </div>
                   <a [routerLink]="['/patients', consultaData!.paciente_id, 'antecedentes']" target="_blank" class="antecedentes-paciente-edit-link">Editar antecedentes</a>
                 </ng-container>
-              </ng-container>
-            </div>
+              </div>
+            </ng-container>
           </div>
         </div>
 
@@ -643,6 +647,14 @@ import { Patient } from '../../../models/patient.model';
     }
     .antecedentes-paciente-toggle:hover {
       text-decoration: underline;
+    }
+    .antecedentes-paciente-loading-inline {
+      color: #64748b;
+      font-size: 0.9rem;
+      padding: 0.25rem 0;
+    }
+    .antecedentes-paciente-add {
+      margin-top: 0.25rem;
     }
     .antecedentes-paciente-content {
       margin-top: 0.75rem;
@@ -1867,6 +1879,13 @@ export class HistoriaMedicaComponent implements OnInit {
       },
       error: () => { this.antecedentesPacienteLoading = false; }
     });
+  }
+
+  /** Navega a la página de antecedentes del paciente para añadirlos; tras guardar/cancelar vuelve aquí. */
+  irAAnadirAntecedentes(): void {
+    if (!this.consultaData?.paciente_id) return;
+    const returnUrl = this.router.url;
+    this.router.navigate(['/patients', this.consultaData.paciente_id, 'antecedentes'], { queryParams: { returnUrl } });
   }
 
   getTipoNombre(tipoId: number): string {
