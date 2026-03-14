@@ -155,6 +155,10 @@
   font-weight: 400;
 }
 
+.incluir-antecedentes-add {
+  margin-top: 0.25rem;
+}
+
 /* Controles del paciente (checkboxes o dropdown) */
 .incluir-controles {
   margin-top: 0.75rem;

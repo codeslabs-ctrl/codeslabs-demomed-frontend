@@ -87,8 +87,10 @@ export class InformeMedicoFormComponent implements OnInit {
   get titulo() { return this.informeForm?.get('titulo'); }
   get tipo_informe() { return this.informeForm?.get('tipo_informe'); }
   get fecha_emision() { return this.informeForm?.get('fecha_emision'); }
+  get clinica_atencion_id() { return this.informeForm?.get('clinica_atencion_id'); }
   get observaciones() { return this.informeForm?.get('observaciones'); }
-  get tieneAntecedentes(): boolean { return !!this.historicoParaSecciones?.id; }
+  /** True si el paciente tiene antecedentes cargados (para mostrar u ocultar el check). */
+  tieneAntecedentes = false;
   get tieneHistorialConsultas(): boolean {
     const list = this.datosContextuales?.historialConsultas;
     return !!list && Array.isArray(list) && list.length > 0;
@@ -148,7 +150,7 @@ export class InformeMedicoFormComponent implements OnInit {
       paciente_id: ['', Validators.required],
       medico_id: ['', Validators.required],
       fecha_emision: [new Date().toISOString().split('T')[0], Validators.required],
-      clinica_atencion_id: [null as number | null],
+      clinica_atencion_id: [null as number | null, Validators.required],
       observaciones: ['', Validators.maxLength(1000)]
     });
   }
@@ -307,7 +309,7 @@ export class InformeMedicoFormComponent implements OnInit {
       paciente_id: this.informe.paciente_id,
       medico_id: this.informe.medico_id,
       fecha_emision: this.informe.fecha_emision.split('T')[0],
-      clinica_atencion_id: (this.informe as any).clinica_atencion_id ?? null,
+      clinica_atencion_id: this.informe.clinica_atencion_id ?? null,
       observaciones: this.informe.observaciones
     });
 
@@ -344,7 +346,17 @@ export class InformeMedicoFormComponent implements OnInit {
       console.error('❌ Formulario no inicializado');
       return;
     }
-    
+
+    const clinicaId = this.informeForm.get('clinica_atencion_id')?.value;
+    if (clinicaId == null || clinicaId === '') {
+      this.error = 'Debe seleccionar la clínica de atención.';
+      this.marcarCamposComoTocados();
+      this.cdr.detectChanges();
+      this.alertService.showError('Debe seleccionar la clínica de atención.');
+      return;
+    }
+    this.error = '';
+
     if (this.informeForm.invalid) {
       console.log('❌ Formulario inválido');
       this.marcarCamposComoTocados();
@@ -504,8 +516,8 @@ export class InformeMedicoFormComponent implements OnInit {
     if (puedeEditarContenido) {
       if (datos.titulo !== undefined && datos.titulo !== null) informeRequest.titulo = String(datos.titulo);
       if (datos.tipo_informe !== undefined && datos.tipo_informe !== null) informeRequest.tipo_informe = String(datos.tipo_informe);
-      if (datos.clinica_atencion_id !== undefined) informeRequest.clinica_atencion_id = datos.clinica_atencion_id;
     }
+    if (datos.clinica_atencion_id !== undefined) informeRequest.clinica_atencion_id = datos.clinica_atencion_id ?? null;
 
     console.log('[actualizarInforme] Enviando PUT keys:', Object.keys(informeRequest), 'contenido length:', informeRequest.contenido?.length ?? 0);
 
@@ -565,6 +577,7 @@ export class InformeMedicoFormComponent implements OnInit {
       'medico_id': 'Médico',
       'estado': 'Estado',
       'fecha_emision': 'Fecha de Emisión',
+      'clinica_atencion_id': 'Clínica de atención',
       'observaciones': 'Observaciones'
     };
     return nombres[campo] || campo;
@@ -616,6 +629,17 @@ export class InformeMedicoFormComponent implements OnInit {
           } catch {
             this.historicoParaSecciones = null;
           }
+          try {
+            const antRes = await firstValueFrom(this.historicoAntecedenteService.getByPacienteId(parseInt(pacienteId)));
+            const data = (antRes?.success && antRes?.data) ? antRes.data : null;
+            const lista = data && typeof data === 'object' && (data as any).antecedentes ? (data as any).antecedentes : [];
+            const otros = data && typeof data === 'object' && (data as any).antecedentes_otros != null ? String((data as any).antecedentes_otros).trim() : '';
+            this.tieneAntecedentes = (lista.some((a: any) => !!a.presente)) || otros.length > 0;
+            if (!this.tieneAntecedentes) this.incluirAntecedentes = false;
+          } catch {
+            this.tieneAntecedentes = false;
+            this.incluirAntecedentes = false;
+          }
           this.cdr.detectChanges();
         }
       } catch (error) {
@@ -624,6 +648,7 @@ export class InformeMedicoFormComponent implements OnInit {
         this.sugerenciasDisponibles = false;
         this.historialDisponible = false;
         this.historicoParaSecciones = null;
+        this.tieneAntecedentes = false;
         this.controlesSeleccionadosIds = [];
         this.controlIdParaAnadir = null;
       }
@@ -633,6 +658,7 @@ export class InformeMedicoFormComponent implements OnInit {
       this.sugerenciasDisponibles = false;
       this.historialDisponible = false;
       this.historicoParaSecciones = null;
+      this.tieneAntecedentes = false;
       this.controlesSeleccionadosIds = [];
       this.controlIdParaAnadir = null;
     }
@@ -643,6 +669,14 @@ export class InformeMedicoFormComponent implements OnInit {
       (this.incluirAntecedentes && this.tieneAntecedentes) ||
       this.controlesSeleccionadosIds.length > 0
     );
+  }
+
+  /** Navega a la página de antecedentes del paciente para añadirlos; tras guardar/cancelar vuelve aquí (nuevo o editar informe). */
+  irAAnadirAntecedentes(): void {
+    const pacienteId = this.informeForm.get('paciente_id')?.value;
+    if (!pacienteId) return;
+    const returnUrl = this.router.url;
+    this.router.navigate(['/patients', pacienteId, 'antecedentes'], { queryParams: { returnUrl } });
   }
 
   isControlSeleccionado(id: number): boolean {

@@ -1536,6 +1536,7 @@ export class HistoriaMedicaComponent implements OnInit {
           this.mode = 'edit';
           const medicoId = this.currentUser?.medico_id;
           this.esEditable = this.isMedico && !!medicoId && this.historiaData!.medico_id === medicoId;
+          if (this.esEditable && !this.esConsultaPasadaOHoy(this.historiaData)) this.esEditable = false;
           this.modoVisualizacion = this.esEditable ? 'edicion' : 'lectura';
           this.historiaForm = {
             motivo_consulta: this.historiaData!.motivo_consulta || '',
@@ -1575,6 +1576,7 @@ export class HistoriaMedicaComponent implements OnInit {
               this.mode = 'edit';
               const medicoId = this.currentUser?.medico_id;
               this.esEditable = this.isMedico && !!medicoId && this.historiaData.medico_id === medicoId;
+              if (this.esEditable && !this.esConsultaPasadaOHoy(this.historiaData)) this.esEditable = false;
               this.modoVisualizacion = this.esEditable ? 'edicion' : 'lectura';
               this.historiaForm = {
                 motivo_consulta: this.historiaData.motivo_consulta || '',
@@ -1800,6 +1802,8 @@ export class HistoriaMedicaComponent implements OnInit {
         if (response.success && response.data) {
           this.mode = 'edit';
           this.historiaData = response.data;
+          if (this.esEditable && !this.esConsultaPasadaOHoy(this.historiaData)) this.esEditable = false;
+          this.modoVisualizacion = this.esEditable ? 'edicion' : 'lectura';
           this.historiaForm = {
             motivo_consulta: this.historiaData.motivo_consulta || '',
             tratamiento_cumplido: (this.historiaData as any).tratamiento_cumplido || '',
@@ -2182,6 +2186,17 @@ export class HistoriaMedicaComponent implements OnInit {
         antecedentes_otros: ''
       };
     }
+  }
+
+  /** Consulta ya ocurrió (hoy o pasada). No permitir editar controles de consultas futuras. */
+  private esConsultaPasadaOHoy(data: { fecha_consulta?: string } | null): boolean {
+    if (!data?.fecha_consulta) return false;
+    const d = new Date(data.fecha_consulta);
+    if (isNaN(d.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime() <= today.getTime();
   }
 
   get pageTitle(): string {

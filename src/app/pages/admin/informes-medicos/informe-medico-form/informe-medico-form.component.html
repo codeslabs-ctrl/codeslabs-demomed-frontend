@@ -131,12 +131,15 @@
             <!-- Clínica de atención -->
             <div class="form-group">
               <label class="form-label">
-                <i class="fas fa-building"></i> Clínica de atención
+                <i class="fas fa-building"></i> Clínica de atención *
               </label>
               <select class="form-input" formControlName="clinica_atencion_id">
-                <option [ngValue]="null">Sin especificar</option>
+                <option [ngValue]="null">Seleccionar sede</option>
                 <option *ngFor="let c of clinicasAtencion" [ngValue]="c.id">{{ c.nombre_clinica }}</option>
               </select>
+              <div *ngIf="clinica_atencion_id && clinica_atencion_id.invalid && clinica_atencion_id.touched" class="error-message">
+                {{ obtenerErrorCampo('clinica_atencion_id') }}
+              </div>
             </div>
           </div>
         </div>
@@ -153,11 +156,15 @@
         </div>
         <div class="section-content">
           <div class="incluir-checks">
-            <label class="incluir-check" [class.disabled]="!tieneAntecedentes">
-              <input type="checkbox" [(ngModel)]="incluirAntecedentes" [ngModelOptions]="{standalone: true}" [disabled]="!tieneAntecedentes">
+            <label class="incluir-check" *ngIf="tieneAntecedentes">
+              <input type="checkbox" [(ngModel)]="incluirAntecedentes" [ngModelOptions]="{standalone: true}">
               <span>Antecedentes del paciente</span>
-              <span *ngIf="!tieneAntecedentes" class="check-hint">(sin datos)</span>
             </label>
+            <div class="incluir-antecedentes-add" *ngIf="!tieneAntecedentes && paciente_id?.value">
+              <button type="button" class="btn btn-sm btn-outline-primary" (click)="irAAnadirAntecedentes()">
+                <i class="fas fa-plus"></i> Añadir antecedentes del paciente
+              </button>
+            </div>
             <!-- Controles del paciente: checkboxes si hay 5 o menos, dropdown + lista si hay más -->
             <div class="incluir-controles" *ngIf="paciente_id?.value && medico_id?.value && tieneHistorialConsultas">
               <div class="incluir-controles-label" *ngIf="usarCheckboxesControles">
@@ -392,7 +399,7 @@
       <!-- Botones de Acción -->
       <div class="form-actions">
         <div class="action-buttons">
-          <button type="submit" class="btn btn-primary" [disabled]="guardando || informeForm.invalid">
+          <button type="submit" class="btn btn-primary" [disabled]="guardando">
             <i class="fas fa-save" *ngIf="!guardando"></i>
             <span class="spinner" *ngIf="guardando"></span>
             {{ guardando ? 'Guardando...' : (esEdicion ? 'Actualizar Informe' : 'Crear Informe') }}

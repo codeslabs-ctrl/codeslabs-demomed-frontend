@@ -9,6 +9,7 @@ import { DateService } from '../../../services/date.service';
 import { AuthService } from '../../../services/auth.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
 import { AlertService } from '../../../services/alert.service';
+import { SnackbarService } from '../../../services/snackbar.service';
 import { ServiciosService, FinalizarConsultaRequest } from '../../../services/servicios.service';
 import { ConsultaWithDetails, ConsultaFilters } from '../../../models/consulta.model';
 import { Medico } from '../../../services/medico.service';
@@ -1612,7 +1613,8 @@ export class ConsultasComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private http: HttpClient,
     private errorHandler: ErrorHandlerService,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private snackbarService: SnackbarService
   ) {}
 
   // Propiedades para modales
@@ -1689,7 +1691,10 @@ export class ConsultasComponent implements OnInit {
         error: (error) => {
           this.errorHandler.logError(error, 'cargar consultas');
           this.loading = false;
-          this.alertService.showError(this.errorHandler.getSafeErrorMessage(error, 'cargar consultas'));
+          // No mostrar modal de error: usar snackbar (toast) que se cierra solo y no bloquea
+          if (error?.status !== 0) {
+            this.snackbarService.showError(this.errorHandler.getSafeErrorMessage(error, 'cargar consultas'), 6000);
+          }
         }
       });
   }

@@ -89,11 +89,11 @@ import { ErrorHandlerService } from '../../../services/error-handler.service';
                   <td>{{ getMedicoTitulo(h) }} {{ h.medico_nombre }} {{ h.medico_apellidos }}</td>
                   <td>{{ h.especialidad_nombre || '-' }}</td>
                   <td>
-                    <button type="button" class="btn btn-sm"
-                            [class.btn-primary]="puedeEditar(h)"
-                            [class.btn-outline]="!puedeEditar(h)"
+                    <button type="button" class="btn btn-sm btn-primary"
+                            [disabled]="!puedeEditar(h)"
+                            [title]="!puedeEditar(h) ? (esConsultaPasadaOHoy(h) ? 'Solo el médico del control puede editar' : 'No puede editar una consulta futura (aún no atendida)') : ''"
                             (click)="abrirControl(h)">
-                      {{ puedeEditar(h) ? 'Editar' : 'Ver' }}
+                      Editar
                     </button>
                   </td>
                 </tr>
@@ -179,10 +179,25 @@ export class HistoriaMedicaListComponent implements OnInit {
     });
   }
 
+  /**
+   * La consulta ya ocurrió (fecha hoy o pasada). No se permite editar historial de consultas futuras.
+   */
+  esConsultaPasadaOHoy(h: HistoricoWithDetails): boolean {
+    if (!h.fecha_consulta) return false;
+    const d = new Date(h.fecha_consulta);
+    if (isNaN(d.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime() <= today.getTime();
+  }
+
   puedeEditar(h: HistoricoWithDetails): boolean {
     if (!this.isMedico) return false;
     const medicoId = this.currentUser?.medico_id;
-    return !!medicoId && h.medico_id === medicoId;
+    if (!medicoId || h.medico_id !== medicoId) return false;
+    // No permitir editar historial de una consulta futura (aún no atendida)
+    return this.esConsultaPasadaOHoy(h);
   }
 
   abrirControl(h: HistoricoWithDetails): void {
