@@ -770,18 +770,15 @@ export class NuevaConsultaComponent implements OnInit {
       return;
     }
     
-    // Validar que la fecha sea futura (manejo de zona horaria)
-    const fechaConsulta = new Date(this.consultaForm.fecha_pautada + 'T00:00:00.000Z'); // Forzar UTC
-    const fechaActual = new Date();
-    fechaActual.setUTCHours(0, 0, 0, 0); // Usar UTC para evitar problemas de zona horaria
-    
-    // Verificar que la fecha sea válida
+    // Validar que la fecha sea futura según zona horaria de Venezuela (America/Caracas)
+    const fechaConsulta = new Date(this.consultaForm.fecha_pautada + 'T12:00:00.000Z');
     if (isNaN(fechaConsulta.getTime())) {
       this.alertService.showWarning('Fecha inválida. Por favor, seleccione una fecha válida.');
       return;
     }
-    
-    if (fechaConsulta < fechaActual) {
+    const hoyVenezuela = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' }); // YYYY-MM-DD
+    const fechaPautada = String(this.consultaForm.fecha_pautada ?? '').slice(0, 10);
+    if (fechaPautada < hoyVenezuela) {
       this.alertService.showWarning('Fecha inválida. La fecha de la consulta debe ser futura (posterior a hoy).');
       return;
     }
