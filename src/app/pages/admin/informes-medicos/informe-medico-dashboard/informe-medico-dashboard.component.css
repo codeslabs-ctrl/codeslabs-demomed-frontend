@@ -290,6 +290,22 @@
   box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
 }
 
+.delete-btn {
+  background-color: #dc2626;
+  color: white;
+}
+
+.delete-btn:hover:not(:disabled) {
+  background-color: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+}
+
+.delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Empty State - igual que Pacientes */
 .empty-state {
   text-align: center;

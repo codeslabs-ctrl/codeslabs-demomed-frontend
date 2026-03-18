@@ -192,7 +192,7 @@ import { Patient } from '../../../models/patient.model';
             <h3>Historia Médica</h3>
             
             <div class="form-group">
-              <label for="motivo_consulta">Motivo de Consulta *</label>
+              <label for="motivo_consulta">Resumen Clínico *</label>
               <app-rich-text-editor
                 [value]="historiaForm.motivo_consulta"
                 [placeholder]="'Describa el motivo de la consulta...'"
@@ -452,7 +452,7 @@ import { Patient } from '../../../models/patient.model';
             <label>Vista previa de la plantilla:</label>
             <div class="plantilla-preview">
               <div class="preview-item" *ngIf="plantillaForm.motivo_consulta_template">
-                <strong>Motivo de Consulta:</strong>
+                <strong>Resumen Clínico:</strong>
                 <div [innerHTML]="plantillaForm.motivo_consulta_template"></div>
               </div>
               <div class="preview-item" *ngIf="plantillaForm.examenes_medico_template">
