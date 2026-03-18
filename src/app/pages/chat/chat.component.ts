@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -39,7 +39,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   constructor(
     public chatService: ChatService,
     public authService: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -103,6 +104,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.shouldScrollToBottom = true;
       if (this.ttsEnabled) this.speak(reply);
     }
+    this.cdr.detectChanges();
   }
 
   goTo(navigateTo: string): void {
@@ -163,11 +165,13 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       if (!base64) return;
       this.loading = true;
       this.error = null;
+      this.cdr.detectChanges();
       this.chatService.sendAudio(base64, mimeType, this.conversationId ?? undefined).subscribe({
         next: (res) => this.handleResponse(res),
         error: () => {
           this.loading = false;
           this.error = 'No se pudo enviar el audio. Inténtalo de nuevo.';
+          this.cdr.detectChanges();
         }
       });
     };
