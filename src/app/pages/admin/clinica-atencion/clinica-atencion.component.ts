@@ -20,7 +20,7 @@ export class ClinicaAtencionComponent implements OnInit {
   saving = false;
   errorMessage = '';
   confirmDelete: ClinicaAtencion | null = null;
-  item: Partial<ClinicaAtencion> = { nombre_clinica: '', direccion_clinica: '', logo_path: '', activo: true };
+  item: Partial<ClinicaAtencion> = { nombre_clinica: '', direccion_clinica: '', logo_path: '', logo_path_recipe: '', activo: true };
 
   constructor(
     private service: ClinicaAtencionService,
@@ -48,7 +48,7 @@ export class ClinicaAtencionComponent implements OnInit {
 
   openAdd(): void {
     this.isEditing = false;
-    this.item = { nombre_clinica: '', direccion_clinica: null, logo_path: null, activo: true };
+    this.item = { nombre_clinica: '', direccion_clinica: null, logo_path: null, logo_path_recipe: null, activo: true };
     this.errorMessage = '';
     this.showModal = true;
   }
@@ -78,6 +78,7 @@ export class ClinicaAtencionComponent implements OnInit {
       nombre_clinica: name,
       direccion_clinica: (this.item['direccion_clinica'] as string) || null,
       logo_path: (this.item['logo_path'] as string) || null,
+      logo_path_recipe: (this.item['logo_path_recipe'] as string) || null,
       activo: this.item['activo'] !== false
     };
     if (this.isEditing && this.item['id']) {

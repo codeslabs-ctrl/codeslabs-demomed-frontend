@@ -25,7 +25,9 @@ export class CrearMedicoComponent implements OnInit {
     especialidad_id: 0,
     sexo: null,
     mpps: '',
-    cm: ''
+    cm: '',
+    titulacion: '',
+    contacto_redes: ''
   };
 
   especialidades: Especialidad[] = [];
@@ -100,7 +102,9 @@ export class CrearMedicoComponent implements OnInit {
         telefono: this.medicoData.telefono!,
         especialidad_id: Number(this.medicoData.especialidad_id),
         mpps: this.medicoData.mpps || undefined,
-        cm: this.medicoData.cm || undefined
+        cm: this.medicoData.cm || undefined,
+        titulacion: this.medicoData.titulacion || undefined,
+        contacto_redes: this.medicoData.contacto_redes || undefined
       };
       
       this.medicoService.createMedico(medicoDataToSend).subscribe({

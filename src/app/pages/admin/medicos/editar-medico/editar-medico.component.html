@@ -130,6 +130,28 @@
             </option>
           </select>
         </div>
+        <div class="form-group form-group-full">
+          <label class="form-label">Titulación / especialidades</label>
+          <textarea
+            class="form-input"
+            [(ngModel)]="medicoData.titulacion"
+            name="titulacion"
+            rows="2"
+            [disabled]="saving"
+            placeholder="Ej: MÉDICO CIRUJANO - UCV RADIONCÓLOGO & MÉDICO NUCLEAR"></textarea>
+          <small class="form-text text-muted">Opcional. Para récipe e informes.</small>
+        </div>
+        <div class="form-group form-group-full">
+          <label class="form-label">Contacto redes</label>
+          <input
+            type="text"
+            class="form-input"
+            [(ngModel)]="medicoData.contacto_redes"
+            name="contacto_redes"
+            [disabled]="saving"
+            placeholder="Ej: @usuario | WhatsApp +58 414-101.26.40">
+          <small class="form-text text-muted">Opcional. WhatsApp, Instagram, etc. para récipe e informes.</small>
+        </div>
       </div>
     </div>
 

@@ -9,6 +9,8 @@ export interface ClinicaAtencion {
   nombre_clinica: string;
   direccion_clinica: string | null;
   logo_path: string | null;
+  /** Logo para encabezado récipe PDF (imagen ya en tamaño adecuado); si vacío se usa logo_path con escala suave */
+  logo_path_recipe: string | null;
   activo: boolean;
   fecha_creacion?: string;
   fecha_actualizacion?: string;

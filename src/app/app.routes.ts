@@ -4,6 +4,7 @@ import { adminMedicoGuard } from './guards/admin-medico.guard';
 import { adminOnlyGuard } from './guards/admin-only.guard';
 import { FinanzasGuard } from './guards/finanzas.guard';
 import { roleRedirectGuard } from './guards/role-redirect.guard';
+import { medicoOnlyGuard } from './guards/medico-only.guard';
 
 export const routes: Routes = [
   {
@@ -72,6 +73,11 @@ export const routes: Routes = [
     path: 'admin/medicos/editar/:id',
     loadComponent: () => import('./pages/admin/medicos/editar-medico/editar-medico.component').then(m => m.EditarMedicoComponent),
     canActivate: [authGuard]
+  },
+  {
+    path: 'medicos/recipe',
+    loadComponent: () => import('./pages/medicos/receta-medico/receta-medico.component').then(m => m.RecetaMedicoComponent),
+    canActivate: [medicoOnlyGuard]
   },
   {
     path: 'admin/especialidades',

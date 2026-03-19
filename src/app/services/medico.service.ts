@@ -17,6 +17,10 @@ export interface Medico {
   sexo?: string | null;
   mpps?: string;
   cm?: string;
+  /** Texto libre: especialidades/titulación para récipe e informes */
+  titulacion?: string | null;
+  /** Texto libre: WhatsApp, Instagram, etc. para récipe e informes */
+  contacto_redes?: string | null;
   fecha_creacion?: string;
   fecha_actualizacion?: string;
   firma_digital?: string;

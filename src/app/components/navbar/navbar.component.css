@@ -51,40 +51,57 @@
   color: #7A9CC6;
 }
 
-/* Accesos inmediatos en el navbar */
+/* Accesos inmediatos: columna central crece; el bloque de pestañas solo ocupa el ancho del contenido */
 .navbar-quick-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  flex: 1;
   justify-content: center;
-  padding: 0 1rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0 0.5rem;
+}
+
+.navbar-quick-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.25rem;
+  width: max-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: #f1f5f9;
+  border-radius: 10px 10px 0 0;
+  padding: 0.2rem 0.35rem 0;
+  border: 1px solid #e2e8f0;
+  border-bottom: none;
 }
 
 .navbar-quick-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
-  color: #fff;
+  gap: 0.25rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px 8px 0 0;
+  background: #e2e8f0;
+  color: #334155;
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.35);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  border: 1px solid #cbd5e1;
+  border-bottom: none;
+  box-shadow: none;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .navbar-quick-btn:hover {
-  background: linear-gradient(135deg, #1E88E5 0%, #1976D2 100%);
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.45);
-  transform: translateY(-1px);
-  color: #fff;
+  background: #fff;
+  color: #0f172a;
+  transform: none;
+  box-shadow: 0 -1px 0 #fff inset;
 }
 
 .navbar-quick-icon {
-  font-size: 1rem;
+  font-size: 0.85rem;
   line-height: 1;
 }
 
@@ -97,7 +114,7 @@
     display: none;
   }
   .navbar-quick-btn {
-    padding: 0.5rem 0.75rem;
+    padding: 0.35rem 0.5rem;
   }
 }
 
