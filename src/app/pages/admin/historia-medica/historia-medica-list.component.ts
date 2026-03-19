@@ -7,6 +7,7 @@ import { MedicoService } from '../../../services/medico.service';
 import { AuthService } from '../../../services/auth.service';
 import { DateService } from '../../../services/date.service';
 import { ErrorHandlerService } from '../../../services/error-handler.service';
+import { AlertService } from '../../../services/alert.service';
 
 @Component({
   selector: 'app-historia-medica-list',
@@ -90,8 +91,6 @@ import { ErrorHandlerService } from '../../../services/error-handler.service';
                   <td>{{ h.especialidad_nombre || '-' }}</td>
                   <td>
                     <button type="button" class="btn btn-sm btn-primary"
-                            [disabled]="!puedeEditar(h)"
-                            [title]="!puedeEditar(h) ? (esConsultaPasadaOHoy(h) ? 'Solo el médico del control puede editar' : 'No puede editar una consulta futura (aún no atendida)') : ''"
                             (click)="abrirControl(h)">
                       Editar
                     </button>
@@ -130,7 +129,8 @@ export class HistoriaMedicaListComponent implements OnInit {
     private medicoService: MedicoService,
     private authService: AuthService,
     private dateService: DateService,
-    private errorHandler: ErrorHandlerService
+    private errorHandler: ErrorHandlerService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit(): void {
@@ -201,7 +201,14 @@ export class HistoriaMedicaListComponent implements OnInit {
   }
 
   abrirControl(h: HistoricoWithDetails): void {
-    this.router.navigate(['/patients', this.patientId, 'historia-medica', String(h.id)]);
+    if (this.puedeEditar(h)) {
+      this.router.navigate(['/patients', this.patientId, 'historia-medica', String(h.id)]);
+      return;
+    }
+    const mensaje = this.esConsultaPasadaOHoy(h)
+      ? 'Solo el médico que atendió este control puede editarlo.'
+      : 'No se puede editar un control asociado a una consulta futura (aún no atendida).';
+    this.alertService.showWarning(mensaje);
   }
 
   volver(): void {
