@@ -18,6 +18,8 @@ export interface ChatMessageResponse {
   fromAudio?: boolean;
   /** Ruta a la que navegar (ej. /patients/5/antecedentes). El chat muestra un botón "Abrir". */
   navigateTo?: string;
+  /** PDF generado por el chatbot (p. ej. récipe). El chat muestra "Descargar PDF". */
+  pdfDownload?: { base64: string; filename: string };
 }
 
 @Injectable({

@@ -443,7 +443,7 @@ export class PatientFormComponent implements OnInit {
   validateCedula() {
     if (this.patient.cedula && this.patient.cedula.length > 0) {
       // Validar formato de cédula venezolana
-      const cedulaPattern = /^[VEJPG][0-9]{7,8}$/;
+      const cedulaPattern = /^[VEJPG][0-9]{3,8}$/;
       if (!cedulaPattern.test(this.patient.cedula)) {
         // Marcar como inválida si no cumple el formato
         console.log('Formato de cédula inválido');

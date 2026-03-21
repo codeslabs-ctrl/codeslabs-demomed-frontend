@@ -14,6 +14,8 @@ export interface ChatBubble {
   date: Date;
   /** Si el asistente sugiere abrir una pantalla (antecedentes, historia médica, etc.). */
   navigateTo?: string;
+  /** Adjunto PDF (récipe, etc.) en base64. */
+  pdfDownload?: { base64: string; filename: string };
 }
 
 @Component({
@@ -66,7 +68,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (this.messages.length === 0) {
       this.messages.push({
         role: 'assistant',
-        text: 'Hola. Soy el asistente de DemoMed. Puedo ayudarte a crear pacientes, agendar consultas, generar informes, y abrir la historia médica o los antecedentes de un paciente. ¿En qué te ayudo?',
+        text: 'Hola. Soy el asistente de DemoMed. Puedo ayudarte a crear pacientes, agendar consultas, generar informes, emitir récipe en PDF (si ya completaste una consulta con ese paciente) y abrir la historia médica o los antecedentes. ¿En qué te ayudo?',
         date: new Date()
       });
       this.shouldScrollToBottom = true;
@@ -100,7 +102,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         text: reply,
         fromAudio: res.fromAudio,
         date: new Date(),
-        navigateTo: res.navigateTo
+        navigateTo: res.navigateTo,
+        pdfDownload: res.pdfDownload
       });
       this.shouldScrollToBottom = true;
       if (this.ttsEnabled) this.speak(reply);
@@ -110,6 +113,19 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   goTo(navigateTo: string): void {
     if (navigateTo) this.router.navigateByUrl(navigateTo);
+  }
+
+  downloadPdf(attachment: { base64: string; filename: string }): void {
+    const bin = atob(attachment.base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = attachment.filename?.trim() || 'receta.pdf';
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   closeChat(): void {

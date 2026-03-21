@@ -173,7 +173,7 @@ import { ConsultaWithDetails } from '../../models/consulta.model';
           <div *ngIf="consultasPendientes.length === 0" class="empty-state">
             <div class="empty-state-icon">✅</div>
             <div class="empty-state-title">No hay consultas pendientes</div>
-            <div class="empty-state-description">Todas las consultas pasadas tienen historia médica registrada.</div>
+            <div class="empty-state-description">No hay citas con fecha anterior a hoy que sigan sin completar o finalizar.</div>
           </div>
 
           <div *ngFor="let consulta of consultasPendientes" class="consulta-card consulta-pendiente" [class]="getConsultaCardClass(consulta)">

@@ -31,6 +31,46 @@ function formatInline(escaped: string): string {
     .replace(/`([^`]+)`/g, '<code>$1</code>');
 }
 
+function splitTableRow(line: string): string[] {
+  let t = line.trim();
+  if (t.startsWith('|')) t = t.slice(1);
+  if (t.endsWith('|')) t = t.slice(0, -1);
+  return t.split('|').map((c) => c.trim());
+}
+
+function isTableDelimiterRow(line: string): boolean {
+  const cells = splitTableRow(line);
+  return (
+    cells.length >= 2 &&
+    cells.every((c) => {
+      const x = c.replace(/\s/g, '');
+      return /^:?-{3,}:?$/.test(x);
+    })
+  );
+}
+
+/** Tabla estilo GitHub (| h1 | h2 | / |---|---| / filas). */
+function markdownTableBlockToHtml(block: string): string | null {
+  const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
+  if (lines.length < 3) return null;
+  if (!lines.every((l) => l.includes('|'))) return null;
+  if (!isTableDelimiterRow(lines[1])) return null;
+  const headerCells = splitTableRow(lines[0]);
+  if (headerCells.length < 2) return null;
+  const ths = headerCells.map((c) => `<th>${formatInline(escapeHtml(c))}</th>`).join('');
+  const bodyRows = lines.slice(2);
+  const tbody = bodyRows
+    .map((row) => {
+      let cells = splitTableRow(row);
+      while (cells.length < headerCells.length) cells.push('');
+      cells = cells.slice(0, headerCells.length);
+      const tds = cells.map((c) => `<td>${formatInline(escapeHtml(c))}</td>`).join('');
+      return `<tr>${tds}</tr>`;
+    })
+    .join('');
+  return `<table><thead><tr>${ths}</tr></thead><tbody>${tbody}</tbody></table>`;
+}
+
 function chatMarkdownToHtml(text: string): string {
   const raw = (text || '').trim();
   if (!raw) return '';
@@ -39,6 +79,12 @@ function chatMarkdownToHtml(text: string): string {
   const out: string[] = [];
 
   for (const block of blocks) {
+    const tableHtml = markdownTableBlockToHtml(block);
+    if (tableHtml) {
+      out.push(tableHtml);
+      continue;
+    }
+
     const lines = block.split('\n');
     const nonEmpty = lines.map((l) => l.trim()).filter(Boolean);
     const allBullets =
@@ -75,7 +121,7 @@ export class ChatMarkdownPipe implements PipeTransform {
     }
     const html = chatMarkdownToHtml(value);
     const clean = sanitizeHtml(html, {
-      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'code', 'ul', 'ol', 'li'],
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'code', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
       ALLOWED_ATTR: []
     });
     return this.sanitizer.bypassSecurityTrustHtml(clean);

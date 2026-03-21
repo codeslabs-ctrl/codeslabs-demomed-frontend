@@ -50,12 +50,12 @@
             [class.duplicate-error]="cedulaExists && cedulaChecked"
             [(ngModel)]="patient.cedula"
             name="cedula"
-            pattern="^[VEJPG][0-9]{7,8}$"
-            placeholder="Ej: V12345678, E1234567"
+            pattern="^[VEJPG][0-9]{3,8}$"
+            placeholder="Ej: V123, E1234567"
             (blur)="validateCedula()"
             #cedula="ngModel">
           <div class="error-message" *ngIf="cedula.invalid && cedula.touched && !cedulaExists">
-            <span *ngIf="cedula.errors?.['pattern']">Formato inválido. Usa: V12345678, E1234567, J12345678, P12345678, G12345678</span>
+            <span *ngIf="cedula.errors?.['pattern']">Formato inválido: letra V, E, J, P o G y al menos 3 dígitos (ej. V123).</span>
             <span *ngIf="cedula.errors?.['cedulaInvalid']">Cédula inválida. Verifica el número</span>
           </div>
           <div class="error-message field-duplicate-error" *ngIf="cedulaExists && cedulaChecked">

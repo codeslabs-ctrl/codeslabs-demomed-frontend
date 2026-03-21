@@ -50,6 +50,11 @@
                   Abrir en la aplicación
                 </button>
               }
+              @if (msg.pdfDownload) {
+                <button type="button" class="chat-agent__cta chat-agent__cta--pdf" (click)="downloadPdf(msg.pdfDownload!)">
+                  Descargar PDF
+                </button>
+              }
               <time class="chat-agent__time">{{ msg.date | date:'shortTime' }}</time>
             </div>
           </div>
