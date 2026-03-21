@@ -1,6 +1,21 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import DOMPurify from 'dompurify';
+import * as PurifyModule from 'dompurify';
+
+type PurifyConfig = import('dompurify').Config;
+
+/** Compatible con dompurify CJS (`export =`) sin `allowSyntheticDefaultImports` en tsconfig. */
+function sanitizeHtml(dirty: string, cfg: PurifyConfig): string {
+  const mod = PurifyModule as unknown as {
+    default?: { sanitize: (d: string, c: PurifyConfig) => string };
+    sanitize?: (d: string, c: PurifyConfig) => string;
+  };
+  const impl = mod.default ?? (mod as { sanitize: (d: string, c: PurifyConfig) => string });
+  if (typeof impl.sanitize !== 'function') {
+    throw new Error('dompurify: sanitize no disponible');
+  }
+  return impl.sanitize(dirty, cfg);
+}
 
 /** Escapa HTML y aplica un subconjunto tipo Markdown (negritas, código, listas) para respuestas del asistente. */
 function escapeHtml(s: string): string {
@@ -59,7 +74,7 @@ export class ChatMarkdownPipe implements PipeTransform {
       return this.sanitizer.bypassSecurityTrustHtml('');
     }
     const html = chatMarkdownToHtml(value);
-    const clean = DOMPurify.sanitize(html, {
+    const clean = sanitizeHtml(html, {
       ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'code', 'ul', 'ol', 'li'],
       ALLOWED_ATTR: []
     });
