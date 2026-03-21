@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { ChatService, ChatMessageResponse } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
+import { ChatMarkdownPipe } from './chat-markdown.pipe';
 
 export interface ChatBubble {
   role: 'user' | 'assistant';
@@ -18,7 +19,7 @@ export interface ChatBubble {
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, ChatMarkdownPipe],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
 })

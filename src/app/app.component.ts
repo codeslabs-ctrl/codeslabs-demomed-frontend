@@ -14,9 +14,13 @@ import { AlertModalComponent } from './components/alert-modal/alert-modal.compon
   standalone: true,
   imports: [RouterOutlet, CommonModule, NavbarComponent, ChangePasswordModalComponent, SnackbarComponent, AlertModalComponent],
   template: `
-    <div class="app-container">
+    <div class="app-container" [class.app-container--chat-view]="showNavbar && isChatRoute">
       <app-navbar *ngIf="showNavbar"></app-navbar>
-      <main class="app-main" [class.full-height]="!showNavbar">
+      <main
+        class="app-main"
+        [class.full-height]="!showNavbar"
+        [class.app-main--chat]="showNavbar && isChatRoute"
+      >
         <router-outlet></router-outlet>
       </main>
       
@@ -42,6 +46,19 @@ import { AlertModalComponent } from './components/alert-modal/alert-modal.compon
       flex-direction: column;
     }
 
+    .app-container.app-container--chat-view {
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+    }
+
+    @supports (height: 100dvh) {
+      .app-container.app-container--chat-view {
+        height: 100dvh;
+        max-height: 100dvh;
+      }
+    }
+
     .app-main {
       flex: 1;
       padding: 1rem;
@@ -51,11 +68,22 @@ import { AlertModalComponent } from './components/alert-modal/alert-modal.compon
       height: 100vh;
       padding: 0;
     }
+
+    /* Chat: sin padding del main (evita altura > viewport + scroll al foco del textarea) */
+    .app-main.app-main--chat {
+      padding: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
   `]
 })
 export class AppComponent implements OnInit {
   title = 'demomed-dashboard';
   showNavbar = false;
+  /** Ruta /chat: el main se comporta como panel fijo para no desbordar el viewport. */
+  isChatRoute = false;
   showPasswordModal = false;
   isFirstLogin = false;
 
@@ -69,11 +97,15 @@ export class AppComponent implements OnInit {
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event) => {
-        this.updateNavbarVisibility((event as NavigationEnd).url);
+        const url = (event as NavigationEnd).urlAfterRedirects || (event as NavigationEnd).url;
+        this.updateNavbarVisibility(url);
+        this.isChatRoute = this.pathOnly(url) === '/chat';
       });
 
     // Verificar ruta inicial
-    this.updateNavbarVisibility(this.router.url);
+    const initial = this.router.url;
+    this.updateNavbarVisibility(initial);
+    this.isChatRoute = this.pathOnly(initial) === '/chat';
 
     // Suscribirse a cambios en el usuario autenticado
     this.authService.currentUser$.subscribe(user => {
@@ -82,6 +114,10 @@ export class AppComponent implements OnInit {
         this.showPasswordModal = true;
       }
     });
+  }
+
+  private pathOnly(url: string): string {
+    return url.split('?')[0].split('#')[0] || '/';
   }
 
   private updateNavbarVisibility(url: string) {
