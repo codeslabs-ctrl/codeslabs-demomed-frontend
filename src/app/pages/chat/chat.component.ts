@@ -97,13 +97,19 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (res.conversationId) this.conversationId = res.conversationId;
     const reply = (res.reply || '').trim();
     if (reply) {
+      const pdfDownloads =
+        res.pdfDownloads?.length
+          ? res.pdfDownloads
+          : res.pdfDownload
+            ? [{ ...res.pdfDownload, label: 'Descargar PDF' }]
+            : undefined;
       this.messages.push({
         role: 'assistant',
         text: reply,
         fromAudio: res.fromAudio,
         date: new Date(),
         navigateTo: res.navigateTo,
-        pdfDownload: res.pdfDownload
+        pdfDownloads
       });
       this.shouldScrollToBottom = true;
       if (this.ttsEnabled) this.speak(reply);
