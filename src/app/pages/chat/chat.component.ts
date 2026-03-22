@@ -14,8 +14,8 @@ export interface ChatBubble {
   date: Date;
   /** Si el asistente sugiere abrir una pantalla (antecedentes, historia médica, etc.). */
   navigateTo?: string;
-  /** Adjunto PDF (récipe, etc.) en base64. */
-  pdfDownload?: { base64: string; filename: string };
+  /** PDFs del chatbot (récipe: medicamentos e indicaciones por separado). */
+  pdfDownloads?: { base64: string; filename: string; label: string }[];
 }
 
 @Component({
@@ -115,7 +115,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (navigateTo) this.router.navigateByUrl(navigateTo);
   }
 
-  downloadPdf(attachment: { base64: string; filename: string }): void {
+  downloadPdf(attachment: { base64: string; filename: string; label?: string }): void {
     const bin = atob(attachment.base64);
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
