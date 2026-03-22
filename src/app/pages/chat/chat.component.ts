@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChatService, ChatMessageResponse } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
@@ -75,6 +76,32 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
+  /** Mensaje HTTP legible (antes solo se mostraba un texto fijo y no se veía 404, CORS, etc.). */
+  private setChatRequestError(err: unknown, kind: 'text' | 'audio'): void {
+    this.loading = false;
+    const intro = kind === 'audio' ? 'No se pudo enviar el audio.' : 'No se pudo enviar el mensaje.';
+    if (err instanceof HttpErrorResponse) {
+      if (err.status === 0) {
+        this.error =
+          `${intro} No hay respuesta del servidor del chat (¿está arrancado el proceso Deno, p. ej. puerto 3999, o el proxy /api/chat hacia ese puerto?).`;
+        return;
+      }
+      const body = err.error;
+      let serverMsg = '';
+      if (typeof body === 'string') serverMsg = body;
+      else if (body && typeof body === 'object') {
+        const o = body as { error?: unknown; message?: unknown };
+        if (typeof o.error === 'string') serverMsg = o.error;
+        else if (typeof o.message === 'string') serverMsg = o.message;
+      }
+      this.error = serverMsg
+        ? `${intro} ${serverMsg}`
+        : `${intro} HTTP ${err.status}${err.statusText ? ` (${err.statusText})` : ''}.`;
+      return;
+    }
+    this.error = `${intro} Inténtalo de nuevo.`;
+  }
+
   sendText(): void {
     const text = (this.inputText || '').trim();
     if (!text || this.loading) return;
@@ -85,10 +112,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.loading = true;
     this.chatService.sendMessage(text, this.conversationId ?? undefined).subscribe({
       next: (res) => this.handleResponse(res),
-      error: () => {
-        this.loading = false;
-        this.error = 'No se pudo enviar el mensaje. Inténtalo de nuevo.';
-      }
+      error: (err) => this.setChatRequestError(err, 'text')
     });
   }
 
@@ -191,9 +215,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.cdr.detectChanges();
       this.chatService.sendAudio(base64, mimeType, this.conversationId ?? undefined).subscribe({
         next: (res) => this.handleResponse(res),
-        error: () => {
-          this.loading = false;
-          this.error = 'No se pudo enviar el audio. Inténtalo de nuevo.';
+        error: (err) => {
+          this.setChatRequestError(err, 'audio');
           this.cdr.detectChanges();
         }
       });
