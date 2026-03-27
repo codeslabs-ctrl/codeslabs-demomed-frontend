@@ -20,8 +20,10 @@ import { Patient } from '../../../models/patient.model';
   styleUrls: ['./receta-medico.component.css']
 })
 export class RecetaMedicoComponent implements OnInit {
-  tipo: 'recipe' | 'indicaciones' = 'recipe';
+  tipo: 'recipe' | 'indicaciones' | 'ambos' = 'recipe';
   contenido = '';
+  /** Plantilla al elegir "Ambos": Récipe, tres líneas en blanco, Indicaciones. */
+  readonly plantillaAmbos = 'Récipe:\n\n\n\nIndicaciones:\n';
   /** ID seleccionado en el dropdown (null = sin paciente) */
   pacienteId: number | null = null;
   pacientes: Patient[] = [];
@@ -137,6 +139,14 @@ export class RecetaMedicoComponent implements OnInit {
     return this.piesSeleccionados.includes(id);
   }
 
+  /** Al seleccionar "Ambos", si el área está vacía se inserta la plantilla guía. */
+  onTipoCambiado(): void {
+    if (this.tipo !== 'ambos') return;
+    if (!(this.contenido || '').trim()) {
+      this.contenido = this.plantillaAmbos;
+    }
+  }
+
   async descargarPdf(): Promise<void> {
     const texto = (this.contenido || '').trim();
     if (!texto) {
@@ -170,7 +180,8 @@ export class RecetaMedicoComponent implements OnInit {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const label = this.tipo === 'indicaciones' ? 'indicaciones' : 'recipe';
+      const label =
+        this.tipo === 'indicaciones' ? 'indicaciones' : this.tipo === 'ambos' ? 'ambos' : 'recipe';
       a.download = `receta-${label}-${Date.now()}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);

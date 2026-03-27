@@ -1,7 +1,7 @@
 <div class="receta-page">
   <header class="receta-header">
     <h1>Récipe médico</h1>
-    <p class="receta-sub">Genere un PDF de <strong>Récipe</strong> o <strong>Indicaciones</strong> con su firma y datos profesionales.</p>
+    <p class="receta-sub">Genere un PDF de <strong>Récipe</strong>, <strong>Indicaciones</strong> o <strong>Ambos</strong> (récipe e indicaciones en un solo texto) con su firma y datos profesionales.</p>
   </header>
 
   <div class="receta-card">
@@ -15,6 +15,10 @@
         <label class="radio-pill" [class.active]="tipo === 'indicaciones'">
           <input type="radio" name="tipo" [(ngModel)]="tipo" value="indicaciones" />
           Indicaciones
+        </label>
+        <label class="radio-pill" [class.active]="tipo === 'ambos'">
+          <input type="radio" name="tipo" [(ngModel)]="tipo" value="ambos" (change)="onTipoCambiado()" />
+          Ambos
         </label>
       </div>
     </div>
@@ -49,7 +53,7 @@
         class="textarea-control"
         rows="14"
         [(ngModel)]="contenido"
-        placeholder="Medicamentos, dosis, indicaciones..."
+        [attr.placeholder]="tipo === 'ambos' ? 'Use las líneas Récipe: e Indicaciones: como guía; no se imprimen en el PDF.' : 'Medicamentos, dosis, indicaciones...'"
       ></textarea>
     </div>
 

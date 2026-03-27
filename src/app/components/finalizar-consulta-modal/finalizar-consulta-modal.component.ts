@@ -223,11 +223,10 @@ export class FinalizarConsultaModalComponent implements OnInit {
   }
 
   validarMontos(): boolean {
-    return this.serviciosSeleccionados.every(servicio => 
-      servicio.monto_pagado > 0 && 
-      servicio.monto_pagado !== null && 
-      !isNaN(servicio.monto_pagado)
-    );
+    return this.serviciosSeleccionados.every(servicio => {
+      const m = servicio.monto_pagado;
+      return m != null && !isNaN(m) && m >= 0;
+    });
   }
 
   getTotalVES(): number {

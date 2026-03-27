@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface RecetaPdfPayload {
-  tipo: 'recipe' | 'indicaciones';
+  tipo: 'recipe' | 'indicaciones' | 'ambos';
   contenido: string;
   paciente_id?: number | null;
   fecha_emision?: string | null;
