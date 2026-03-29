@@ -624,14 +624,37 @@
     min-height: auto;
   }
 
+  /* Móvil/tablet: imagen a un costado (poco ancho) + texto; menos altura que columna imagen+marca */
   .login-left {
     width: 100%;
     flex: none;
+    flex-direction: row;
+    align-items: stretch;
   }
 
   .login-left-image {
-    flex: 1 0 auto;
-    min-height: 140px;
+    flex: 0 0 32%;
+    max-width: 150px;
+    min-height: 0;
+    padding: 0.65rem 0.4rem 0.65rem 0.75rem;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .login-medico-img {
+    max-height: 96px;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    object-position: center center;
+  }
+
+  .login-left-brand {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    padding: 0.65rem 1rem 0.75rem 0.65rem;
+    justify-content: center;
   }
 
   .login-right {
@@ -659,20 +682,32 @@
   }
 
   .login-left-image {
-    flex: 1 0 auto;
-    min-height: 120px;
+    flex: 0 0 28%;
+    max-width: 118px;
+    padding: 0.5rem 0.35rem 0.5rem 0.5rem;
+  }
+
+  .login-medico-img {
+    max-height: 80px;
   }
 
   .login-left-brand {
-    padding: 0.65rem 1rem 0.75rem 1rem;
+    padding: 0.5rem 0.75rem 0.6rem 0.5rem;
   }
 
   .login-left-title {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
   }
 
   .login-left-desc {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .login-left-logo {

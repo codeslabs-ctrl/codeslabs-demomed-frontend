@@ -390,7 +390,8 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
     .patients-table {
       background: #ffffff;
       border-radius: 16px;
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: visible;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
       border: 1px solid rgba(0, 0, 0, 0.05);
     }
@@ -418,6 +419,12 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
       vertical-align: middle;
       font-size: 0.8rem;
       line-height: 1.4;
+    }
+
+    .table th:last-child,
+    .table td:last-child {
+      min-width: 280px;
+      vertical-align: top;
     }
 
     .table tbody tr:nth-child(even) {
@@ -459,10 +466,11 @@ import { ConfirmModalComponent } from '../../components/confirm-modal/confirm-mo
 
     .action-buttons {
       display: flex;
-      gap: 0.25rem;
-      flex-wrap: nowrap;
-      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      justify-content: flex-start;
       align-items: center;
+      max-width: 420px;
     }
 
     .action-btn {

@@ -106,9 +106,9 @@ export class LoginComponent implements OnInit, OnDestroy {
       return '🚫 Demasiados intentos de login. Debes esperar 15 minutos antes de intentar nuevamente.';
     }
     
-    // Error 401 - No autorizado (sin rate limiting)
+    // Error 401 - No autorizado (sin rate limiting): credenciales inválidas
     if (error.status === 401) {
-      return '❌ Usuario o contraseña incorrectos. Verifica tus credenciales.';
+      return 'La contraseña es incorrecta.';
     }
     
     // Error 403 - Prohibido
