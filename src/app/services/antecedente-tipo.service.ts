@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APP_CONFIG } from '../config/app.config';
 import { ApiResponse } from '../models/patient.model';
-import { AntecedenteMedicoTipo, AntecedenteTipoEnum } from '../models/antecedente-tipo.model';
+import { AntecedenteMedicoTipo, AntecedenteTipoEnum, AntecedenteTipoLabel } from '../models/antecedente-tipo.model';
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +17,11 @@ export class AntecedenteTipoService {
     return this.http.get<ApiResponse<AntecedenteMedicoTipo[]>>(this.baseUrl);
   }
 
-  getByTipo(tipo: AntecedenteTipoEnum, soloActivos = true): Observable<ApiResponse<AntecedenteMedicoTipo[]>> {
+  getCategoriaLabels(): Observable<ApiResponse<AntecedenteTipoLabel[]>> {
+    return this.http.get<ApiResponse<AntecedenteTipoLabel[]>>(`${this.baseUrl}/categoria-labels`);
+  }
+
+  getByTipo(tipo: AntecedenteTipoEnum | string, soloActivos = true): Observable<ApiResponse<AntecedenteMedicoTipo[]>> {
     let params = new HttpParams().set('tipo', tipo);
     if (soloActivos) params = params.set('activo', 'true');
     return this.http.get<ApiResponse<AntecedenteMedicoTipo[]>>(`${this.baseUrl}/por-tipo`, { params });

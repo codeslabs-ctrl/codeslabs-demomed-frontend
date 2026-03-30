@@ -53,6 +53,10 @@ export class PatientFormComponent implements OnInit {
   currentMedicoId: number | null = null;
   shouldCreateNewHistory = false;
 
+  /** 409 PATIENT_CEDULA_EXISTS: datos del paciente ya registrado (confirmación) */
+  cedulaConflictModalOpen = false;
+  existingPatientConflict: Partial<Patient> | null = null;
+
   constructor(
     private patientService: PatientService,
     private authService: AuthService,
@@ -109,7 +113,7 @@ export class PatientFormComponent implements OnInit {
       this.alertService.show('El correo electrónico ya está siendo usado por otro paciente.', 'error');
       return;
     }
-    if (this.cedulaExists && this.cedulaChecked) {
+    if (this.isEdit && this.cedulaExists && this.cedulaChecked) {
       this.alertService.show('La cédula ya está siendo usada por otro paciente.', 'error');
       return;
     }
@@ -130,8 +134,7 @@ export class PatientFormComponent implements OnInit {
 
   createPatient() {
     this.loading = true;
-    
-    // Solo enviar datos básicos del paciente
+
     const patientData = {
       nombres: this.patient.nombres!,
       apellidos: this.patient.apellidos!,
@@ -141,75 +144,67 @@ export class PatientFormComponent implements OnInit {
       email: this.patient.email!,
       telefono: this.patient.telefono!,
       remitido_por: this.patient.remitido_por ?? undefined,
-      activo: true // Los pacientes nuevos siempre se crean como activos
+      activo: true
     };
 
     console.log('🔍 Datos del paciente a enviar:', patientData);
-    
-    this.patientService.createPatient(patientData)
-      .subscribe({
-        next: (response) => {
-          console.log('✅ Respuesta del servidor:', response);
-          if (response.success) {
-            const newPatientId = (response.data as any)?.id;
-            console.log('🔍 ID del paciente obtenido:', newPatientId);
-            if (newPatientId) {
-              this.patientId = newPatientId;
-              this.loading = false;
-              this.loadingPatientData = true;
-              this.patientService.getPatientById(newPatientId).subscribe({
-                next: (loadRes) => {
-                  this.loadingPatientData = false;
-                  if (loadRes.success && loadRes.data) {
-                    this.patient = loadRes.data;
-                    this.patientCreated = true;
-                    this.showSuccessActions = true;
-                  } else {
-                    this.patientCreated = true;
-                    this.showSuccessActions = true;
-                  }
-                },
-                error: () => {
-                  this.loadingPatientData = false;
-                  this.patientCreated = true;
-                  this.showSuccessActions = true;
-                }
-              });
-            } else {
-              this.patientCreated = true;
-              this.showSuccessActions = true;
-              this.loading = false;
-            }
+
+    this.patientService.createPatient(patientData).subscribe({
+      next: (response) => {
+        console.log('✅ Respuesta del servidor:', response);
+        if (response.success) {
+          const newPatientId = (response.data as any)?.id;
+          console.log('🔍 ID del paciente obtenido:', newPatientId);
+          if (newPatientId) {
+            this.applyPostCreateSuccess(newPatientId);
           } else {
-            const errorMessage = (response as any).error?.message || 'Error creando paciente';
-            this.alertService.show(`${errorMessage} Por favor, intente nuevamente.`, 'error');
+            this.patientCreated = true;
+            this.showSuccessActions = true;
             this.loading = false;
           }
-        },
-        error: (error) => {
-          this.errorHandler.logError(error, 'crear paciente');
+        } else {
+          const errorMessage = (response as any).error?.message || 'Error creando paciente';
+          this.alertService.show(`${errorMessage} Por favor, intente nuevamente.`, 'error');
           this.loading = false;
-          // Ver en consola el cuerpo completo del 400 para depurar
-          console.warn('Crear paciente - respuesta de error del servidor:', error?.error);
-          const bodyMessage = error?.error?.error?.message ?? error?.error?.message ?? error?.message;
-          const errorMessage = typeof bodyMessage === 'string' ? bodyMessage : 'Error de conexión creando paciente';
-          if (errorMessage.includes('email ya está registrado') || errorMessage.includes('Email ya está registrado')) {
-            this.emailExists = true;
-            this.emailChecked = true;
-            this.alertService.show('El correo electrónico ya está siendo usado por otro paciente.', 'error');
-          } else if (errorMessage.includes('cédula ya está registrada') || errorMessage.includes('Cédula ya está registrada')) {
-            this.cedulaExists = true;
-            this.cedulaChecked = true;
-            this.alertService.show('La cédula ya está siendo usada por otro paciente.', 'error');
-          } else if (errorMessage.includes('teléfono') && (errorMessage.includes('ya está') || errorMessage.includes('registrado'))) {
-            this.telefonoExists = true;
-            this.telefonoChecked = true;
-            this.alertService.show('El teléfono ya está siendo usado por otro paciente.', 'error');
-          } else {
-            this.alertService.show(errorMessage || this.errorHandler.getSafeErrorMessage(error, 'crear paciente'), 'error');
-          }
         }
-      });
+      },
+      error: (error) => {
+        this.errorHandler.logError(error, 'crear paciente');
+        const errPayload = error?.error as {
+          error?: { code?: string; message?: string; details?: { existingPatient?: Partial<Patient> } };
+        } | undefined;
+        const apiErr = errPayload?.error;
+        if (error?.status === 409 && apiErr?.code === 'PATIENT_CEDULA_EXISTS') {
+          this.loading = false;
+          this.existingPatientConflict = apiErr.details?.existingPatient ?? null;
+          this.cedulaConflictModalOpen = true;
+          return;
+        }
+        this.loading = false;
+        console.warn('Crear paciente - respuesta de error del servidor:', error?.error);
+        const bodyMessage = apiErr?.message ?? (error?.error as any)?.message ?? error?.message;
+        const errorMessage = typeof bodyMessage === 'string' ? bodyMessage : 'Error de conexión creando paciente';
+        if (errorMessage.includes('email ya está registrado') || errorMessage.includes('Email ya está registrado')) {
+          this.emailExists = true;
+          this.emailChecked = true;
+          this.alertService.show('El correo electrónico ya está siendo usado por otro paciente.', 'error');
+        } else if (
+          errorMessage.includes('cédula ya está registrada') ||
+          errorMessage.includes('Cédula ya está registrada') ||
+          errorMessage.includes('usuario médico para vincularlo')
+        ) {
+          this.cedulaExists = true;
+          this.cedulaChecked = true;
+          this.alertService.show(errorMessage, 'error');
+        } else if (errorMessage.includes('teléfono') && (errorMessage.includes('ya está') || errorMessage.includes('registrado'))) {
+          this.telefonoExists = true;
+          this.telefonoChecked = true;
+          this.alertService.show('El teléfono ya está siendo usado por otro paciente.', 'error');
+        } else {
+          this.alertService.show(errorMessage || this.errorHandler.getSafeErrorMessage(error, 'crear paciente'), 'error');
+        }
+      }
+    });
   }
 
   updatePatient() {
@@ -391,6 +386,70 @@ export class PatientFormComponent implements OnInit {
     this.router.navigate(['/patients']);
   }
 
+  private applyPostCreateSuccess(newPatientId: number) {
+    this.patientId = newPatientId;
+    this.loading = false;
+    this.loadingPatientData = true;
+    this.patientService.getPatientById(newPatientId).subscribe({
+      next: (loadRes) => {
+        this.loadingPatientData = false;
+        if (loadRes.success && loadRes.data) {
+          this.patient = loadRes.data;
+          this.patientCreated = true;
+          this.showSuccessActions = true;
+        } else {
+          this.patientCreated = true;
+          this.showSuccessActions = true;
+        }
+      },
+      error: () => {
+        this.loadingPatientData = false;
+        this.patientCreated = true;
+        this.showSuccessActions = true;
+      }
+    });
+  }
+
+  closeCedulaConflictModal() {
+    this.cedulaConflictModalOpen = false;
+    this.existingPatientConflict = null;
+  }
+
+  confirmVincularPaciente() {
+    const ep = this.existingPatientConflict;
+    if (!ep?.id) {
+      this.alertService.show('No se pudo identificar al paciente existente.', 'error');
+      return;
+    }
+    this.loading = true;
+    this.patientService.linkPatientToMyHistorial(ep.id, {}).subscribe({
+      next: (response) => {
+        this.closeCedulaConflictModal();
+        if (response.success && response.data) {
+          const rid = (response.data as Patient).id;
+          if (rid) {
+            this.applyPostCreateSuccess(rid);
+          } else {
+            this.loading = false;
+            this.alertService.show((response.data as any).message || 'Vinculación completada.', 'success');
+          }
+        } else {
+          this.loading = false;
+          this.alertService.show('No se pudo completar la vinculación.', 'error');
+        }
+      },
+      error: (err) => {
+        this.loading = false;
+        this.errorHandler.logError(err, 'vincular paciente');
+        const msg =
+          err?.error?.error?.message ??
+          err?.error?.message ??
+          this.errorHandler.getSafeErrorMessage(err, 'vincular paciente');
+        this.alertService.show(msg, 'error');
+      }
+    });
+  }
+
   // Validación de email
   validateEmail() {
     if (this.patient.email && this.patient.email.length > 0) {
@@ -445,19 +504,22 @@ export class PatientFormComponent implements OnInit {
       // Validar formato de cédula venezolana
       const cedulaPattern = /^[VEJPG][0-9]{3,8}$/;
       if (!cedulaPattern.test(this.patient.cedula)) {
-        // Marcar como inválida si no cumple el formato
         console.log('Formato de cédula inválido');
         this.cedulaExists = false;
         this.cedulaChecked = false;
         return;
       }
-      
-      // Si el formato es válido, verificar duplicados
+
+      if (!this.isEdit) {
+        this.cedulaExists = false;
+        this.cedulaChecked = false;
+        return;
+      }
+
       clearTimeout(this.cedulaValidationTimeout);
       this.cedulaValidationTimeout = setTimeout(() => {
         this.patientService.searchPatientsByCedula(this.patient.cedula!).subscribe({
           next: (response) => {
-            // Si es modo edición, excluir el paciente actual
             if (this.isEdit && this.patientId) {
               const otherPatients = response.data.filter(p => p.id !== this.patientId);
               this.cedulaExists = otherPatients.length > 0;
@@ -467,11 +529,9 @@ export class PatientFormComponent implements OnInit {
             this.cedulaChecked = true;
           },
           error: (error) => {
-            // Solo loguear errores reales (no 404, que es esperado cuando no hay resultados)
             if (error.status !== 404 && error.status !== 0) {
               this.errorHandler.logError(error, 'validar cédula');
             }
-            // Si hay error o no hay resultados, la cédula está disponible
             this.cedulaExists = false;
             this.cedulaChecked = true;
           }
