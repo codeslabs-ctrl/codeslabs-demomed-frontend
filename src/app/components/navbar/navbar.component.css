@@ -1,17 +1,42 @@
+/* Host = <app-navbar>: debe ocupar todo el ancho del layout (no inline) */
+:host {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .navbar {
   background: white;
   border-bottom: 1px solid #e5e7eb;
-  padding: 0.1rem 2rem;
+  padding-top: 0.1rem;
+  padding-bottom: 0.1rem;
+  padding-left: 0.75rem;
+  padding-right: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.35rem;
   min-height: 70px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* flex 1 + width:0: la columna usa todo el espacio entre logo y usuario */
+.navbar-shortcuts {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
 }
 
 .navbar-brand {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .brand-link {
@@ -51,78 +76,14 @@
   color: #7A9CC6;
 }
 
-/* Accesos inmediatos: columna central crece; el bloque de pestañas solo ocupa el ancho del contenido */
-.navbar-quick-actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  min-width: 0;
-  padding: 0 0.5rem;
-}
-
-.navbar-quick-tabs {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  gap: 0.25rem;
-  width: max-content;
-  max-width: 100%;
-  box-sizing: border-box;
-  background: #f1f5f9;
-  border-radius: 10px 10px 0 0;
-  padding: 0.2rem 0.35rem 0;
-  border: 1px solid #e2e8f0;
-  border-bottom: none;
-}
-
-.navbar-quick-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.35rem 0.65rem;
-  border-radius: 8px 8px 0 0;
-  background: #e2e8f0;
-  color: #334155;
-  text-decoration: none;
-  font-size: 0.72rem;
-  font-weight: 600;
-  border: 1px solid #cbd5e1;
-  border-bottom: none;
-  box-shadow: none;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.navbar-quick-btn:hover {
-  background: #fff;
-  color: #0f172a;
-  transform: none;
-  box-shadow: 0 -1px 0 #fff inset;
-}
-
-.navbar-quick-icon {
-  font-size: 0.85rem;
-  line-height: 1;
-}
-
-.navbar-quick-label {
-  white-space: nowrap;
-}
-
-@media (max-width: 900px) {
-  .navbar-quick-label {
-    display: none;
-  }
-  .navbar-quick-btn {
-    padding: 0.35rem 0.5rem;
-  }
-}
-
 .navbar-user {
   display: flex;
   align-items: center;
   gap: 1rem;
   position: relative;
+  flex-shrink: 0;
+  margin-right: 0;
+  padding-right: 0;
 }
 
 .user-info {
@@ -397,7 +358,7 @@
 
 @media (max-width: 768px) {
   .navbar {
-    padding: 0 1rem;
+    padding: 0 0 0 1rem;
     height: 60px;
   }
   
