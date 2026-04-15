@@ -8,8 +8,10 @@ export interface ClinicaAtencion {
   id: number;
   nombre_clinica: string;
   direccion_clinica: string | null;
+  /** WGS84; opcional. Con longitud se envía enlace a mapas en correos de consulta. */
+  latitud?: number | null;
+  longitud?: number | null;
   logo_path: string | null;
-  /** Logo para encabezado récipe PDF (imagen ya en tamaño adecuado); si vacío se usa logo_path con escala suave */
   logo_path_recipe: string | null;
   activo: boolean;
   fecha_creacion?: string;
@@ -26,7 +28,7 @@ export class ClinicaAtencionService {
 
   list(activosOnly: boolean = true): Observable<ApiResponse<ClinicaAtencion[]>> {
     const params = activosOnly ? {} : { activosOnly: 'false' };
-    return this.http.get<ApiResponse<ClinicaAtencion[]>>(this.baseUrl, { params: params as Record<string, string> });
+    return this.http.get<ApiResponse<ClinicaAtencion[]>>(this.baseUrl, { params: params as any });
   }
 
   getById(id: number): Observable<ApiResponse<ClinicaAtencion>> {
